@@ -1,0 +1,7 @@
+# Default gitleaks rules plus one allowlisted value.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "IndexNow ownership key: public by design, served at /bfc2b345b3d867338dd79061e7e54f93.txt"
+regexes = ['''bfc2b345b3d867338dd79061e7e54f93''']

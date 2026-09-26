@@ -1,13 +1,13 @@
-// Extension + public store API helpers: pure logic, no network. `node --test extension/test.mjs`.
+// Extension + public store API helpers: pure logic, no network. `npm test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 // extension/lib.js is an ES module for Chrome; load it as one without a package.json type.
-const src = readFileSync(new URL('./lib.js', import.meta.url), 'utf8');
+const src = readFileSync(new URL('../extension/lib.js', import.meta.url), 'utf8');
 const ext = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
-// The CLI's normaliser is the same contract as the server's.
-const { normaliseDomain } = await import('../packages/shopify-inspect/parse.js');
+// Node >= 22.18 strips TS types natively.
+const { normaliseDomain } = await import('../app/api/public/store/domain.ts');
 
 test('server normaliser: accepts pasted URLs and bare hosts', () => {
   assert.equal(normaliseDomain('fashionnova.com'), 'fashionnova.com');

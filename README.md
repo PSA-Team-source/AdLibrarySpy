@@ -2,17 +2,17 @@
 
 # AdLibrarySpy
 
-**Open-source Shopify competitor research: a CLI, an MCP server for AI assistants, a Chrome extension and a weekly leaderboard.**
+**Open-source Shopify store and ad intelligence: the full [adlibraryspy.com](https://adlibraryspy.com/?ref=gh:readme) web app, a CLI, an MCP server for AI assistants, a Chrome extension and a weekly leaderboard.**
 
 See any store's best sellers, apps, traffic and live Meta ads, or ask Claude which stores are scaling this week.
 Every number carries its source. Nothing is estimated.
 
-[![CI](https://github.com/PSA-Team-source/shopify-spy/actions/workflows/ci.yml/badge.svg)](https://github.com/PSA-Team-source/shopify-spy/actions/workflows/ci.yml)
+[![CI](https://github.com/PSA-Team-source/AdLibrarySpy/actions/workflows/ci.yml/badge.svg)](https://github.com/PSA-Team-source/AdLibrarySpy/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![Node 18+](https://img.shields.io/badge/node-%E2%89%A518-43853d)
 
-[Quick start](#quick-start) · [MCP for Claude & Cursor](#ask-your-ai-assistant) · [This week's leaderboard](#this-weeks-shopify-breakouts) · [Data honesty](docs/data-honesty.md) · [adlibraryspy.com](https://adlibraryspy.com/?ref=gh:readme)
+[Quick start](#quick-start) · [The web app](#the-web-app) · [MCP for Claude & Cursor](#ask-your-ai-assistant) · [This week's leaderboard](#this-weeks-shopify-breakouts) · [Data honesty](docs/data-honesty.md) · [adlibraryspy.com](https://adlibraryspy.com/?ref=gh:readme)
 
 <img src=".github/assets/shopify-inspect.gif" alt="npx shopify-inspect deathwishcoffee.com prints the store's theme, prices, measured traffic, live Meta ads, apps, best sellers and newest products" width="760">
 
@@ -55,6 +55,7 @@ The server works with **Claude, Claude Code, Cursor, VS Code** and any other MCP
 
 | | |
 |---|---|
+| [`app/`](app), [`lib/`](lib), [`components/`](components) | The **adlibraryspy.com web app** (Next.js 15, React 19, Postgres): store and ad explorer, store dossiers, brandtracker, AI creative labels, weekly report, public SEO pages, and the hosted MCP server with OAuth 2.1. |
 | [`packages/shopify-inspect`](packages/shopify-inspect) | CLI + library. Reads a store's own storefront (`/meta.json`, collection order, `/products.json`) and detects 40+ apps and pixels. Zero dependencies. |
 | [`packages/mcp`](packages/mcp) | `adlibraryspy-mcp`, a stdio MCP server. Keyless tools plus a proxy to the hosted index. |
 | [`extension`](extension) | Chrome extension: click on any Shopify store to see traffic, ads, top products and apps. `activeTab` only, nothing runs in the background. |
@@ -108,6 +109,185 @@ We don't. A figure appears only when something measured it, and it carries its s
 A missing value is `null` and renders as nothing, never as `0` or a guess. AI labels come with their confidence.
 [Read the rules →](docs/data-honesty.md)
 
+## The web app
+
+This is the complete source of [adlibraryspy.com](https://adlibraryspy.com/?ref=gh:readme), exactly as it runs in production.
+
+### What it is
+
+Sign-up, workspaces, roles, a live
+shop/ad explorer, a brandtracker that records real snapshots, AI creative
+labels (hook / angle / funnel stage / offer / urgency), and an MCP server so
+Claude or ChatGPT can query the index directly.
+
+#### AI creative labels
+
+Each creative's ad text is classified by a text classifier; the index's creatives
+endpoints return the result as `ai_labels` and serve label counts from
+`/creatives-es/label-facets`. `lib/market/labels.ts` maps both.
+
+- **They are model judgments with a confidence, not measurements.** Every
+  surface says so: the `/ads` filter row, the ad's "Creative breakdown" block
+  and the shop's "Creative mix" section.
+- **A label the model was unsure of is absent**, and absence renders nothing.
+  An unlabeled ad has no breakdown block and no hook chip.
+- **Filters are built from the facets.** `/ads` shows hook / angle / funnel
+  stage / offer / urgency filters only when the current search has labeled
+  creatives, with the options and counts the index returned. They are applied
+  server-side (`hook`, `angle`, `funnelStage`, `offer`, `urgency` params), so
+  unlabeled creatives drop out of a filtered search.
+- **Shares are of labeled creatives**, not of all creatives: a brand's
+  "Creative mix" divides each count by `labeled`, and is omitted when that is 0.
+
+### Everything is free
+
+Since 2026-09-19 every feature is open to every workspace: no plans, no
+limits, no metered credits, no checkout. Abuse protection is the per-workspace
+rate limit (`lib/ratelimit.ts`), not a paywall. The `plans`, `subscriptions`,
+`credit_*` and `invoices` tables remain in the database but nothing reads them.
+
+### Configuration
+
+All variables are listed, with placeholders, in [`.env.example`](.env.example).
+
+| Variable | Required | Effect when unset |
+|---|---|---|
+| `DATABASE_URL` | yes | App cannot start; `/api/health` returns 503 |
+| `PGSSL` | no | TLS on; set `off` for a local Postgres without TLS |
+| `PG_POOL_MAX` | no | Defaults to 10 connections |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | yes | Sign-in is an emailed magic link: nobody can sign in, and invites cannot send |
+| `APP_BASE_URL` | yes in production | Links in mail and OAuth metadata point at `http://localhost:4311` |
+| `SESSION_SECRET` | for the newsletter | At least 16 characters; without it unsubscribe links cannot be signed |
+| `MARKET_API_BASE` | no | Defaults to the public index, `https://api.platformdtc.com/api/v1` |
+| `MARKET_TIMEOUT_MS` | no | Defaults to 12000 |
+| `PLATFORM_JWT_SECRET`, `MARKET_SERVICE_ACCOUNT_ID`, `MARKET_SERVICE_EMAIL` | for ad creatives and MCP | Service account issued by the index operator; without it ad creatives return empty (shops still work) |
+| `CLICKHOUSE_URL`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD` | no | Funnel events are not recorded |
+| `TRAFFIC_PROVIDER` + `SIMILARWEB_API_KEY` / `SEMRUSH_API_KEY`, `TRAFFIC_CACHE_DAYS` | no | Traffic comes only from the index's SimilarWeb crawl (see below) |
+| `NEXT_PUBLIC_CHROME_EXTENSION_URL` | no | The homepage shows no extension link |
+| `APP_VERSION` | no | `/api/health` reports `dev` |
+| `WEEKLY_MAIL_PER_SEC` | no | Weekly report sends 4 emails per second |
+
+#### Traffic
+
+`lib/traffic/similarweb.ts` reads the platform's own SimilarWeb site-overview
+crawl, which measures the **exact store host**. Brand rows carry `sw_visits`,
+`sw_growth_pct`, `sw_period` and the global/country/category ranks;
+`/top-brands/{id}` adds `similarweb_detail` — up to three measured months,
+engagement, the traffic-source mix, top countries and top keywords. Shops are
+ranked by `sw_visits` (`SHOP_SORTS.traffic`; the table opens on `max_ads_7d`) and
+by `sw_growth_pct` (`SHOP_SORTS.growth` and the *Fastest growing* segment). Both
+sorts keep a second key — `monthly_traffic` and `growth_rate` — underneath, with
+`missing: "_last"` in both directions, so a store the crawl has not reached
+holds its old relative position instead of dropping out of a list.
+
+The index's own `monthly_traffic` is the **parent** domain's figure —
+store.nytimes.com was filed with nytimes.com's 178M visits — and its
+`similar_web` rank is a ~12.1M sentinel for every subdomain storefront. It
+survives only as a fallback for stores the crawl has not reached yet, always
+captioned *Market index estimate*, and `trafficIsCredible()`
+(`lib/traffic/crux.ts`) still withholds it where Chrome's own ranking
+contradicts it. Growth follows the visit figure's source by construction: a
+measured store shows SimilarWeb's month-over-month change or, with only one
+measured month, nothing at all — never the index's rate beside a measured
+figure. A measured SimilarWeb figure is never gated by that test — the
+contradiction it catches is exactly what the crawl fixes. `Shop.trafficSource`
+says which of the two any figure is, on every surface and in the MCP tools.
+
+#### Licensed traffic
+
+`lib/traffic/provider.ts` implements SimilarWeb and Semrush. Set
+`TRAFFIC_PROVIDER=similarweb` and `SIMILARWEB_API_KEY`, and monthly history is
+fetched, cached in `traffic_monthly`, and used in place of the index value.
+Without a key — the production case — `monthlyTraffic()` returns `null` for
+every domain. It never fabricates a series, and it is skipped entirely for a
+store the platform's own crawl has already measured.
+
+### Architecture
+
+```
+app/(auth)/*      sign in, sign up, reset, verify, accept invite
+app/(app)/*       the product — every page behind requireCtx()
+app/(public)/*    anonymous, edge-cached pages: /store/{domain}, /stores, /trending, /weekly
+app/api/public/*  anonymous JSON (store card, weekly report) used by the extension, CLI and MCP
+app/api/mcp       MCP server (JSON-RPC 2.0, OAuth 2.1 bearer)
+app/oauth/*       consent screen; app/api/oauth/* token + registration
+lib/market/*      index client, service token, shop and creative mappers
+lib/traffic/*     SimilarWeb mapping + labels, CrUX ranks, licensed-provider cache
+lib/auth/*        passwordless (magic link) sign-in, sessions, request guards
+lib/migrations/   SQL, applied in filename order by npm run migrate
+packages/*        shopify-inspect (CLI) and adlibraryspy-mcp (stdio MCP), npm workspaces
+extension/        Chrome extension (Manifest V3, activeTab only)
+leaderboard/      the weekly README table and its GitHub Action
+scripts/          migrations runner, snapshot + weekly-report jobs
+```
+
+Multi-tenancy is enforced in `lib/auth/guard.ts`: a `workspace_id` is always
+resolved from the session, never accepted from a request.
+
+### MCP
+
+Server URL: `https://<host>/api/mcp`. Discovery is at
+`/.well-known/oauth-authorization-server` and
+`/.well-known/oauth-protected-resource`; clients register themselves via RFC 7591
+and authorize with PKCE (S256 required). 12 tools across three scopes — see
+`lib/mcp/tools.ts`. Only tools with a real query behind them are declared.
+
+`search_ads` filters by AI label (`hook`, `angle`, `funnelStage`, `offer`,
+`urgency`) and returns each ad's `labels`; `get_ad` returns them too;
+`creative_breakdown` returns a store's label counts (`total`, `labeled`, and
+per-label `facets`). All three tell the assistant the labels are model
+classifications of ad text with a confidence, absent when uncertain, and that
+absence is not evidence of anything.
+
+### Data honesty rules
+
+These are load-bearing, not stylistic. The predecessor to this codebase
+synthesised traffic history (linear interpolation plus random noise), modelled
+visit counts from ad and follower counts, and presented both as measurements.
+All of that is gone.
+
+- **A number is rendered only if something measured it.** `monthlyVisits` is
+  SimilarWeb's measurement of the store's own host (`sw_visits`) or, where the
+  crawl has not reached the store, the index's `monthly_traffic` — labelled as
+  the index's estimate wherever it appears. There is no fallback estimator.
+- **Traffic history is only real, named months.** SimilarWeb's measured months
+  on a dossier, the index's own recorded months on a store it has not measured;
+  the two are never concatenated. A chart needs two real points (`MIN_POINTS` in
+  `components/charts.tsx`) or it does not render at all.
+- **Absent data renders nothing.** No grey box where an image failed, no `—`
+  standing in for a metric that was never collected, no `href="#"`.
+  `components/ShopMedia.tsx` returns `null` on a missing or broken image rather
+  than an empty frame.
+- **`null` ≠ `0`.** The MCP tool descriptions tell assistants this explicitly,
+  because a model that reads a missing measurement as zero will draw a false
+  conclusion from it.
+- **A model judgment is labelled as one.** AI creative labels carry their
+  confidence and are never presented as a measured fact; an absent label means
+  the model was not sure, not that the ad lacks that trait.
+- **Features without data are not sold.** A screen whose data the index does
+  not hold is not shipped, rather than filled with sample rows or invented counts.
+
+### Run it locally
+
+```bash
+npm install
+cp .env.example .env.local     # set DATABASE_URL (PGSSL=off for a local Postgres) and SMTP_*
+npm run migrate
+npm run dev                    # http://localhost:4311
+npm test && npm run typecheck
+```
+
+SMTP is required to sign in: there are no passwords, and every sign-in is a link sent by email. A local mail
+catcher such as Mailpit works (`SMTP_HOST=localhost`, `SMTP_PORT=1025`). Unless you change `MARKET_API_BASE`, a
+local instance reads the public index at `api.platformdtc.com`.
+
+Accounts, workspaces, roles, API keys, OAuth, the brandtracker and the public pages all run on your own
+Postgres. **Store and ad data come from the AdLibrarySpy market index**, a hosted service this repo is a
+client of. The index's shop endpoints are public, while ad creatives need a service account
+(`PLATFORM_JWT_SECRET`, `MARKET_SERVICE_ACCOUNT_ID`). If you want to run your own instance against the
+index, [open an issue](https://github.com/PSA-Team-source/AdLibrarySpy/issues). Without those variables, the
+app shows no creatives instead of inventing any.
+
 ## How it works
 
 ```
@@ -125,9 +305,10 @@ brand tracking) is the hosted [AdLibrarySpy](https://adlibraryspy.com/?ref=gh:re
 
 ## Contributing
 
-App and pixel signatures are the easiest place to start. Add a vendor host and a test, and every user
-benefits. See [CONTRIBUTING.md](CONTRIBUTING.md). If this saves you research time, **a ⭐ helps other people find it.**
+App and pixel signatures are the easiest place to start: add a vendor host and a test, and every user
+benefits. Bug fixes and features in the web app are welcome too. See [CONTRIBUTING.md](CONTRIBUTING.md).
+If this saves you research time, **a ⭐ helps other people find it.**
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The AdLibrarySpy name and logo, third-party logos and the screenshots are not covered; see [NOTICE.md](NOTICE.md).

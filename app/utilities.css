@@ -1,0 +1,72 @@
+/* Utility classes */
+
+.text-high-contrast-light {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.text-high-contrast-dark {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.text-neutral-improved-light {
+  color: rgba(60, 60, 60, 1);
+}
+
+.text-neutral-improved-dark {
+  color: rgba(220, 220, 220, 1);
+}
+
+/* Hide scrollbars while maintaining scrolling functionality */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Thin scrollbar styling */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* RTL-aware sidebar transforms */
+.sidebar-hidden {
+  transform: translateX(-120%);
+}
+
+[dir='rtl'] .sidebar-hidden {
+  transform: translateX(120%);
+}
+
+.sidebar-visible {
+  transform: translateX(0);
+}
+
+@keyframes fadeInFast {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in-fast {
+  animation: fadeInFast 0.2s ease-in;
+}

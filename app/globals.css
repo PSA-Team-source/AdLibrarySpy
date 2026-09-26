@@ -1,0 +1,1392 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Speed up spinners 2x (default animate-spin = 1s → 0.5s) */
+@layer utilities {
+  .animate-spin {
+    animation-duration: 0.5s;
+  }
+}
+
+@layer base {
+
+  /* Light Mode — Shopify-admin palette (grey app bg #f1f1f1, white cards,
+     #303030 text, #616161 secondary, #e3e3e3 borders). */
+  :root {
+    --background: 225 50% 98%;         /* #F9FAFD near-white canvas — the base frame */
+    --foreground: 0 0% 0%;         /* #000 — full-contrast text (per request) */
+    --card: 0 0% 100%;                 /* #fff card — max contrast, matches chrome */
+    --card-foreground: 0 0% 0%;
+    --popover: 0 0% 100%;              /* menus/dropdowns pure white, match cards */
+    --popover-foreground: 0 0% 0%;
+    --primary: 0 0% 17%;               /* #2c2c2c — neutral dark CTA (mirrors dark theme) */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 216 16% 94%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 216 16% 94%;
+    --muted-foreground: 0 0% 0%;       /* #000 — full contrast, no muted (per request) */
+    --accent: 216 15% 91%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 72% 50%;          /* rgb(220,38,38) */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 14% 86%;             /* #D7DBE0 clearly visible, soft */
+    --input: 0 0% 100%;
+    --input-border: 214 14% 84%;
+    --ring: 215 16% 52%;               /* neutral-cool focus ring */
+    --radius: 0.625rem;
+    --bg-primary: 225 50% 98%;
+    --bg-secondary: 216 16% 94%;
+    --chart-1: 220 65% 52%;
+    --chart-2: 160 55% 42%;
+    --chart-3: 30 80% 50%;
+    --chart-4: 280 55% 55%;
+    --chart-5: 340 68% 52%;
+
+    --sidebar-background: 0 0% 100%;   /* white chrome, matches --chrome-bg */
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 17%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 216 15% 91%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 214 14% 88%;
+    --sidebar-ring: 215 16% 52%;
+
+    /* Semantic tokens — soft off-white light values */
+    --surface: #fff;                   /* sidebar/chrome — white, matches --chrome-bg */
+    --surface-hover: rgb(234, 236, 240);
+    --control-bg: rgb(240, 242, 245);
+    --control-bg-hover: rgb(231, 234, 238);
+    --text: rgb(0, 0, 0);
+    --text-muted: rgb(0, 0, 0);
+    --border-subtle: rgb(223, 227, 232);
+    --selected-bg: rgb(228, 231, 236);
+    --selected-text: #1f2328;
+    --table-bg: rgb(248, 249, 251);
+    --table-hover-bg: rgb(240, 242, 245);
+    --border-table: rgb(228, 231, 236);
+    --trend-growth: rgb(22, 163, 74);
+    --trend-drop: rgb(234, 88, 12);
+    --primaryColor: #2c2c2c;
+    --primaryColorHover: #1a1a1a;
+    --neutralLight: rgb(158, 165, 174);
+    --neutralMedium: rgb(101, 109, 118);
+    --brand-gradient: linear-gradient(135deg, #000000 0%, #4a4a4a 100%);
+    --input-bg: rgb(255, 255, 255);    /* = --input (#fff) — keep the RGB twin in sync */
+    /* --input-border is defined above as HSL var (line ~34) for use with hsl(var(--input-border)) */
+    --alert-success-bg: rgb(240, 253, 244);
+    --alert-success-border: rgb(34, 197, 94);
+    --alert-success-text: rgb(22, 101, 52);
+    --alert-success-icon: rgb(22, 163, 74);
+    --alert-error-bg: rgb(254, 242, 242);
+    --alert-error-border: rgb(239, 68, 68);
+    --alert-error-text: rgb(153, 27, 27);
+    --alert-error-icon: rgb(220, 38, 38);
+    --alert-warning-bg: rgb(255, 251, 235);
+    --alert-warning-border: rgb(245, 158, 11);
+    --alert-warning-text: rgb(146, 64, 14);
+    --alert-warning-icon: rgb(217, 119, 6);
+    --alert-info-bg: rgb(239, 246, 255);
+    --alert-info-border: rgb(59, 130, 246);
+    --alert-info-text: rgb(30, 58, 138);
+    --alert-info-icon: rgb(37, 99, 235);
+
+    /* ── Chrome and content-surface tokens (tinted to the light palette above;
+       the values above are untouched). ─────────────────────────────────────────── */
+    --chrome-bg: #fff;                  /* sidebar/topbar chrome — white for max contrast */
+    --overlay-1: rgba(0, 0, 0, 0.04);   /* dark-on-light overlays (theme-flipping) */
+    --overlay-2: rgba(0, 0, 0, 0.08);
+    --hairline: rgba(0, 0, 0, 0.08);
+    --grid-line: rgba(0, 0, 0, 0.06);
+    --chart-grid: 220 13% 88%;          /* recharts gridlines */
+    --chart-axis: 220 9% 40%;           /* axis ticks/labels */
+    --chart-tooltip-bg: 0 0% 100%;      /* = platformdtc --card (#fff) */
+    --chart-tooltip-text: 0 0% 0%;      /* platformdtc full-contrast text */
+    /* Kept in step with the authoritative pair further down this file (search
+       "PLACEHOLDER tone"); at 65% alpha this composited to 2.82:1 on white. */
+    --placeholder: hsl(0 0% 40%);
+  }
+
+  /* Dark Mode — dark palette */
+  .dark {
+    --background: 0 0% 4%;             /* rgb(11,11,11) */
+    --foreground: 0 0% 96%;
+    /* The brand's card surface, expressed as a flat value.
+       The marketing surface builds a card as `rgb(255 255 255 / 0.02)` over the
+       page ground — which composites to rgb(15,15,15) on this background, i.e.
+       6%. This was 8%, a shade lighter than every card on the public site.
+       Flat rather than alpha because these tokens are consumed as HSL triples
+       by ~200 utilities that expect an opaque colour. */
+    --card: 0 0% 6%;                   /* rgb(15,15,15) — matches the marketing card surface */
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 90%;               /* #e5e5e5 */
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 100%;     /* white (forced — see override at end of file) */
+    --accent: 0 0% 24%;                /* rgb(60,61,65) */
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 65% 63%;          /* rgb(248,113,113) */
+    /* Dark text on the destructive FILL, not white.
+       `--destructive` is light here on purpose — it is used as a text colour on
+       dark surfaces in 195 places (`text-destructive`) and has to stay legible
+       there. But that same light red is also the fill behind ~35 solid
+       destructive buttons and badges, and white-on-rgb(248,113,113) measures
+       3.31:1 — under the 4.5:1 AA floor, i.e. the word "Revoked" on a revoked
+       API key was the hardest label on the screen to read.
+       Near-black on that fill measures 6.4:1, and every use of
+       `text-destructive-foreground` in the codebase sits on `bg-destructive`,
+       so nothing else moves. Light mode already passes (white on
+       rgb(220,38,38) = 4.7:1) and is left alone. */
+    --destructive-foreground: 0 0% 10%;
+    /* The brand's hairline. The marketing surface draws every edge with
+       `rgb(255 255 255 / 0.12)`, which composites to rgb(39,39,39) here — 15%.
+       This was 18%, so app edges read heavier than the ones on the public site.
+       The previous comment's concern (row edges must stay visible on
+       card+background) still holds at 15%: that is the value the content hubs
+       and /about-us use for exactly the same job, on the same ground. */
+    --border: 0 0% 15%;                /* rgb(39,39,39) — the marketing hairline */
+    --input: 0 0% 10%;
+    --input-border: 0 0% 28%;          /* rgb(71,71,71) */
+    --ring: 217 91% 60%;
+    --bg-primary: 0 0% 4%;
+    --bg-secondary: 0 0% 15%;
+    --chart-1: 220 80% 60%;    /* brighter blue for dark bg */
+    --chart-2: 160 65% 50%;    /* teal */
+    --chart-3: 35 90% 60%;     /* amber */
+    --chart-4: 280 70% 68%;    /* purple */
+    --chart-5: 340 80% 62%;    /* pink */
+
+    --sidebar-background: 0 0% 8%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 0 0% 90%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 0 0% 24%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 217 91% 60%;
+
+    /* Semantic tokens — dark values */
+    /* The SECOND surface token pair. `--card`/`--border` is the shadcn one;
+       this pair is used directly by the settings screens and parts of the
+       chrome, and it had drifted away from both. Aligned to the same marketing
+       values as --card so a settings panel and an orders card are the same
+       surface. */
+    --surface: rgb(15, 15, 15);
+    --chrome-bg: rgb(21, 21, 21);     /* dark chrome — unchanged from prior --surface */
+    --surface-hover: rgb(60, 61, 65);
+    --control-bg: rgb(38, 38, 38);
+    --control-bg-hover: rgb(58, 58, 58);
+    --text: rgb(255, 255, 255);
+    --text-muted: rgb(179, 180, 181);
+    /* Was rgb(26,26,26) — barely visible against a 21% surface, and nothing
+       like the hairline every card on the public site is drawn with. This is
+       what `audit-app-design` caught on /setting. */
+    --border-subtle: rgb(39, 39, 39);
+    --selected-bg: rgba(240, 240, 240, 0.18);
+    --selected-text: #e5e5e5;
+    --table-bg: rgb(38, 38, 38);
+    --table-hover-bg: rgb(60, 61, 65);
+    --border-table: rgb(39, 39, 39);
+    --trend-growth: rgb(74, 222, 128);
+    --trend-drop: rgb(251, 146, 60);
+    --primaryColor: #e5e5e5;
+    --primaryColorHover: #f5f5f5;
+    --neutralLight: rgb(179, 180, 181);
+    --neutralMedium: rgb(109, 110, 110);
+    --brand-gradient: linear-gradient(135deg, #e5e5e5 0%, #a0a0a0 100%);
+    --input-bg: rgb(25, 25, 25);
+    /* --input-border is defined above as HSL var (line ~114) for use with hsl(var(--input-border)) */
+    --alert-success-bg: rgba(34, 197, 94, 0.18);
+    --alert-success-border: rgb(74, 222, 128);
+    --alert-success-text: rgb(209, 250, 229);
+    --alert-success-icon: rgb(74, 222, 128);
+    --alert-error-bg: rgba(239, 68, 68, 0.22);
+    --alert-error-border: rgb(248, 113, 113);
+    --alert-error-text: rgb(254, 205, 211);
+    --alert-error-icon: rgb(248, 113, 113);
+    --alert-warning-bg: rgba(234, 179, 8, 0.22);
+    --alert-warning-border: rgb(250, 204, 21);
+    --alert-warning-text: rgb(254, 240, 199);
+    --alert-warning-icon: rgb(250, 204, 21);
+    --alert-info-bg: rgba(59, 130, 246, 0.24);
+    --alert-info-border: rgb(96, 165, 250);
+    --alert-info-text: rgb(191, 219, 254);
+    --alert-info-icon: rgb(96, 165, 250);
+    --radius: 0.625rem;
+
+    /* Theme-flipping overlay/grid/chart tokens (light-on-dark for dark mode). */
+    --overlay-1: rgba(255, 255, 255, 0.04);
+    --overlay-2: rgba(255, 255, 255, 0.08);
+    --hairline: rgba(255, 255, 255, 0.08);
+    --grid-line: rgba(255, 255, 255, 0.06);
+    --chart-grid: 0 0% 25%;             /* dark gridlines */
+    --chart-axis: 0 0% 64%;             /* axis ticks/labels */
+    --chart-tooltip-bg: 220 13% 11%;    /* ≈ #111827 dark tooltip */
+    --chart-tooltip-text: 0 0% 96%;     /* light tooltip text */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.5);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--overlay-1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.35);
+  border-radius: 4px;
+  border: 1px solid var(--hairline);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.35) var(--overlay-1);
+}
+
+/* ── List-page viewport-height tables ─────────────────────────────────────────
+   Dashboard list pages use a full-height template: the page root is
+   `flex h-full flex-col`, the table card is `flex-1 min-h-0`, and its body is a
+   `min-h-0 flex-1 overflow-auto` scroll region with a sticky header. For that
+   `h-full` to resolve, every ancestor up to the viewport-height shell pane must
+   be a definite height. The shell pane now carries an explicit height
+   (calc(100vh - topbar)); this makes the inner padded wrapper fill it too — but
+   ONLY when the page inside declares itself full-height (root `.h-full`). So the
+   table card runs to the bottom of the screen with internal scroll, short tables
+   still stretch the card (empty space lives inside the scroll region), and
+   pagination stays pinned in the card footer.
+
+   Pages WITHOUT an `.h-full` root (settings, forms, detail views) don't match
+   `:has(> .h-full)`, so the inner wrapper stays auto-height and the pane keeps
+   its normal `overflow-y-auto` document scroll — unchanged. Unlayered so it wins
+   over the Tailwind `pb-24` utility on the same element. */
+.app-content-inner:has(> .h-full) {
+  height: 100%;
+  min-height: 0;
+  /* Replace the tall pb-24 dead space with a modest shell gutter so the table
+     card's pagination footer sits just above the viewport bottom. */
+  padding-bottom: 1.5rem;
+}
+
+/* Cosmos background star twinkle animation */
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Legal pages — markdown content rendering */
+.legal-prose {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+/*
+  THE LEGAL PAGES ARE PART OF THE SITE, NOT PART OF THE APP.
+
+  These four rules set every heading on /privacy-policy, /terms-conditions,
+  /refund-policy, /acceptable-use, /compliance, /contact, /dispute-resolution,
+  /dropshipping-policy, /seller-terms and /shipping-policy — eleven pages, one
+  contract. They were Inter at 600-700, which `audit:typeface` reports as the
+  single largest weight gap on the public surface: the homepage sets display
+  type in Faktum at 300, these set it at more than double that in a different
+  face, and a reader arriving from the front door lands somewhere that looks
+  like a different company's terms.
+
+  Faktum is loaded by home-shopify.css, which components/legal/legal-page-shell
+  imports for exactly this reason — the fallback chain below still resolves if
+  a future page renders `.legal-prose` without that scope, it just resolves to
+  the body face rather than to nothing.
+
+  Sizes are unchanged apart from the h1. A legal document is read, not scanned,
+  and its heading hierarchy was already right; what was wrong was the voice.
+*/
+.legal-prose h1,
+.legal-prose h2,
+.legal-prose h3,
+.legal-prose h4 {
+  font-family: "Faktum", "Inter-Variable", Helvetica, Arial, sans-serif;
+  color: hsl(var(--foreground));
+}
+.legal-prose h1 {
+  font-size: clamp(32px, 1.8vw + 20px, 44px);
+  line-height: 1.1;
+  font-weight: 330;
+  margin: 0 0 1.5rem;
+  letter-spacing: -0.02em;
+}
+.legal-prose h2 {
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  margin: 2.5rem 0 1rem;
+}
+.legal-prose h3 {
+  font-size: 1.1rem;
+  font-weight: 400;
+  margin: 1.75rem 0 0.75rem;
+}
+.legal-prose h4 {
+  font-size: 0.98rem;
+  font-weight: 500;
+  margin: 1.25rem 0 0.5rem;
+}
+.legal-prose p {
+  margin: 0 0 1rem;
+}
+.legal-prose ul,
+.legal-prose ol {
+  margin: 0 0 1rem;
+  padding-left: 1.5rem;
+}
+.legal-prose ul { list-style: disc; }
+.legal-prose ol { list-style: decimal; }
+.legal-prose li { margin: 0.35rem 0; }
+.legal-prose li > p { margin: 0.25rem 0; }
+.legal-prose strong { color: hsl(var(--foreground)); font-weight: 600; }
+.legal-prose em { font-style: italic; }
+.legal-prose a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-prose a:hover { opacity: 0.8; }
+.legal-prose hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+  margin: 2rem 0;
+}
+.legal-prose blockquote {
+  border-left: 3px solid hsl(var(--border));
+  padding: 0.25rem 0 0.25rem 1rem;
+  margin: 1rem 0;
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+.legal-prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: hsl(var(--muted));
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+.legal-prose pre {
+  background: hsl(var(--muted));
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.legal-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.legal-prose th {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+/* ── Yin-yang preloader (whole-app loading spinner) ──────────────────────────
+   Replaces the circular Loader2 for full-page loading states. Single element +
+   two pseudo-elements form the yin-yang; it rotates continuously. Sizing is a
+   fixed 100×100 design scaled by --yy-scale (set inline by <YinYangSpinner>),
+   baked into the keyframes so the scale survives the rotate animation. */
+.yy-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+.yy-symbol {
+  box-sizing: content-box;
+  flex: none;
+  width: 96px;
+  height: 48px;
+  position: relative;
+  border-radius: 100%;
+  background: var(--yy-light, #d4d4d4);
+  border-color: var(--yy-dark, #525252);
+  border-style: solid;
+  border-width: 2px 2px 50px 2px;
+  transform: scale(var(--yy-scale, 1));
+  transform-origin: center;
+  animation: yy-spin 1.1s linear infinite;
+}
+.yy-symbol::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 100%;
+  background: var(--yy-light, #d4d4d4);
+  border: 18px solid var(--yy-dark, #525252);
+}
+.yy-symbol::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  border-radius: 100%;
+  background: var(--yy-dark, #525252);
+  border: 18px solid var(--yy-light, #d4d4d4);
+}
+@keyframes yy-spin {
+  from { transform: rotate(0deg) scale(var(--yy-scale, 1)); }
+  to { transform: rotate(360deg) scale(var(--yy-scale, 1)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yy-symbol { animation-duration: 3s; }
+}
+
+/* ── Forced muted-foreground color (requested, non-overridable) ───────────────
+   Every `.text-muted-foreground` (and its opacity variants like
+   `text-muted-foreground/70`, plus hover/responsive prefixes) must render at
+   MAX contrast in each theme: pure white in dark, pure black in light. Declared
+   at the top level (outside @layer) and marked !important so Tailwind utilities,
+   hover/variant classes, and theme switches cannot change it. Theme-scoped so
+   light mode is legible (a global white would be invisible on a light bg). */
+.dark .text-muted-foreground,
+.dark [class*="text-muted-foreground"] {
+  color: #fff !important;
+}
+html:not(.dark) .text-muted-foreground,
+html:not(.dark) [class*="text-muted-foreground"] {
+  color: #000 !important;   /* full-contrast black — no muted/faint gray in light (per request) */
+}
+/* Sidebar nav text → full black on the light #ebebeb sidebar (not muted). */
+html:not(.dark) .app-sidebar .text-foreground,
+html:not(.dark) .app-sidebar [class*="text-foreground"],
+html:not(.dark) .app-sidebar [class*="text-accent-foreground"],
+html:not(.dark) .app-sidebar [class*="text-muted-foreground"] {
+  color: #000 !important;
+}
+
+/* ── PLACEHOLDER tone (dim, per theme) ────────────────────────────────────────
+   The forced-white --muted-foreground above turns placeholders pure white in
+   dark mode (placeholders read like real input — too loud). Define a dedicated
+   --placeholder colour that is NOT derived from text-muted-foreground, so the
+   forced max-contrast rule never matches it. Inputs use it via ::placeholder;
+   Radix selects use it via `data-[placeholder]:text-[var(--placeholder)]` on the
+   trigger (a class with no "text-muted-foreground" substring, so it escapes the
+   forced rule). Selected text keeps text-foreground; only the hint is dimmed. */
+/* Both values are set by CONTRAST, not by taste: placeholder text is content
+   under WCAG and has to clear 4.5:1 like any other label.
+     dark  white @45% over a #1a1a1a card = 4.47:1 — it failed by 0.03, which is
+           how /setting/store's "Select timezone" was the last AA failure left in
+           the product. @50% is 5.3:1 on pure black, the darkest ground here.
+     light #616161 @65% composites to #989898 on white = 2.82:1, a much worse
+           miss. Dropped the alpha entirely; #666 is 5.7:1 and still reads as a
+           hint next to `text-foreground` input values. */
+:root { --placeholder: hsl(0 0% 40%); }          /* light: #666666 — 5.7:1 on white */
+.dark { --placeholder: hsl(0 0% 100% / 0.5); }   /* dark:  white @50% — 5.3:1 on black */
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder) !important;
+}
+
+/* Brand wordmark exception: the "DTC" half of "PlatformDTC" keeps its muted
+   grey so the two-tone logo stays legible. It uses `.brand-dtc` (not
+   `text-muted-foreground`) so the forced-white rule above never matches it.
+   Grey is hard-coded (rgb 163,163,163 — the original muted tone) so it stays
+   constant regardless of the now-white --muted-foreground variable. */
+.brand-dtc {
+  color: rgb(163, 163, 163);
+}
+
+/* ── Dashboard chat composer — force LIGHT surfaces in light mode (platformdtc has
+   NO dark/gray blocks in light). The composer is shared with the dark homepage
+   and is hard-coded dark; the dashboard wraps it in `.composer-adaptive` to flip
+   it in light mode only. Each color family is its OWN rule so a single unusual
+   selector can never drop a whole group, and the arbitrary `bg-[#1c1c1c]` box is
+   targeted by its escaped class (the [class*="bg-[#…"] attr form is unreliable). ── */
+/* mid neutrals/grays → muted */
+html:not(.dark) .composer-adaptive [class*="bg-neutral-"],
+html:not(.dark) .composer-adaptive [class*="bg-zinc-"],
+html:not(.dark) .composer-adaptive [class*="bg-stone-"],
+html:not(.dark) .composer-adaptive [class*="bg-gray-"] {
+  background-color: hsl(var(--muted)) !important;
+}
+/* darkest surfaces → card (listed AFTER so they win for -8/-9) */
+html:not(.dark) .composer-adaptive [class*="bg-neutral-8"],
+html:not(.dark) .composer-adaptive [class*="bg-neutral-9"],
+html:not(.dark) .composer-adaptive [class*="bg-zinc-8"],
+html:not(.dark) .composer-adaptive [class*="bg-zinc-9"],
+html:not(.dark) .composer-adaptive [class*="bg-black"] {
+  background-color: hsl(var(--card)) !important;
+}
+html:not(.dark) .composer-adaptive .bg-\[\#1c1c1c\] {
+  background-color: hsl(var(--card)) !important;
+}
+/* dark gradients → drop the image so the flipped bg-color shows */
+html:not(.dark) .composer-adaptive [class*="bg-gradient"] {
+  background-image: none !important;
+}
+/* Exception: the "Self-Driving Commerce" heading keeps its original silver
+   gradient in light mode — the blanket neutralize above would erase it, and its
+   text is transparent (bg-clip-text) → invisible. Restore the exact gradient
+   (gray-400 → gray-600 → gray-400). */
+html:not(.dark) .composer-adaptive .composer-heading {
+  /* the heading uses bg-clip-text + text-transparent (silver gradient for the dark
+     hero). In light mode the light silver is invisible on the off-white canvas —
+     restore a DARKER slate silver gradient (slate-500 → slate-700) so it reads as a
+     soft metallic title, clearly visible but not a heavy pure black. */
+  background-image: none !important;
+  color: #475569 !important;              /* slate-600 — soft metallic title gray, not pure black */
+  -webkit-text-fill-color: #475569 !important;
+}
+/* borders */
+html:not(.dark) .composer-adaptive [class*="border-neutral-"],
+html:not(.dark) .composer-adaptive [class*="border-zinc-"],
+html:not(.dark) .composer-adaptive [class*="border-gray-"] {
+  border-color: hsl(var(--border)) !important;
+}
+/* light text on dark → foreground / muted-foreground */
+html:not(.dark) .composer-adaptive [class*="text-white"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-1"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-2"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-3"] {
+  color: hsl(var(--foreground)) !important;
+}
+html:not(.dark) .composer-adaptive [class*="text-neutral-4"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-5"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-6"],
+html:not(.dark) .composer-adaptive [class*="text-neutral-7"] {
+  color: hsl(var(--muted-foreground)) !important;
+}
+/* soften the hard black drop-shadow in light mode (shadow-black/60 is far too
+   heavy on platformdtc's soft light canvas → a subtle lift instead) */
+html:not(.dark) .composer-adaptive [class*="shadow-black"],
+html:not(.dark) .composer-adaptive [class*="shadow-2xl"],
+html:not(.dark) .composer-adaptive [class*="shadow-xl"] {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 16px rgb(0 0 0 / 0.06) !important;
+}
+html:not(.dark) .composer-adaptive [class~="opacity-25"] {
+  filter: brightness(0);
+  /* the "Powered by" logos are 25% (subtle on the dark hero); on the light
+     dashboard that reads as too faint → lift them so they're clearly legible */
+  opacity: 0.6 !important;
+}
+html:not(.dark) .composer-adaptive [class~="opacity-25"]:hover {
+  opacity: 0.85 !important;
+}
+
+/* ── Light-mode legibility override (CSS-only; no markup/layout change) ─────────
+   The dashboard is dark-first: text-zinc-400 / text-*-400 are tuned for dark
+   surfaces and go faint on the light off-white canvas. Remap the faint text
+   utilities to legible values in light mode only (:root:not(.dark)). Neutral
+   grays -> full-contrast foreground (no muted/faint gray, per request); washed
+   colored -300/-400 -> their -600 so status hues stay readable. text-white/* is
+   left untouched — it sits on colored chips/buttons/dark overlays. */
+:root:not(.dark) .text-zinc-300,
+:root:not(.dark) .text-zinc-400,
+:root:not(.dark) .text-zinc-500,
+:root:not(.dark) .text-gray-300,
+:root:not(.dark) .text-gray-400,
+:root:not(.dark) .text-gray-500,
+:root:not(.dark) .text-neutral-300,
+:root:not(.dark) .text-neutral-400,
+:root:not(.dark) .text-neutral-500,
+:root:not(.dark) .text-slate-300,
+:root:not(.dark) .text-slate-400,
+:root:not(.dark) .text-slate-500,
+:root:not(.dark) .text-stone-300,
+:root:not(.dark) .text-stone-400,
+:root:not(.dark) .text-stone-500 {
+  color: hsl(var(--foreground));
+}
+:root:not(.dark) .text-red-300,
+:root:not(.dark) .text-red-400 {
+  color: #dc2626;
+}
+:root:not(.dark) .text-rose-300,
+:root:not(.dark) .text-rose-400 {
+  color: #e11d48;
+}
+:root:not(.dark) .text-pink-300,
+:root:not(.dark) .text-pink-400 {
+  color: #db2777;
+}
+:root:not(.dark) .text-fuchsia-300,
+:root:not(.dark) .text-fuchsia-400 {
+  color: #c026d3;
+}
+:root:not(.dark) .text-purple-300,
+:root:not(.dark) .text-purple-400 {
+  color: #9333ea;
+}
+:root:not(.dark) .text-violet-300,
+:root:not(.dark) .text-violet-400 {
+  color: #7c3aed;
+}
+:root:not(.dark) .text-indigo-300,
+:root:not(.dark) .text-indigo-400 {
+  color: #4f46e5;
+}
+:root:not(.dark) .text-blue-300,
+:root:not(.dark) .text-blue-400 {
+  color: #2563eb;
+}
+:root:not(.dark) .text-sky-300,
+:root:not(.dark) .text-sky-400 {
+  color: #0284c7;
+}
+:root:not(.dark) .text-cyan-300,
+:root:not(.dark) .text-cyan-400 {
+  color: #0891b2;
+}
+:root:not(.dark) .text-teal-300,
+:root:not(.dark) .text-teal-400 {
+  color: #0d9488;
+}
+:root:not(.dark) .text-emerald-300,
+:root:not(.dark) .text-emerald-400 {
+  color: #059669;
+}
+:root:not(.dark) .text-green-300,
+:root:not(.dark) .text-green-400 {
+  color: #16a34a;
+}
+:root:not(.dark) .text-lime-300,
+:root:not(.dark) .text-lime-400 {
+  color: #65a30d;
+}
+:root:not(.dark) .text-yellow-300,
+:root:not(.dark) .text-yellow-400 {
+  color: #ca8a04;
+}
+:root:not(.dark) .text-amber-300,
+:root:not(.dark) .text-amber-400 {
+  color: #d97706;
+}
+:root:not(.dark) .text-orange-300,
+:root:not(.dark) .text-orange-400 {
+  color: #ea580c;
+}
+
+/* ============================================================================
+   MOBILE CHROME CONTRACT
+   ----------------------------------------------------------------------------
+   One source of truth for the app frame on a phone. Everything that used to be
+   a hardcoded `44` in dashboard-shell.tsx or a bare `100vh` reads from here.
+
+   Why these exist:
+
+   --app-topbar-h  The top bar was 44px tall on every viewport, which is exactly
+                   the iOS minimum touch target — so nothing inside it could
+                   *be* 44px. Phones get 52px so the bar's controls can hit the
+                   minimum; ≥1024px keeps the original 44px desktop chrome.
+
+   --app-safe-*    Resolves to 0 everywhere except a notched device, and only
+                   because `viewportFit: 'cover'` is set in app/layout.tsx.
+                   The fixed top bar adds the top inset to its own height (it
+                   would otherwise sit under the Dynamic Island in landscape),
+                   and scroll panes add the bottom inset so the last row of a
+                   list is not buried under the home indicator.
+
+   --app-chrome-top  topbar + top inset = where page content actually begins.
+                     Sidebar `top`, content `margin-top` and the content pane's
+                     height all derive from it, so they cannot drift apart.
+
+   100dvh not 100vh: on iOS/Android the URL bar is included in `vh` but not in
+   the visible area, so a `100vh` app shell is ~60-100px taller than the screen.
+   With the shell's `overflow-hidden` root that surplus is unreachable — the
+   bottom of every full-height screen (table pagination, form submit, sticky
+   action bars) was simply cut off. `dvh` tracks the live viewport.
+   ========================================================================== */
+:root {
+  --app-topbar-h: 52px;
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-left: env(safe-area-inset-left, 0px);
+  --app-safe-right: env(safe-area-inset-right, 0px);
+  --app-chrome-top: calc(var(--app-topbar-h) + var(--app-safe-top));
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-topbar-h: 44px;
+  }
+}
+
+/* The scroll pane's own bottom gutter has to clear the home indicator, or the
+   final list row / save button is untappable on an iPhone. */
+.app-content-inner {
+  padding-bottom: calc(6rem + var(--app-safe-bottom));
+}
+.app-content-inner:has(> .h-full) {
+  padding-bottom: calc(1.5rem + var(--app-safe-bottom));
+}
+
+/* Landscape on a notched phone puts the inset on the sides instead of the top. */
+@media (orientation: landscape) {
+  .app-content-inner {
+    padding-left: var(--app-safe-left);
+    padding-right: var(--app-safe-right);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch targets.
+
+   Applied to the top bar's icon controls, which rendered at 20-28px — below the
+   44px floor in both the iOS HIG and WCAG 2.5.8. The button keeps its small
+   visual footprint (icon + rounded hover chip); only the *hit* area grows, so
+   the bar does not visually inflate. Pointer-precise devices drop back to a
+   32px box so desktop density is untouched.
+   ------------------------------------------------------------------------- */
+.tap-target {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (pointer: fine) and (min-width: 1024px) {
+  .tap-target {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* Momentum scrolling + no rubber-band chaining into the shell behind a pane. */
+.app-content-pane,
+.app-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* A drawer/sheet is open: freeze the document behind it so the page under the
+   overlay does not scroll when the user drags on the backdrop. */
+body.app-scroll-locked {
+  overflow: hidden;
+  touch-action: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Sidebar rows on a phone.
+
+   The rail is a dense desktop control: 31px rows, which is right at 220px wide
+   with a mouse. On a phone that same markup IS the navigation — it is the only
+   way to reach 120+ screens — and 31px is well under the 44px touch floor, so
+   rows were easy to mis-tap into the wrong section. Below lg the row grows to
+   44px; the desktop rail is untouched.
+   ------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .app-sidebar .nav-row {
+    min-height: 44px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .app-sidebar .nav-row > span,
+  .app-sidebar .nav-row > .flex-1 {
+    font-size: 0.9375rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Horizontal tab / filter strips.
+
+   Status tabs ("All Orders · Open · Fulfilled · Cancelled · Drafts · Disputes")
+   and date pills ("Today · 7D · 30D · … · Custom") were `flex-wrap`, so on a
+   390px screen they stacked into 3 rows and ate half the viewport above the
+   data the merchant actually came for. Every native admin (and Shopify's own)
+   makes these one scrollable line instead. `.tab-scroller` is that line:
+   single row, momentum scroll, snap, no visible scrollbar.
+
+   Deliberately NOT applied above `sm` — with room to lay them out flat, a
+   static row is more scannable than a scroller.
+   ------------------------------------------------------------------------- */
+/* Scoped to below `lg`: this is a phone/tablet affordance. Above 1024px the
+   original layout had room and is left exactly as it was — including the one
+   TabsList that deliberately asks to wrap onto two rows.
+
+   NB: no `display` here on purpose. `.tab-scroller` is mixed into components
+   that already declare their own (`inline-flex` on TabsList, `grid` on a few
+   callers); claiming display would silently break those. Scrolling behaves the
+   same on any of them. */
+@media (max-width: 1023px) {
+  .tab-scroller {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .tab-scroller::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-scroller > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+
+/* Rails that DO fit once there is tablet room go back to wrapping at 640px;
+   the ones without this modifier keep scrolling up to `lg`. */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .tab-scroller--wrap-sm {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .tab-scroller--wrap-sm > * {
+    flex-shrink: 1;
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Hover-revealed controls on a touch screen.
+
+   The pattern `opacity-0 group-hover:opacity-100` is everywhere in this admin
+   (row delete/duplicate/copy buttons). On a phone there is no hover, so those
+   controls never appear — and `opacity: 0` does NOT remove them from the hit
+   layer, so they were invisible AND tappable. The chat rows in the sidebar are
+   the sharp edge of that: the right end of a row is a delete button a merchant
+   could not see.
+
+   `hover: none` is true exactly on the devices where the reveal can never fire,
+   so there the control is simply always visible. Scoped to real controls —
+   `absolute inset-0` scrim overlays keep their hover behaviour, since making
+   those permanent would black out every card thumbnail on a phone.
+   ------------------------------------------------------------------------- */
+@media (hover: none) {
+  :is(button, a, [role='button'], summary).group-hover\:opacity-100,
+  .row-actions {
+    opacity: 1;
+  }
+
+  /* Dense 20px row actions are usable with a mouse and not with a thumb. */
+  .row-actions > :is(button, a) {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Wide data tables on a phone.
+
+   47 tables in this admin declare a `min-w-[560px … 1400px]` inside an
+   `overflow-auto` box. That is the right call — an orders table has 11 real
+   columns and squeezing them into 390px would destroy it — but the phone
+   experience of it was poor in two specific ways, both fixed here rather than
+   in 47 files:
+
+   1. No affordance. The scrollbar is hidden on iOS until you already started
+      scrolling, so the table looked like a 2-column table that simply omitted
+      status, total and fulfillment. A thin persistent scrollbar (touch only)
+      says "this continues".
+   2. No anchor. Scrolled to the Total column you could no longer see WHICH
+      order the row was — the identifying column had scrolled away. Opt a table
+      into `.table-sticky-id` and its first column pins while the rest scrolls,
+      which is what every native data grid does.
+   ------------------------------------------------------------------------- */
+.data-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+@media (pointer: coarse) {
+  .data-table-scroll {
+    scrollbar-width: thin;
+  }
+  .data-table-scroll::-webkit-scrollbar {
+    height: 4px;
+    -webkit-appearance: none;
+  }
+  .data-table-scroll::-webkit-scrollbar-thumb {
+    border-radius: 2px;
+    background: var(--text-muted, hsl(var(--muted-foreground)));
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* The pinned block is the first column — plus the second one when the first
+     is only a select-all checkbox, because pinning a 40px checkbox while the
+     order number scrolls away leaves the row anonymous. `--table-sticky-offset`
+     is the checkbox column's width (`w-10` on every table here); a table with a
+     different first column can override it inline. */
+  /* Split from the `:has()` rules below on purpose: a selector list containing
+     an unsupported selector is dropped WHOLE, so keeping the plain first-column
+     pin in its own rule means a browser without `:has()` still gets it. */
+  .table-sticky-id :is(thead, tbody) tr > :first-child {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background-color: hsl(var(--card));
+  }
+  .table-sticky-id
+    :is(thead, tbody)
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + * {
+    position: sticky;
+    z-index: 3;
+    background-color: hsl(var(--card));
+  }
+  .table-sticky-id
+    :is(thead, tbody)
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + * {
+    left: var(--table-sticky-offset, 2.5rem);
+  }
+
+  /* The header cells sit at the intersection of two sticky axes (this column
+     and the sticky thead) and must win over both. */
+  .table-sticky-id thead tr > :first-child {
+    z-index: 4;
+  }
+  .table-sticky-id
+    thead
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + * {
+    z-index: 4;
+  }
+
+  /* One hairline on the RIGHT edge of the pinned block, so the pin reads as
+     intentional rather than as text overlapping text. */
+  .table-sticky-id :is(thead, tbody) tr > :first-child::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: hsl(var(--border));
+  }
+  .table-sticky-id
+    :is(thead, tbody)
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + *::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: hsl(var(--border));
+  }
+  /* …and not a second one in the middle of that block. */
+  .table-sticky-id
+    :is(thead, tbody)
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))::after {
+    content: none;
+  }
+}
+
+/* Table rows are tap targets on a phone — a 32px row is a mis-tap. */
+@media (pointer: coarse) {
+  .data-table-scroll tbody td {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   iOS focus-zoom.
+
+   Safari on iPhone zooms the entire page when a focused form field renders
+   below 16px, and it does NOT zoom back out — the merchant is left on a
+   horizontally scrolled, magnified screen after tapping any search box or form
+   field. `text-sm` (14px) is this codebase's default for inputs, so that was
+   every field on every screen: ~50 raw `<input className="… text-sm">` in
+   `(dashboard)` alone, plus the shared Input/Select/Textarea primitives.
+
+   The primitives now carry `text-base sm:text-sm` themselves; this rule is the
+   backstop for the raw fields, and the reason it is written with a trailing
+   `[class]` is specificity — a bare `input` selector (0,0,1) loses to Tailwind's
+   `.text-sm` (0,1,0), so the rule has to out-specify the utility to win.
+
+   The correct alternative — `maximum-scale=1, user-scalable=no` — is an
+   accessibility failure (WCAG 1.4.4) and is deliberately not used.
+   ------------------------------------------------------------------------- */
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range'])[class],
+  textarea[class],
+  select[class] {
+    font-size: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Tables that squeeze instead of scrolling.
+
+   The 40-odd tables that declare `min-w-[Npx]` scroll correctly. The rest —
+   /discounts, /page-funnels/funnel and friends — are plain auto-layout tables,
+   and at 390px the browser resolves that by crushing the widest column: a
+   discount title rendered in a 105px column as six lines of two syllables,
+   with acres of unused space in the numeric columns beside it.
+
+   A per-cell floor turns crushing back into scrolling, and does it
+   proportionally: a 3-column table still fits (3 × 120px < 390px) while a
+   7-column one scrolls. Tables that set their own `min-w-[…]` opt out via the
+   attribute-substring match, as do checkbox and single-icon action cells, which
+   are legitimately narrow.
+   ------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .data-table-scroll table:not([class*='min-w-']) :is(th, td) {
+    min-width: 7.5rem;
+  }
+  .data-table-scroll
+    table:not([class*='min-w-'])
+    :is(th, td):has(:is(input[type='checkbox'], [role='checkbox'])),
+  .data-table-scroll table:not([class*='min-w-']) :is(th, td):empty {
+    min-width: 0;
+  }
+
+  /* The identity column (campaign name, discount title, customer) holds the
+     longest string in the row and needs more than the generic floor — 120px
+     still wrapped "August: Back-to-School Prep SMS" into five lines. It is the
+     first cell, or the second when the first is a select checkbox. */
+  .data-table-scroll
+    table:not([class*='min-w-'])
+    tr
+    > :first-child:not(:has(:is(input[type='checkbox'], [role='checkbox']))),
+  .data-table-scroll
+    table:not([class*='min-w-'])
+    tr
+    > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + * {
+    min-width: 11rem;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Touch halo.
+
+   For controls whose VISUAL size is load-bearing — a 16px checkbox in a table
+   row, a 20px radio — growing the box would shift every layout it sits in. A
+   transparent ::after extends only the hit area, which is what the 44px
+   guideline is actually about. Applied on coarse pointers only, so mouse
+   precision targeting is unchanged and the halos cannot overlap on desktop.
+   ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  .touch-target-halo::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Empty states inside a wide table.
+
+   "No segments yet — Create a segment" is rendered as a `<td colSpan={5}>`
+   inside a `min-w-[720px]` table. On a 390px screen that centres the message
+   and its call-to-action at x≈360, i.e. entirely off-screen: the merchant sees
+   a blank card and has to swipe sideways to discover the button that is the
+   whole point of the empty state.
+
+   Pinning the cell's content to the left edge of the scroll port and capping it
+   at the screen width puts the message back where it is read. Cells with real
+   row data are unaffected — this only matches the full-width `colspan` cells
+   that empty/loading/error rows use.
+   ------------------------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .data-table-scroll td[colspan] > * {
+    position: sticky;
+    left: 0;
+    max-width: calc(100vw - 2rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Reduced motion.
+
+   Only one animation honoured `prefers-reduced-motion` before this (the yin-yang
+   spinner); the drawer slide, the pane transitions, the scroll-snap and every
+   `animate-*` utility ignored it. On iOS and Android "Reduce Motion" is a
+   system accessibility setting, and a phone is where people actually turn it on.
+
+   Motion is reduced to a near-instant crossfade rather than removed: a `0s`
+   duration breaks JS that waits on `transitionend`, so 0.01ms is the safe
+   floor. Scrolling behaviour is made instantaneous for the same reason.
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .tab-scroller {
+    scroll-snap-type: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Tap highlight.
+
+   iOS paints a grey box over any element it considers tappable for ~300ms after
+   a touch. On a dense admin — table rows, nav rows, pills — that reads as a
+   rendering glitch rather than feedback, and the app already gives feedback with
+   its own active/hover states. Removed only for controls we style ourselves;
+   the default stays anywhere it is not overridden.
+   ------------------------------------------------------------------------- */
+button,
+a,
+[role='button'],
+[role='tab'],
+[role='menuitem'],
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Minimum legible text on a phone.
+
+   421 elements in the admin are typeset at 9-11px — status chips, table meta
+   lines, badge counts. At arm's length on a 390px screen that is below what most
+   people can read, and it is exactly the text that carries state ("Awaiting
+   reply", "3 in 30 days", "DEV").
+
+   Raised to a 11.5px floor on phones only; the desktop density is untouched.
+   Deliberately a small nudge rather than a jump to 12px+: these labels sit
+   inside chips with fixed padding, and a larger step would reflow the rows they
+   live in. `[class]` on the selector is for specificity — a bare attribute
+   selector loses to the Tailwind arbitrary-value utility it is correcting.
+   ------------------------------------------------------------------------- */
+@media (max-width: 639px) {
+  [class][class*='text-[9px]'],
+  [class][class*='text-[10px]'],
+  [class][class*='text-[11px]'] {
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Native checkbox / radio inputs.
+
+   A handful of screens use a raw `<input type="checkbox">` instead of the
+   shared Checkbox primitive, and a native one renders 13x13. The primitive's
+   trick — a transparent ::after halo — cannot be used here: pseudo-elements do
+   not render on replaced elements. So on coarse pointers the control itself
+   grows to 20px, which is the largest step that does not reflow the label rows
+   these sit in.
+
+   The right long-term fix is for those screens to use the primitive; this makes
+   sure none of them is a 13px target in the meantime.
+   ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  input[type='checkbox'],
+  input[type='radio'] {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   In-row controls in data tables.
+
+   Table rows carry the densest controls in the product — an inline-edit price
+   trigger (24px tall), a row overflow menu (32px). They cannot simply grow:
+   these tables have fixed column widths and a taller control reflows the row.
+
+   So the hit area grows instead, asymmetrically: 12px of extra height, where
+   the row has room and there is no neighbouring control, and only 8px of extra
+   width, so two adjacent icon buttons in the same cell do not steal each
+   other's taps. A 32px button becomes 44x40; a 24px inline trigger becomes
+   36x32.
+   ------------------------------------------------------------------------- */
+@media (pointer: coarse) {
+  /* `:not(...)` in the SELECTOR, not a `content: none` override afterwards.
+     This rule is more specific than `.touch-target-halo::after`, so cancelling
+     it with `content: none` would delete that control's own (larger) halo
+     instead of deferring to it — which is exactly what it did on the first
+     attempt: every row-select checkbox went from a 40px target back to 28px. */
+  .data-table-scroll
+    :is(td, th)
+    :is(button, a[href]):not(.touch-target-halo):not(.tap-target):not(
+      [class*='h-9']
+    ):not([class*='h-10']):not([class*='h-11']) {
+    position: relative;
+  }
+  .data-table-scroll
+    :is(td, th)
+    :is(button, a[href]):not(.touch-target-halo):not(.tap-target):not(
+      [class*='h-9']
+    ):not([class*='h-10']):not([class*='h-11'])::after {
+    content: '';
+    position: absolute;
+    inset: -6px -4px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   AdLibrarySpy component layer.
+
+   Everything above this banner is the base design system shared with the
+   PlatformDTC dashboard (tokens, surfaces, dark mode; Inter is the UI face).
+   Change it deliberately: every screen reads those tokens.
+
+   These classes are the short-hand the AdLibrarySpy screens use. Each one is
+   a React primitive's recipe restated, so a class here and the matching
+   React primitive in components/ui render identically:
+     .btn-primary / .btn-ghost   = <Button> default / outline (rounded-full)
+     .chip / .chip-active        = the /market segment pills
+     .card                       = SectionCard surface (rounded-xl border bg-card)
+     .th / .td                   = components/ui/table header + cell recipe
+     .field                      = <Input>
+     .alert-*                    = the --alert-* token sets, both themes
+   ───────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply rounded-xl border border-border bg-card text-card-foreground;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-border bg-muted
+           px-2.5 py-0.5 text-xs font-medium text-muted-foreground;
+  }
+
+  .chip {
+    @apply inline-flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-full border
+           border-border bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground
+           transition-colors hover:bg-accent hover:text-accent-foreground;
+  }
+  .chip-active {
+    @apply border-transparent bg-accent text-accent-foreground hover:bg-accent;
+  }
+
+  .btn {
+    @apply relative inline-flex h-10 select-none items-center justify-center gap-2 whitespace-nowrap
+           rounded-full px-4 py-2 text-sm font-medium transition-[transform,opacity,background-color]
+           duration-200 ease-out focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-[var(--primaryColor)] text-[var(--surface)] hover:bg-[var(--primaryColorHover)];
+  }
+  .btn-ghost {
+    @apply btn border border-border bg-card text-[var(--text)] hover:bg-[var(--surface-hover)] dark:bg-transparent;
+  }
+
+  .field {
+    @apply flex h-10 w-full rounded-md border border-[hsl(var(--input-border))] bg-input px-3 py-2
+           text-sm text-foreground transition-colors placeholder:text-muted-foreground
+           focus-visible:border-transparent focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .kpi {
+    @apply flex flex-col gap-1 rounded-xl border border-border bg-card p-4;
+  }
+
+  /* components/ui/table.tsx recipe: untinted header, uppercase tracked labels. */
+  .th {
+    @apply whitespace-nowrap p-3 text-left align-middle text-xs font-medium uppercase tracking-wider text-muted-foreground;
+  }
+  .td { @apply p-3 align-middle text-sm text-foreground; }
+
+  .alert-error {
+    @apply rounded-lg border px-3 py-2 text-sm;
+    background: var(--alert-error-bg); border-color: var(--alert-error-border); color: var(--alert-error-text);
+  }
+  .alert-success {
+    @apply rounded-lg border px-3 py-2 text-sm;
+    background: var(--alert-success-bg); border-color: var(--alert-success-border); color: var(--alert-success-text);
+  }
+  .alert-warning {
+    @apply rounded-lg border px-3 py-2 text-sm;
+    background: var(--alert-warning-bg); border-color: var(--alert-warning-border); color: var(--alert-warning-text);
+  }
+  .alert-info {
+    @apply rounded-lg border px-3 py-2 text-sm;
+    background: var(--alert-info-bg); border-color: var(--alert-info-border); color: var(--alert-info-text);
+  }
+
+  .scroll-thin::-webkit-scrollbar { @apply h-2 w-2; }
+  .scroll-thin::-webkit-scrollbar-thumb { @apply rounded-lg bg-foreground/20; }
+}

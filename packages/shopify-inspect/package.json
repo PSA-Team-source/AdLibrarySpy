@@ -10,8 +10,8 @@
   "engines": { "node": ">=18.17" },
   "scripts": { "test": "node --test test.mjs" },
   "keywords": ["shopify", "ecommerce", "store", "spy", "competitor", "theme-detector", "cli", "dropshipping", "best-sellers"],
-  "homepage": "https://github.com/PSA-Team-source/shopify-spy/tree/main/packages/shopify-inspect",
-  "repository": { "type": "git", "url": "git+https://github.com/PSA-Team-source/shopify-spy.git", "directory": "packages/shopify-inspect" },
-  "bugs": "https://github.com/PSA-Team-source/shopify-spy/issues",
+  "homepage": "https://github.com/PSA-Team-source/AdLibrarySpy/tree/main/packages/shopify-inspect",
+  "repository": { "type": "git", "url": "git+https://github.com/PSA-Team-source/AdLibrarySpy.git", "directory": "packages/shopify-inspect" },
+  "bugs": "https://github.com/PSA-Team-source/AdLibrarySpy/issues",
   "license": "MIT"
 }

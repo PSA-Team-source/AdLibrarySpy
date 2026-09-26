@@ -9,7 +9,7 @@ import {
 
 export * from './parse.js';
 
-const UA = 'shopify-inspect/1.0 (+https://github.com/PSA-Team-source/shopify-spy)';
+const UA = 'shopify-inspect/1.0 (+https://github.com/PSA-Team-source/AdLibrarySpy)';
 const GRID = 12;
 
 async function get(url, as, { timeoutMs, fetchImpl }) {

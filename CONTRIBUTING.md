@@ -1,12 +1,16 @@
 # Contributing
 
-Thanks for helping. Everything here runs on Node 18+ with **zero runtime dependencies**, and we'd like to keep it that way.
+Thanks for helping. This repo is the whole of adlibraryspy.com: the Next.js web app at the root, plus
+`packages/` (CLI and MCP server, Node 18+, **zero runtime dependencies**, and we'd like to keep it that way),
+`extension/` and `leaderboard/`.
 
 ```bash
-git clone https://github.com/PSA-Team-source/shopify-spy && cd shopify-spy
-npm install          # links the workspaces, nothing is downloaded
-npm test             # every package + extension + leaderboard
+git clone https://github.com/PSA-Team-source/AdLibrarySpy && cd AdLibrarySpy
+npm install                 # Node 22.18+ (the app's tests import TypeScript directly)
+npm test                    # app + packages + leaderboard
+npm run typecheck
 node packages/shopify-inspect/cli.js allbirds.com
+npm run dev                 # the web app on :4311; see README → Run it locally
 ```
 
 ## The one rule: no invented numbers
@@ -25,4 +29,6 @@ A missing value is `null` and renders as nothing. It is never `0`, `—`, or a g
 ## Pull requests
 
 - Keep each PR to one change and include a test for any new logic (`node:test`, no frameworks).
-- Run `npm test` before you push. CI runs it on Node 18, 20 and 22, and scans for secrets.
+- Run `npm test` and `npm run typecheck` before you push. CI runs the app on Node 22 and 24, runs the
+  packages on Node 18 and 20, and scans for secrets.
+- Web app changes: multi-tenancy goes through `lib/auth/guard.ts`. A `workspace_id` never comes from the request.

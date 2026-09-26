@@ -1,0 +1,69 @@
+/* Base styles and CSS reset */
+
+html,
+body {
+  overscroll-behavior: none;
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    overscroll-behavior: auto;
+  }
+}
+
+:root {
+  color-scheme: light;
+  /* Card elevation for the market tables. */
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+}
+
+@keyframes shine {
+  0% {
+    background-position: 0% 0%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  to {
+    background-position: 0% 0%;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Collapsible animations */
+[data-radix-collapsible-content] {
+  transition: background-color 0s !important;
+}

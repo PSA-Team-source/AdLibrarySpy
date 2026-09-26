@@ -22,8 +22,8 @@ Every number comes from a real measurement with its source attached. Nothing is 
 
 ## What it is
 
-AdLibrarySpy indexes **14.7M online stores, 3.9M of them on Shopify**, plus **1.8M Meta ad creatives**
-(counts as of September 2026). It shows you which stores are growing, what they sell and how they advertise.
+AdLibrarySpy indexes **14.7M online stores, 3.9M of them on Shopify** (as of September 2026), and the
+Meta ads they run. It shows you which stores are growing, what they sell and how they advertise.
 Traffic figures come from SimilarWeb's measurement of each store's exact domain, labelled with the month
 they cover. Ad data comes from the Meta Ad Library.
 

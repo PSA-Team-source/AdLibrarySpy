@@ -13,6 +13,9 @@ export function publicDomain(raw: string): string {
   return d.length <= 253 && /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))*\.[a-z]{2,63}$/.test(d) ? d : '';
 }
 
+/** Public source (MIT). Published by deploy/export-oss.sh, never pushed from this monorepo. */
+export const REPO_URL = 'https://github.com/PSA-Team-source/AdLibrarySpy';
+
 export const storePath = (domain: string) => `/store/${domain}`;
 export const adPath = (id: string) => `/ad/${encodeURIComponent(id)}`;
 /** Gated action → signup, landing on the signed-in screen afterwards. */

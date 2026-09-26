@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Eye, Filter, Globe, Layers3, Search, Share2, Store, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Eye, Filter, GitPullRequest, Globe, Layers3, Scale, Search, Share2, Store, Users } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { RefBeacon } from '@/components/public/RefBeacon';
 import { marketGet, unwrapTotal } from '@/lib/market/client';
 import { listAds } from '@/lib/market/creatives';
 import { directoryList, measuredMonth } from '@/lib/seo/directory';
-import { measuredVisits, storePath, adPath, SITE_URL } from '@/lib/public/site';
+import { measuredVisits, storePath, adPath, SITE_URL, REPO_URL } from '@/lib/public/site';
 import { compact, flag } from '@/lib/format';
 import type { Ad, Shop } from '@/lib/types';
 
@@ -59,6 +59,7 @@ const faqs: [string, string][] = [
   ['Does AdLibrarySpy estimate missing numbers?', 'No. When a store has no measured traffic or an ad has no media, the value is left out rather than invented. There are no modelled revenue, spend or rating figures.'],
   ['Which ad networks are covered?', 'Meta (Facebook and Instagram). TikTok and Google ads are not covered today, and we say so on the comparison page.'],
   ['Can my team use it together?', 'Yes. Invite teammates to your workspace for free and share saved shops, ads and tracked brands.'],
+  ['Is AdLibrarySpy open source?', 'Yes. The whole app, the Chrome extension, the MCP server and the CLI are MIT-licensed on GitHub. Read the code, open an issue or send a pull request.'],
   ['Can I use it from ChatGPT or Claude?', 'Yes. The built-in MCP connection lets compatible AI assistants search shops and ads and manage tracked brands with your workspace access.'],
 ];
 
@@ -73,7 +74,7 @@ export default async function HomePage() {
       <RefBeacon />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'AdLibrarySpy', url: SITE_URL,
-        applicationCategory: 'BusinessApplication', operatingSystem: 'Web',
+        applicationCategory: 'BusinessApplication', operatingSystem: 'Web', sameAs: [REPO_URL],
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
       }) }} />
 
@@ -92,6 +93,9 @@ export default async function HomePage() {
             <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
           </nav>
           <div className="flex items-center gap-2">
+            <a href={REPO_URL} target="_blank" rel="noopener" aria-label="AdLibrarySpy on GitHub" className="hidden rounded-lg p-2 text-white/70 hover:text-white sm:block">
+              <GitHubMark className="h-5 w-5" />
+            </a>
             <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-white/80 hover:text-white">Log in</Link>
             <Link href="/signup" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium hover:bg-white/10">
               Start free <ArrowRight className="h-3.5 w-3.5" aria-hidden />
@@ -264,6 +268,40 @@ export default async function HomePage() {
         </section>
       </div>
 
+      {/* ---------- open source ---------- */}
+      <section className="px-4 pt-24 sm:px-6" aria-labelledby="oss">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 sm:p-12 lg:grid-cols-[1.3fr_1fr]">
+          <div>
+            <Kicker dark>Open source</Kicker>
+            <h2 id="oss" className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Built in the open. Help build it.</h2>
+            <p className="mt-3 text-white/65">Every line of AdLibrarySpy is on GitHub under the MIT license: the web app, the Chrome extension, the MCP server and the CLI. Found a bug, want a filter, or have a data source we should add? Open an issue or send a pull request.</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a href={REPO_URL} target="_blank" rel="noopener" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-[#071004]" style={{ background: LIME }}>
+                <GitHubMark className="h-4 w-4" /> Star on GitHub
+              </a>
+              <a href={`${REPO_URL}/contribute`} target="_blank" rel="noopener" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-medium text-white/90 hover:bg-white/5">
+                Find a first issue <ArrowRight className="h-4 w-4" aria-hidden />
+              </a>
+            </div>
+          </div>
+          <ul className="grid grid-cols-1 gap-2 text-sm">
+            {([
+              [Scale, 'MIT license', `${REPO_URL}/blob/main/LICENSE`],
+              [GitPullRequest, 'Contributing guide', `${REPO_URL}/blob/main/CONTRIBUTING.md`],
+              [Bot, 'MCP server & CLI packages', `${REPO_URL}/tree/main/packages`],
+              [Globe, 'Chrome extension source', `${REPO_URL}/tree/main/extension`],
+            ] as const).map(([Icon, label, href]) => (
+              <li key={label}>
+                <a href={href} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-4 py-3 text-white/85 hover:bg-white/[0.07]">
+                  <Icon className="h-4 w-4 shrink-0" style={{ color: LIME }} aria-hidden />{label}
+                  <ArrowRight className="ml-auto h-3.5 w-3.5 text-white/40" aria-hidden />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
       {/* ---------- FAQ ---------- */}
       <section id="faq" className="px-4 py-24 sm:px-6">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[1fr_1.4fr]">
@@ -309,12 +347,22 @@ export default async function HomePage() {
             <Link href="/weekly" className="hover:text-white">Weekly report</Link>
             <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
             {extensionUrl && <a href={extensionUrl} target="_blank" rel="noopener" className="hover:text-white">Chrome extension</a>}
+            <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-white">GitHub</a>
             <Link href="/privacy/extension" className="hover:text-white">Privacy</Link>
             <Link href="/login" className="hover:text-white">Log in</Link>
           </nav>
         </div>
       </footer>
     </main>
+  );
+}
+
+/** GitHub's official mark (github.com/logos); lucide 1.x dropped brand icons. */
+function GitHubMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M12 .5C5.65.5.5 5.65.5 12.02c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.52 11.52 0 0 0 23.5 12.02C23.5 5.65 18.35.5 12 .5Z" />
+    </svg>
   );
 }
 

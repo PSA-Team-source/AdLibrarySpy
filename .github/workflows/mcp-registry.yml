@@ -1,0 +1,20 @@
+# Lists the hosted server (https://adlibraryspy.com/api/mcp) on the official MCP
+# Registry. GitHub OIDC proves ownership of io.github.PSA-Team-source/*. Run by hand
+# after a change to packages/mcp/server.json; bump its "version" first.
+name: MCP Registry
+on:
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Publish server.json
+        working-directory: packages/mcp
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

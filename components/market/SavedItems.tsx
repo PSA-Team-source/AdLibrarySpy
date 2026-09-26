@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { getAds, getShops, type FavType } from '@/lib/data';
+import { getAds, getShops, storeMetaPages, type FavType } from '@/lib/data';
 import type { FavoriteFolder } from '@/lib/favorite-folders';
 import { CreativeCard } from './CreativeCard';
 import { ShopExplorerTable } from './ShopExplorerTable';
@@ -33,8 +33,11 @@ export async function SavedItems({ entity, entries, saved, folders, empty }: {
   if (entity === 'shop') {
     const found = await getShops(ids).catch(() => []);
     if (!found.length) return <>{empty}</>;
-    const signals = await shopRowSignals(found.map(s => s.storeId));
-    const shops = found.map(s => applyRowSignals(s, signals.get(s.storeId)));
+    const [signals, pages] = await Promise.all([
+      shopRowSignals(found.map(s => s.storeId)),
+      storeMetaPages(found.map(s => s.domain)),
+    ]);
+    const shops = found.map(s => ({ ...applyRowSignals(s, signals.get(s.storeId)), metaPage: pages.get(s.domain) ?? null }));
     return (
       <ShopExplorerTable shops={shops} saved={saved}
         infoSlot={folders?.length ? s => picker(s.id) : undefined} />

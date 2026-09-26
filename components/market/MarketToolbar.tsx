@@ -2,7 +2,7 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, ChevronDown, X, Users, TrendingUp, Package, Store, Globe,
+  Search, ChevronLeft, ChevronRight, ChevronDown, X, Users, TrendingUp, Package, Store, Globe, SlidersHorizontal,
   LayoutGrid, CalendarDays, Eye, EyeOff, Crosshair, Radar, Blocks, type LucideIcon,
 } from 'lucide-react';
 import { flag } from '@/lib/format';
@@ -68,7 +68,7 @@ const PILL_ON = 'bg-foreground text-background';
 const PILL_OFF = 'border border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10';
 
 // Top Brands' platform and category rows: rounded-full, muted until picked.
-const TB_PILL = 'inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm transition-colors';
+const TB_PILL = 'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors';
 const TB_ON = 'bg-foreground text-background';
 const TB_OFF = 'bg-muted text-foreground hover:bg-border';
 
@@ -219,14 +219,25 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
   );
 
   const activeCount = FILTER_KEYS.filter(k => params.get(k)).length;
+  // The filter chips fold away behind one button so the table gets the height
+  // (feedback: only 3 stores fit). Remembered per browser; a per-viewer
+  // convenience, so a blocked storage just means it opens closed.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    try { setFiltersOpen(localStorage.getItem('shops.filtersOpen') === '1'); } catch { /* storage blocked */ }
+  }, []);
+  const toggleFilters = () => setFiltersOpen(open => {
+    try { localStorage.setItem('shops.filtersOpen', open ? '0' : '1'); } catch { /* storage blocked */ }
+    return !open;
+  });
   const hideViewed = p('viewed') === 'exclude';
   const showingHidden = p('hidden') === 'show';
 
   // Top Brands' platform row and category row, then search + view toggles,
   // then the filter chips. Sorting lives on the table's column headers.
   return (
-    <div className={cn('flex shrink-0 flex-col gap-2.5 transition-opacity', pending && 'opacity-60')}>
-      <div className="flex flex-wrap gap-2">
+    <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
+      <div className="flex flex-wrap gap-1.5">
         {MARKET_PLATFORM_FILTERS.map(pl => (
           <button key={pl.id} type="button" onClick={() => set({ platform: pl.id === 'shopify' ? '' : pl.id })}
             aria-pressed={platform === pl.id} className={cn(TB_PILL, platform === pl.id ? TB_ON : TB_OFF)}>
@@ -238,8 +249,8 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
       </div>
 
       {categoryTabs.length > 0 && (
-        <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max gap-2">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max gap-1.5">
             {[{ id: '', name: 'All Categories' }, ...categoryTabs].map(c => (
               <button key={c.id || 'all'} type="button" onClick={() => set({ category: c.id, subcategory: '' })}
                 aria-pressed={categoryId === c.id} className={cn(TB_PILL, categoryId === c.id ? TB_ON : TB_OFF)}>
@@ -273,6 +284,12 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             </button>
           )}
         </form>
+        <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="shop-filters"
+          className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          Filters{activeCount > 0 && <span className="tabular-nums">({activeCount})</span>}
+          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} aria-hidden />
+        </button>
         <button type="button" onClick={() => set({ viewed: hideViewed ? '' : 'exclude' })}
           aria-pressed={hideViewed} title={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
           aria-label={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
@@ -288,7 +305,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      {filtersOpen && <div id="shop-filters" className="flex flex-wrap items-center gap-2">
         <FilterChip icon={Users} label="Traffic" value={p('traffic')} onChange={v => set({ traffic: v })} options={[
           { value: '10k', label: '10K+ visits' }, { value: '100k', label: '100K+ visits' },
           { value: '1m', label: '1M+ visits' }, { value: '10m', label: '10M+ visits' },
@@ -331,7 +348,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             <X className="h-3 w-3" /> Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
           </button>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

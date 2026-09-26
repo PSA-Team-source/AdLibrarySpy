@@ -3,7 +3,7 @@
 import type { Shop, Ad } from './types';
 import { cache } from 'react';
 import { listShops, getShop as mktGetShop, getShops as mktGetShops, similarShops, categoryRanking, type ShopFilter } from './market/shops';
-import { listAds, getAd as mktGetAd, getAds as mktGetAds, storeAdBundle, storeAdCountries, storeAds, storeAdPreviews, labelFacets, type AdFilter } from './market/creatives';
+import { listAds, getAd as mktGetAd, getAds as mktGetAds, storeAdBundle, storeAdCountries, storeAds, storeAdPreviews, storeMetaPages, labelFacets, type AdFilter } from './market/creatives';
 import { query, one } from './db';
 import { markFirst } from '@/lib/analytics/events';
 
@@ -93,7 +93,7 @@ export async function queryShops(qp: ShopQuery, opts?: { crux?: boolean }) {
 
 export const getShop = cache(async (id: string): Promise<Shop | null> => mktGetShop(id));
 export async function getShops(ids: string[]): Promise<Shop[]> { return mktGetShops(ids); }
-export { similarShops, storeAds, storeAdBundle, storeAdPreviews, storeAdCountries, labelFacets };
+export { similarShops, storeAds, storeAdBundle, storeAdPreviews, storeAdCountries, storeMetaPages, labelFacets };
 
 export async function queryAds(qp: AdFilter) {
   return listAds(qp);

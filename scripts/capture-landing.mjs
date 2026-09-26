@@ -21,7 +21,7 @@ import pg from 'pg';
 
 const BASE = process.env.CAPTURE_BASE || 'https://adlibraryspy.com';
 const EMAIL = process.env.SHOTS_EMAIL || 'shots@marketlens.test';
-const OUT = path.resolve('public/landing');
+const OUT = path.resolve(process.env.CAPTURE_OUT || 'public/landing');
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7);
 // Captured at 1680x922 so the whole Shops table fits beside the sidebar, then
 // scaled: stills to 2000px, the hero video to the page's 1440x790 frame.

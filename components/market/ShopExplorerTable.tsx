@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { BarChart2, ExternalLink, Eye, TrendingDown, TrendingUp } from 'lucide-react';
-import type { ShopRow } from '@/lib/types';
+import type { MetaPage, ShopRow } from '@/lib/types';
 import { compact } from '@/lib/format';
 import { monthLabel, trafficTitle } from '@/lib/traffic/similarweb';
 import { trafficIsCredible } from '@/lib/traffic/crux-bands';
@@ -38,8 +38,18 @@ function usd(n: number): string {
   return `$${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 }
 
-const adLibraryUrl = (domain: string) =>
-  `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=US&is_targeted_country=false&media_type=all&q=${encodeURIComponent(`"${domain}"`)}&search_type=keyword_exact_phrase&sort_data[mode]=total_impressions&sort_data[direction]=desc`;
+/**
+ * Meta Ad Library for the store. With the page behind its ads (from our ad
+ * index) it opens on that page, preselected — a quoted-domain keyword search
+ * also surfaced other advertisers that merely mention the domain. Without one,
+ * a plain search for the domain.
+ */
+function adLibraryUrl(domain: string, page: MetaPage | null | undefined): string {
+  const base = 'https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&media_type=all';
+  return page?.id
+    ? `${base}&view_all_page_id=${encodeURIComponent(page.id)}`
+    : `${base}&q=${encodeURIComponent(domain)}&search_type=keyword_unordered`;
+}
 
 /**
  * The Shops table, laid out exactly as PlatformDTC's Top Brands: Rank | Brand
@@ -70,7 +80,7 @@ export function ShopExplorerTable({
 }) {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-border/70 bg-card shadow-[var(--card-shadow)]">
-      <Table containerClassName="table-sticky-id min-h-0 flex-1" className="min-w-[1400px] table-fixed">
+      <Table containerClassName="table-sticky-id min-h-0 flex-1" className="min-w-[1400px] table-fixed [&_tbody_td]:py-2">
         <colgroup>
           <col className="w-16" /><col className="w-56" /><col className="w-48" /><col className="w-32" />
           <col className="w-28" /><col className="w-24" /><col className="w-32" /><col className="w-40" />
@@ -104,9 +114,9 @@ export function ShopExplorerTable({
                 <TableCell><RankBadge rank={rankOffset + i + 1} /></TableCell>
 
                 <TableCell>
-                  <div className="flex items-center gap-4 overflow-hidden">
+                  <div className="flex items-center gap-3 overflow-hidden">
                     <Link href={`/shops/${s.id}`} className="shrink-0" aria-label={`${s.domain} analytics`}>
-                      <BrandLogo logo={s.logo} domain={s.domain} name={s.name} size={64} />
+                      <BrandLogo logo={s.logo} domain={s.domain} name={s.name} size={44} />
                     </Link>
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <div className="flex min-w-0 items-center gap-1">
@@ -114,7 +124,7 @@ export function ShopExplorerTable({
                         <FavButton type="shop" id={s.id} initial={saved.has(s.id)} />
                         {viewed.has(s.id) && <Eye className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-label="Viewed" />}
                       </div>
-                      <div className="mt-1 flex items-center gap-2">
+                      <div className="mt-0.5 flex items-center gap-2">
                         <PlatformIcon platform={s.platform} />
                         {s.niches[0] && (
                           <p className="truncate text-xs text-muted-foreground" title={s.niches.join(', ')}>{s.niches[0]}</p>
@@ -169,8 +179,9 @@ export function ShopExplorerTable({
                         <BarChart2 className="h-3.5 w-3.5" />
                       </Link>
                     )}
-                    <a href={adLibraryUrl(s.domain)} target="_blank" rel="noopener noreferrer"
-                      className="text-blue-400 transition-colors hover:text-blue-300" title="View on Facebook Ad Library (US)">
+                    <a href={adLibraryUrl(s.domain, s.metaPage)} target="_blank" rel="noopener noreferrer"
+                      className="text-blue-400 transition-colors hover:text-blue-300"
+                      title={s.metaPage ? `View ${s.metaPage.name || 'this page'} on Meta Ad Library` : `Search ${s.domain} on Meta Ad Library`}>
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </div>
@@ -181,7 +192,12 @@ export function ShopExplorerTable({
                 </TableCell>
 
                 <TableCell>
-                  <ProductThumbs products={s.bestSellers} max={3} size={48} />
+                  {s.bestSellers.some(p => p.image) && (
+                    <Link href={`/shops/${s.id}#products`} className="inline-flex rounded-md transition-opacity hover:opacity-80"
+                      title={`${s.bestSellers.filter(p => p.image).slice(0, 3).map(p => p.title).join(' · ')} — see ${s.domain}'s products`}>
+                      <ProductThumbs products={s.bestSellers} max={3} size={40} />
+                    </Link>
+                  )}
                 </TableCell>
 
                 <TableCell>

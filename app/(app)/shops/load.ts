@@ -3,8 +3,8 @@
 // by the server render of /shops (first paint) and GET /api/shops (every
 // filter, sort and page change after it), so both always return the same rows.
 import type { Ctx } from '@/lib/auth/guard';
-import type { Shop, ShopRow } from '@/lib/types';
-import { queryShops, favoriteIds } from '@/lib/data';
+import type { MetaPage, Shop, ShopRow } from '@/lib/types';
+import { queryShops, favoriteIds, storeMetaPages } from '@/lib/data';
 import { applyCrux, countShops } from '@/lib/market/shops';
 import { shopRowSignals, applyRowSignals } from '@/lib/market/shop-signals';
 import { hiddenShopIds, storeIdOf, trackedShopIdList, viewedShopIds } from './data';
@@ -47,7 +47,7 @@ function createdAfter(value: string | undefined) {
   return new Date(Date.now() - days[value] * 86_400_000).toISOString();
 }
 
-function toRow(s: Shop, saved: boolean, viewed: boolean): ShopsRow {
+function toRow(s: Shop, saved: boolean, viewed: boolean, metaPage: MetaPage | null): ShopsRow {
   return {
     id: s.id, name: s.name, domain: s.domain, fullTitle: s.fullTitle, screenshot: s.screenshot,
     logo: s.logo, country: s.country, platform: s.platform, createdOn: s.createdOn,
@@ -59,7 +59,7 @@ function toRow(s: Shop, saved: boolean, viewed: boolean): ShopsRow {
     trafficSeries: s.trafficSeries, metaAds: s.metaAds,
     targetedCountries: s.targetedCountries, liveAdsSeries: s.liveAdsSeries,
     visitsGrowth: s.visitsGrowth, avgPrice: s.avgPrice, maxAds7d: s.maxAds7d,
-    saved, viewed,
+    metaPage, saved, viewed,
   };
 }
 
@@ -114,10 +114,12 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
   const rows = res.items.filter(s => !drop.has(s.id) && (!keepIds || keepIds.includes(s.id)));
 
   // Both are per-row lookups keyed off the page; neither needs the other.
-  const [signals] = await Promise.all([shopRowSignals(rows.map(s => s.storeId)), applyCrux(rows)]);
+  const [signals, pages] = await Promise.all([
+    shopRowSignals(rows.map(s => s.storeId)), storeMetaPages(rows.map(s => s.domain)), applyCrux(rows),
+  ]);
 
   return {
-    rows: rows.map(s => toRow(applyRowSignals(s, signals.get(s.storeId)), savedSet.has(s.id), viewedSet.has(s.id))),
+    rows: rows.map(s => toRow(applyRowSignals(s, signals.get(s.storeId)), savedSet.has(s.id), viewedSet.has(s.id), pages.get(s.domain) ?? null)),
     total: res.total,
     allPlatformsTotal: allPlatforms ?? null,
     page,

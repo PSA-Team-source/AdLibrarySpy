@@ -189,7 +189,13 @@ export type ShopRow = Pick<Shop,
   | 'id' | 'name' | 'domain' | 'fullTitle' | 'screenshot' | 'logo' | 'country' | 'platform'
   | 'createdOn' | 'bestSellers' | 'productCount' | 'niches' | 'trafficSource' | 'monthlyVisits'
   | 'cruxBucket' | 'similarWebRank' | 'similarweb' | 'visitorCountries' | 'trafficSeries'
-  | 'metaAds' | 'targetedCountries' | 'liveAdsSeries' | 'visitsGrowth' | 'avgPrice' | 'maxAds7d'>;
+  | 'metaAds' | 'targetedCountries' | 'liveAdsSeries' | 'visitsGrowth' | 'avgPrice' | 'maxAds7d'> & {
+  /** The Facebook page running the store's ads, from our ad index; null = none found. */
+  metaPage?: MetaPage | null;
+};
+
+/** A Facebook page, as the Meta Ad Library identifies an advertiser. */
+export interface MetaPage { id: string; name: string }
 
 /** One ad thumbnail in a Shops row. */
 export type AdPreview = Pick<Ad, 'id' | 'image' | 'mediaType' | 'headline' | 'advertiser'>;

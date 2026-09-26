@@ -4,10 +4,10 @@ import { useEffect } from 'react';
 import { REF_COOKIE, REF_MAX_AGE, refFromUrl } from '@/lib/public/ref';
 
 /**
- * Client twin of middleware.ts's first-touch cookie. Public pages are served from
- * the Cloudflare edge cache, so a shared link's first hit often never reaches the
- * origin middleware — this sets the same `als_ref` cookie in the browser, same rules
- * (only when absent). Renders nothing.
+ * The first-touch `als_ref` cookie on public pages. They are served from the
+ * Cloudflare edge cache and must never Set-Cookie (that makes the response
+ * uncacheable), so middleware.ts only sets it on non-public pages and this sets
+ * it in the browser, same rules (only when absent). Renders nothing.
  */
 export function RefBeacon() {
   useEffect(() => {

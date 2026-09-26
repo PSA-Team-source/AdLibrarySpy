@@ -33,7 +33,8 @@ export default function ProductsPanel({ count, bestSelling, latest, fallback }: 
   if (!items.length) return null;
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
+    // #products: the Shops table's product thumbnails land here.
+    <section id="products" className="scroll-mt-20 rounded-xl border border-border bg-card p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-foreground">Products</div>

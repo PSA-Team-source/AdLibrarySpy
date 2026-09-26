@@ -3,12 +3,14 @@ import { REF_COOKIE, REF_MAX_AGE, refFromUrl } from '@/lib/public/ref';
 import { PATH_HEADER } from '@/lib/auth/safe-next';
 
 /**
- * Two cheap jobs, no auth (pages do their own requireCtx):
+ * Three cheap jobs, no auth (pages do their own requireCtx):
  *  1. First-touch attribution: `?ref=` / `?utm_source=` → `als_ref` cookie, only when
- *     absent (contract + value format in lib/public/ref.ts). Public pages are usually
- *     answered by the Cloudflare cache and never reach this, so components/public/RefBeacon
- *     sets the same cookie client-side. A response carrying Set-Cookie is never stored
- *     by Cloudflare, so the cookie cannot leak into a cached copy.
+ *     absent (contract + value format in lib/public/ref.ts) — on NON-public pages only
+ *     (/signup?ref=…, /login?ref=…). Public pages never Set-Cookie: Cloudflare refuses to
+ *     store a response that sets one, so every tagged launch link (`?ref=ph:launch`) used
+ *     to BYPASS the edge and render at origin. There components/public/RefBeacon (in the
+ *     public layout + homepage) sets the same cookie client-side, same rules, and signup
+ *     (lib/auth/actions.ts) reads it from the request as before.
  *  2. Cache-Tag on the anonymous public surface, so a deploy can purge exactly those
  *     edge copies: `deploy/edge/deploy.sh --purge` purges this tag with the /shops one.
  *  3. The requested path rides along as the `x-als-path` REQUEST header so the auth
@@ -21,7 +23,7 @@ const PUBLIC = /^\/$|^\/(store|ad|stores|trending|weekly|vs)(\/|$)|^\/api\/publi
 export function middleware(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
   const isPublic = PUBLIC.test(pathname);
-  const ref = req.cookies.has(REF_COOKIE) ? null : refFromUrl(pathname, searchParams);
+  const ref = isPublic || req.cookies.has(REF_COOKIE) ? null : refFromUrl(pathname, searchParams);
   const headers = new Headers(req.headers);
   headers.set(PATH_HEADER, pathname + req.nextUrl.search);
   const res = NextResponse.next({ request: { headers } });

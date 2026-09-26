@@ -1,10 +1,11 @@
-# Tag vX.Y.Z (after bumping both package.json files and server.json) to publish
-# shopify-inspect and adlibraryspy-mcp to npm, then list the server on the
-# official MCP Registry. Needs the NPM_TOKEN repository secret.
+# Tag packages-vX.Y.Z (after bumping both package.json files and server.json) to
+# publish shopify-inspect and adlibraryspy-mcp to npm, then list the server on
+# the official MCP Registry. Needs the NPM_TOKEN repository secret. App releases
+# (vX.Y.Z) are plain GitHub releases and don't trigger this.
 name: Release
 on:
   push:
-    tags: ["v*"]
+    tags: ["packages-v*"]
 jobs:
   publish:
     runs-on: ubuntu-latest

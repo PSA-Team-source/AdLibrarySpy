@@ -205,9 +205,15 @@ the AI labels and the MCP server.
 
 ## Contributing
 
-Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Adding app and pixel
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and our [Code of Conduct](CODE_OF_CONDUCT.md). Questions and ideas go to [Discussions](https://github.com/PSA-Team-source/AdLibrarySpy/discussions). Adding app and pixel
 signatures to `shopify-inspect` is an easy first contribution. If AdLibrarySpy helps you, **a ⭐ helps other
 people find it.**
+
+## Star history
+
+<a href="https://star-history.com/#PSA-Team-source/AdLibrarySpy&Date">
+  <img src="https://api.star-history.com/svg?repos=PSA-Team-source/AdLibrarySpy&type=Date" alt="Star history of AdLibrarySpy" width="600">
+</a>
 
 ## License
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions, ideas and show-and-tell
+    url: https://github.com/PSA-Team-source/AdLibrarySpy/discussions
+    about: Ask how to do something, share what you found with AdLibrarySpy, or float an idea before filing it.
+  - name: Report a security vulnerability
+    url: https://github.com/PSA-Team-source/AdLibrarySpy/security/advisories/new
+    about: Report security problems privately, never in a public issue.

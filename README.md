@@ -71,16 +71,16 @@ The server works with **Claude, Claude Code, Cursor, VS Code** and any other MCP
 
 | # | Store | Niche | | Change | Measured |
 |--:|---|---|:-:|--:|---|
-| 1 | [SM Appliance](https://adlibraryspy.com/store/smappliance.com?ref=gh:leaderboard) | Home & Garden | 🇵🇭 | **+251 ads** | 344 ads running in the Meta Ad Library (+69%) · 309K visits in Aug 2026 (SimilarWeb) |
-| 2 | [Power Crunch](https://adlibraryspy.com/store/powercrunch.com?ref=gh:leaderboard) | Health | 🇺🇸 | **+115 ads** | 114 ads running in the Meta Ad Library · 33K visits in Aug 2026 (SimilarWeb) |
-| 3 | [Roosty's](https://adlibraryspy.com/store/roostys.co?ref=gh:leaderboard) | Food & Drink | 🇺🇸 | **+78 ads** | 99 ads running in the Meta Ad Library (+49%) · 110K visits in Aug 2026 (SimilarWeb) |
-| 4 | [Official EA Site](https://adlibraryspy.com/store/ea.com?ref=gh:leaderboard) | Games | 🇺🇸 | **+68 ads** | 137 ads running in the Meta Ad Library · 77M visits in Aug 2026 (SimilarWeb) |
-| 5 | [AntiSocialSocialClub](https://adlibraryspy.com/store/antisocialsocialclub.com?ref=gh:leaderboard) | Apparel | 🇺🇸 | **+68 ads** | 154 ads running in the Meta Ad Library (+425%) · 183K visits in Aug 2026 (SimilarWeb) |
-| 6 | [Official Sun Bum® Website](https://adlibraryspy.com/store/sunbum.com?ref=gh:leaderboard) | Beauty & Fitness | 🇺🇸 | **+66 ads** | 253 ads running in the Meta Ad Library · 201K visits in Aug 2026 (SimilarWeb) |
-| 7 | [Kardia](https://adlibraryspy.com/store/kardia.com?ref=gh:leaderboard) | Health |  | **+61 ads** | 151 ads running in the Meta Ad Library (+203%) · 172K visits in Aug 2026 (SimilarWeb) |
-| 8 | [MeUndies®](https://adlibraryspy.com/store/meundies.com?ref=gh:leaderboard) | Apparel | 🇺🇸 | **+60 ads** | 541 ads running in the Meta Ad Library (+35%) · 1.8M visits in Aug 2026 (SimilarWeb) |
-| 9 | [SYLVOX](https://adlibraryspy.com/store/sylvoxtv.com?ref=gh:leaderboard) | Consumer Electronics | 🇺🇸 | **+57 ads** | 109 ads running in the Meta Ad Library (+172%) · 185K visits in Aug 2026 (SimilarWeb) |
-| 10 | [LSKD](https://adlibraryspy.com/store/lskd.co?ref=gh:leaderboard) | Apparel | 🇦🇺 | **+44 ads** | 69 ads running in the Meta Ad Library (+733%) · 2M visits in Aug 2026 (SimilarWeb) |
+| 1 | [SM Appliance](https://adlibraryspy.com/store/smappliance.com) | Home & Garden | 🇵🇭 | **+251 ads** | 344 ads running in the Meta Ad Library (+69%) · 309K visits in Aug 2026 (SimilarWeb) |
+| 2 | [Power Crunch](https://adlibraryspy.com/store/powercrunch.com) | Health | 🇺🇸 | **+115 ads** | 114 ads running in the Meta Ad Library · 33K visits in Aug 2026 (SimilarWeb) |
+| 3 | [Roosty's](https://adlibraryspy.com/store/roostys.co) | Food & Drink | 🇺🇸 | **+78 ads** | 99 ads running in the Meta Ad Library (+49%) · 110K visits in Aug 2026 (SimilarWeb) |
+| 4 | [Official EA Site](https://adlibraryspy.com/store/ea.com) | Games | 🇺🇸 | **+68 ads** | 137 ads running in the Meta Ad Library · 77M visits in Aug 2026 (SimilarWeb) |
+| 5 | [AntiSocialSocialClub](https://adlibraryspy.com/store/antisocialsocialclub.com) | Apparel | 🇺🇸 | **+68 ads** | 154 ads running in the Meta Ad Library (+425%) · 183K visits in Aug 2026 (SimilarWeb) |
+| 6 | [Official Sun Bum® Website](https://adlibraryspy.com/store/sunbum.com) | Beauty & Fitness | 🇺🇸 | **+66 ads** | 253 ads running in the Meta Ad Library · 201K visits in Aug 2026 (SimilarWeb) |
+| 7 | [Kardia](https://adlibraryspy.com/store/kardia.com) | Health |  | **+61 ads** | 151 ads running in the Meta Ad Library (+203%) · 172K visits in Aug 2026 (SimilarWeb) |
+| 8 | [MeUndies®](https://adlibraryspy.com/store/meundies.com) | Apparel | 🇺🇸 | **+60 ads** | 541 ads running in the Meta Ad Library (+35%) · 1.8M visits in Aug 2026 (SimilarWeb) |
+| 9 | [SYLVOX](https://adlibraryspy.com/store/sylvoxtv.com) | Consumer Electronics | 🇺🇸 | **+57 ads** | 109 ads running in the Meta Ad Library (+172%) · 185K visits in Aug 2026 (SimilarWeb) |
+| 10 | [LSKD](https://adlibraryspy.com/store/lskd.co) | Apparel | 🇦🇺 | **+44 ads** | 69 ads running in the Meta Ad Library (+733%) · 2M visits in Aug 2026 (SimilarWeb) |
 
 ### Fastest traffic growth
 
@@ -88,16 +88,16 @@ The server works with **Claude, Claude Code, Cursor, VS Code** and any other MCP
 
 | # | Store | Niche | | Change | Measured |
 |--:|---|---|:-:|--:|---|
-| 1 | [StancedCo](https://adlibraryspy.com/store/stanced.co?ref=gh:leaderboard) | Apparel | 🇺🇸 | **+1,522%** | 29K → 474K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 2 | [Starlite](https://adlibraryspy.com/store/starlite.com.gh?ref=gh:leaderboard) | Computers | 🇬🇭 | **+1,519%** | 85K → 1.4M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 3 | [Starlink Online](https://adlibraryspy.com/store/starlink.qa?ref=gh:leaderboard) | Computers | 🇶🇦 | **+1,503%** | 55K → 883K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 4 | [Absolute Eclipse](https://adlibraryspy.com/store/absoluteeclipse.eu?ref=gh:leaderboard) | Apparel | 🇱🇻 | **+1,475%** | 77K → 1.2M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 5 | [CompuGhana](https://adlibraryspy.com/store/compughana.com?ref=gh:leaderboard) | Home & Garden | 🇬🇭 | **+1,410%** | 85K → 1.3M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 6 | [Solar Eclipse Eyewear](https://adlibraryspy.com/store/helioclipse.com?ref=gh:leaderboard) | Health | 🇺🇸 | **+1,399%** | 52K → 784K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 7 | [Deli Hemp](https://adlibraryspy.com/store/delihemp.com?ref=gh:leaderboard) | Food & Drink | 🇫🇷 | **+1,204%** | 29K → 373K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 8 | [Primal Storm](https://adlibraryspy.com/store/primal-storm.com?ref=gh:leaderboard) | Health | 🇺🇸 | **+1,014%** | 59K → 659K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 9 | [Dogshood](https://adlibraryspy.com/store/dogshood.com?ref=gh:leaderboard) | Pets & Animals | 🇩🇪 | **+981%** | 36K → 385K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
-| 10 | [RADER SHOP](https://adlibraryspy.com/store/rader-shop.com?ref=gh:leaderboard) | Food & Drink | 🇯🇵 | **+967%** | 22K → 236K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 1 | [StancedCo](https://adlibraryspy.com/store/stanced.co) | Apparel | 🇺🇸 | **+1,522%** | 29K → 474K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 2 | [Starlite](https://adlibraryspy.com/store/starlite.com.gh) | Computers | 🇬🇭 | **+1,519%** | 85K → 1.4M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 3 | [Starlink Online](https://adlibraryspy.com/store/starlink.qa) | Computers | 🇶🇦 | **+1,503%** | 55K → 883K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 4 | [Absolute Eclipse](https://adlibraryspy.com/store/absoluteeclipse.eu) | Apparel | 🇱🇻 | **+1,475%** | 77K → 1.2M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 5 | [CompuGhana](https://adlibraryspy.com/store/compughana.com) | Home & Garden | 🇬🇭 | **+1,410%** | 85K → 1.3M visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 6 | [Solar Eclipse Eyewear](https://adlibraryspy.com/store/helioclipse.com) | Health | 🇺🇸 | **+1,399%** | 52K → 784K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 7 | [Deli Hemp](https://adlibraryspy.com/store/delihemp.com) | Food & Drink | 🇫🇷 | **+1,204%** | 29K → 373K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 8 | [Primal Storm](https://adlibraryspy.com/store/primal-storm.com) | Health | 🇺🇸 | **+1,014%** | 59K → 659K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 9 | [Dogshood](https://adlibraryspy.com/store/dogshood.com) | Pets & Animals | 🇩🇪 | **+981%** | 36K → 385K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
+| 10 | [RADER SHOP](https://adlibraryspy.com/store/rader-shop.com) | Food & Drink | 🇯🇵 | **+967%** | 22K → 236K visits, Jul 2026 → Aug 2026 (SimilarWeb) |
 
 <!-- leaderboard:end -->
 

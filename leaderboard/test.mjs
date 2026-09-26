@@ -13,7 +13,7 @@ const report = {
 
 test('tables escape pipes, flag countries and link the public store page', () => {
   const t = sectionTable(report.data.sections[0]);
-  assert.match(t, /\[A \\\| B\]\(https:\/\/adlibraryspy\.com\/store\/a\.com\?ref=gh:leaderboard\)/);
+  assert.match(t, /\[A \\\| B\]\(https:\/\/adlibraryspy\.com\/store\/a\.com\)/);
   assert.match(t, /🇺🇸/);
 });
 

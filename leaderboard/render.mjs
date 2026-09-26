@@ -1,10 +1,11 @@
 // Markdown for the weekly leaderboard. Pure, so test.mjs can check it offline.
+// Links carry no ?ref=: a ref param makes the site set a cookie, which bypasses
+// the edge cache, and these pages must stay cacheable under launch traffic.
 const SITE = 'https://adlibraryspy.com';
-const REF = 'ref=gh:leaderboard';
 
 const cell = s => String(s ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
 const flag = cc => (/^[A-Z]{2}$/.test(cc ?? '') ? String.fromCodePoint(...[...cc].map(c => 0x1f1a5 + c.charCodeAt(0))) : '');
-const storeLink = i => `[${cell(i.name || i.domain)}](${SITE}/store/${encodeURIComponent(i.domain)}?${REF})`;
+const storeLink = i => `[${cell(i.name || i.domain)}](${SITE}/store/${encodeURIComponent(i.domain)})`;
 
 export function sectionTable(section, limit = 10) {
   const rows = section.items.slice(0, limit).map((i, n) =>
@@ -27,7 +28,7 @@ export function weekMarkdown(report) {
     `# Shopify breakouts: ${cell(d.weekLabel)} (${d.weekStart} → ${d.weekEnd})`,
     '',
     `Every figure is copied from a measurement with its source and period beside it. Nothing here is modelled or estimated. `
-      + `Interactive version: [${report.url.replace('https://', '')}](${report.url}?${REF}).`,
+      + `Interactive version: [${report.url.replace('https://', '')}](${report.url}).`,
     '',
     ...d.sections.filter(s => s.items.length).flatMap(s => [sectionTable(s, 25), '']),
   ].join('\n');

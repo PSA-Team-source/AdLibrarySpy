@@ -3,7 +3,7 @@
 Thanks for helping. Everything here runs on Node 18+ with **zero runtime dependencies**, and we'd like to keep it that way.
 
 ```bash
-git clone https://github.com/PSA-Team-source/adlibraryspy && cd adlibraryspy
+git clone https://github.com/PSA-Team-source/shopify-spy && cd shopify-spy
 npm install          # links the workspaces, nothing is downloaded
 npm test             # every package + extension + leaderboard
 node packages/shopify-inspect/cli.js allbirds.com

@@ -4,7 +4,7 @@
   "title": "AdLibrarySpy",
   "description": "Shopify store and ad intelligence: traffic, best sellers, apps, live Meta ads and weekly breakouts.",
   "websiteUrl": "https://adlibraryspy.com",
-  "repository": { "url": "https://github.com/PSA-Team-source/adlibraryspy", "source": "github", "subfolder": "packages/mcp" },
+  "repository": { "url": "https://github.com/PSA-Team-source/shopify-spy", "source": "github", "subfolder": "packages/mcp" },
   "version": "1.0.0",
   "packages": [
     {

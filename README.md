@@ -7,7 +7,7 @@
 See any store's best sellers, apps, traffic and live Meta ads, or ask Claude which stores are scaling this week.
 Every number carries its source. Nothing is estimated.
 
-[![CI](https://github.com/PSA-Team-source/adlibraryspy/actions/workflows/ci.yml/badge.svg)](https://github.com/PSA-Team-source/adlibraryspy/actions/workflows/ci.yml)
+[![CI](https://github.com/PSA-Team-source/shopify-spy/actions/workflows/ci.yml/badge.svg)](https://github.com/PSA-Team-source/shopify-spy/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)
 ![Node 18+](https://img.shields.io/badge/node-%E2%89%A518-43853d)

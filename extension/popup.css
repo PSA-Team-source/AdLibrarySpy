@@ -8,6 +8,7 @@
   --border: #d7dbe0;
   --primary: #2c2c2c;
   --primary-fg: #fafafa;
+  --primary-hover: #000000;
   --lime: #a7f45a;
   --up: #047857;
   --up-bg: rgba(16, 185, 129, 0.1);
@@ -15,6 +16,29 @@
   --down-bg: rgba(239, 68, 68, 0.1);
   --radius: 10px;
   color-scheme: light;
+}
+
+/* Match the system theme for the extension popup. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0a;
+    --card: #0f0f0f;
+    --fg: #f5f5f5;
+    --muted-bg: #262626;
+    --muted-fg: #b3b4b5;
+    --border: #272727;
+    --primary: #e5e5e5;
+    --primary-fg: #171717;
+    --primary-hover: #ffffff;
+    --lime: #a7f45a;
+    --up: #34d399;
+    --up-bg: rgba(16, 185, 129, 0.15);
+    --down: #f87171;
+    --down-bg: rgba(239, 68, 68, 0.15);
+    --radius: 10px;
+
+    color-scheme: dark;
+  }
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -65,7 +89,7 @@ main { padding: 14px; display: grid; gap: 12px; }
 .ctas { display: grid; gap: 8px; }
 .btn { display: flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 13px; }
 .btn.primary { background: var(--primary); color: var(--primary-fg); }
-.btn.primary:hover { background: #000; }
+.btn.primary:hover { background: var(--primary-hover); }
 .btn.secondary { background: var(--card); border: 1px solid var(--border); }
 .btn.secondary:hover { background: var(--muted-bg); }
 .btn:focus-visible, .brand:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }

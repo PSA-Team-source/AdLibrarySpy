@@ -1,0 +1,17 @@
+{
+  "name": "shopify-inspect",
+  "version": "1.0.0",
+  "description": "See what any Shopify store publishes about itself: theme, best sellers, newest products, prices, apps and pixels. Zero dependencies, no API key.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": { ".": "./index.js", "./parse": "./parse.js", "./index-card": "./index-card.js" },
+  "bin": { "shopify-inspect": "./cli.js" },
+  "files": ["index.js", "parse.js", "index-card.js", "cli.js", "README.md"],
+  "engines": { "node": ">=18.17" },
+  "scripts": { "test": "node --test test.mjs" },
+  "keywords": ["shopify", "ecommerce", "store", "spy", "competitor", "theme-detector", "cli", "dropshipping", "best-sellers"],
+  "homepage": "https://github.com/PSA-Team-source/adlibraryspy/tree/main/packages/shopify-inspect",
+  "repository": { "type": "git", "url": "git+https://github.com/PSA-Team-source/adlibraryspy.git", "directory": "packages/shopify-inspect" },
+  "bugs": "https://github.com/PSA-Team-source/adlibraryspy/issues",
+  "license": "MIT"
+}

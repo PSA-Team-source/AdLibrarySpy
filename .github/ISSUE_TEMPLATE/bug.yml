@@ -1,0 +1,15 @@
+name: Bug report
+description: Something printed a wrong value or crashed
+labels: [bug]
+body:
+  - type: input
+    id: command
+    attributes: { label: Command or MCP tool call, placeholder: "npx shopify-inspect somestore.com" }
+    validations: { required: true }
+  - type: textarea
+    id: what
+    attributes: { label: What happened vs. what you expected }
+    validations: { required: true }
+  - type: input
+    id: env
+    attributes: { label: Node version and OS, placeholder: "node 22.4, macOS 15" }

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.PSA-Team-source/adlibraryspy",
+  "title": "AdLibrarySpy",
+  "description": "Shopify store and ad intelligence: traffic, best sellers, apps, live Meta ads and weekly breakouts.",
+  "websiteUrl": "https://adlibraryspy.com",
+  "repository": { "url": "https://github.com/PSA-Team-source/adlibraryspy", "source": "github", "subfolder": "packages/mcp" },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "adlibraryspy-mcp",
+      "version": "1.0.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "ADLIBRARYSPY_API_KEY",
+          "description": "Optional. Free key from https://adlibraryspy.com/settings/api unlocks store and ad search over the full index.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    { "type": "streamable-http", "url": "https://adlibraryspy.com/api/mcp" }
+  ]
+}

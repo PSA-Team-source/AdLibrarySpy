@@ -1,0 +1,15 @@
+name: App / pixel not detected
+description: shopify-inspect missed an app or tracking pixel a store loads
+labels: [signature]
+body:
+  - type: input
+    id: app
+    attributes: { label: App or pixel name }
+    validations: { required: true }
+  - type: input
+    id: store
+    attributes: { label: A store that loads it on its homepage }
+    validations: { required: true }
+  - type: input
+    id: host
+    attributes: { label: The script host it loads from (DevTools → Network), placeholder: "cdn.example-app.com" }

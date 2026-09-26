@@ -1,0 +1,17 @@
+{
+  "name": "adlibraryspy-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Shopify store and ad intelligence. Ask Claude, Cursor or ChatGPT which stores are scaling, what they sell and which ads they run.",
+  "type": "module",
+  "bin": { "adlibraryspy-mcp": "./server.js" },
+  "files": ["server.js", "tools.js", "hosted.js", "README.md"],
+  "engines": { "node": ">=18.17" },
+  "dependencies": { "shopify-inspect": "^1.0.0" },
+  "scripts": { "test": "node --test test.mjs" },
+  "keywords": ["mcp", "model-context-protocol", "mcp-server", "claude", "cursor", "shopify", "ads", "meta-ads", "ad-library", "ecommerce"],
+  "homepage": "https://github.com/PSA-Team-source/adlibraryspy/tree/main/packages/mcp",
+  "repository": { "type": "git", "url": "git+https://github.com/PSA-Team-source/adlibraryspy.git", "directory": "packages/mcp" },
+  "bugs": "https://github.com/PSA-Team-source/adlibraryspy/issues",
+  "mcpName": "io.github.PSA-Team-source/adlibraryspy",
+  "license": "MIT"
+}

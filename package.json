@@ -1,0 +1,9 @@
+{
+  "name": "adlibraryspy-monorepo",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=18.17" },
+  "scripts": {
+    "test": "npm test --workspaces && node --test extension/test.mjs leaderboard/test.mjs"
+  }
+}

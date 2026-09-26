@@ -1,0 +1,33 @@
+# Tag vX.Y.Z (after bumping both package.json files and server.json) to publish
+# shopify-inspect and adlibraryspy-mcp to npm, then list the server on the
+# official MCP Registry. Needs the NPM_TOKEN repository secret.
+name: Release
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # npm provenance + MCP Registry OIDC login
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
+      - run: npm ci
+      - run: npm test
+      - name: Publish to npm (skips versions already published)
+        env: { NODE_AUTH_TOKEN: "${{ secrets.NPM_TOKEN }}" }
+        run: |
+          for pkg in packages/shopify-inspect packages/mcp; do
+            name=$(node -p "require('./$pkg/package.json').name"); ver=$(node -p "require('./$pkg/package.json').version")
+            if npm view "$name@$ver" version >/dev/null 2>&1; then echo "$name@$ver already published"; continue; fi
+            npm publish "./$pkg" --access public --provenance
+          done
+      - name: Publish to the MCP Registry
+        working-directory: packages/mcp
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

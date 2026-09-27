@@ -2,6 +2,7 @@
 import { parseArgs } from 'node:util';
 import { inspectStore } from './index.js';
 import { indexCard } from './index-card.js';
+import { CSV_COLUMNS, csvRow } from './csv.js';
 
 const HELP = `shopify-inspect — what any Shopify store publishes about itself
 
@@ -10,6 +11,7 @@ Usage
 
 Options
   --json        Print JSON instead of the summary
+  --csv         Print CSV instead of the summary
   --limit <n>   Best sellers / newest products to list (1-50, default 12)
   --offline     Skip the AdLibrarySpy index lookup (traffic, live ads)
   -h, --help
@@ -21,7 +23,7 @@ Examples
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
-    json: { type: 'boolean' }, offline: { type: 'boolean' },
+    json: { type: 'boolean' }, csv: { type: 'boolean' }, offline: { type: 'boolean' },
     limit: { type: 'string' }, help: { type: 'boolean', short: 'h' },
   },
 });
@@ -84,7 +86,10 @@ function print(s) {
 
 let failed = 0;
 const results = await Promise.all(positionals.map(d => one(d).catch(err => { failed++; return { domain: d, error: err.message }; })));
-if (values.json) {
+if (values.csv) {
+  console.log(CSV_COLUMNS.join(','));
+  console.log(results.map(csvRow).join('\n'));
+} else if (values.json) {
   console.log(JSON.stringify(results.length === 1 ? results[0] : results, null, 2));
 } else {
   console.log(results.map(r => (r.error ? `${bold(r.domain)}\n  ${red(r.error)}` : print(r))).join('\n\n'));

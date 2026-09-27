@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { normaliseDomain, parseTheme, parseLocale, parseHandles, detectTech, isShopifyHtml, priceStats, productFromJs, inspectStore } from './index.js';
+import { CSV_COLUMNS, csvRow } from './csv.js';
 
 test('domains are normalised and non-public names refused', () => {
   assert.equal(normaliseDomain('https://www.Allbirds.com/products/x?y=1'), 'allbirds.com');
@@ -73,4 +74,34 @@ test('inspectStore assembles a store from its own endpoints', async () => {
   assert.deepEqual(s.newest.map(p => p.title), ['A']);
   assert.deepEqual(s.apps, ['Klaviyo']);
   assert.deepEqual(s.prices, { sampled: 2, min: 10, median: 20, max: 30 });
+});
+
+test('CSV rows escape RFC 4180 characters and join lists with semicolons', () => {
+  const store = {
+    domain: 'example.com',
+    name: 'Demo, "Store"',
+    shopify: true,
+    theme: 'Dawn',
+    currency: 'USD',
+    locale: 'en-US',
+    productCount: 10,
+    prices: { min: 5, max: 100 },
+    index: {
+      traffic: { visits: 1234, sourceLabel: 'CrUX, monthly' },
+      metaAds: { live: 7 },
+      niche: ['Fashion', 'Beauty'],
+    },
+    pixels: ['Meta Pixel', 'Google'],
+    apps: ['Klaviyo', 'Judge.me'],
+  };
+
+  assert.equal(
+    CSV_COLUMNS.join(','),
+    'domain,name,shopify,theme,currency,locale,productCount,priceMin,priceMax,visits,visitsSource,liveMetaAds,niche,pixels,apps',
+  );
+
+  assert.equal(
+    csvRow(store),
+    '"example.com","Demo, ""Store""","true","Dawn","USD","en-US","10","5","100","1234","CrUX, monthly","7","Fashion;Beauty","Meta Pixel;Google","Klaviyo;Judge.me"',
+  );
 });

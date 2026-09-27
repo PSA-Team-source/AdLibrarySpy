@@ -31,8 +31,17 @@ test('handles follow collection order from <main>, deduped, menu links skipped',
 
 test('apps and pixels come from vendor hosts in the HTML', () => {
   const html = '<script src="https://static.klaviyo.com/onsite/js/klaviyo.js"></script>'
-    + '<script src="https://connect.facebook.net/en_US/fbevents.js"></script><script src="//cdn.judge.me/x.js">';
-  assert.deepEqual(detectTech(html), { pixels: ['Meta Pixel'], apps: ['Klaviyo', 'Judge.me'] });
+    + '<script src="https://connect.facebook.net/en_US/fbevents.js"></script><script src="//cdn.judge.me/x.js">'
+    + '<script src="https://api.loopreturns.com/api/v1/">';
+  assert.deepEqual(detectTech(html), {
+    pixels: ['Meta Pixel'],
+    apps: ['Klaviyo', 'Judge.me', 'Loop Returns'],
+  });
+
+  assert.deepEqual(
+    detectTech('<script src="https://api.example.com/api/v1/"></script>'),
+    { pixels: [], apps: [] },
+  );
   assert.deepEqual(detectTech('<html></html>'), { pixels: [], apps: [] });
   assert.ok(isShopifyHtml('Shopify.shop = "x.myshopify.com";'));
   assert.ok(!isShopifyHtml('<html>wordpress</html>'));

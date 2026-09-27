@@ -106,6 +106,7 @@ export const SIGNATURES = [
   ['Zendesk', 'app', /static\.zdassets\.com/],
   ['Tidio', 'app', /code\.tidio\.co/],
   // Payments and post-purchase
+  ['Loop Returns', 'app', /(?:https?:)?\/\/api\.loopreturns\.com(?:\/|["'])/],
   ['Klarna', 'app', /js\.klarna\.com|klarnaservices\.com/],
   ['Afterpay', 'app', /js\.afterpay\.com|static\.afterpay\.com/],
   ['Affirm', 'app', /cdn1\.affirm\.com/],

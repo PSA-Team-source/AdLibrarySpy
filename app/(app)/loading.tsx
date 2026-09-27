@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 // page does not shift. Normal routes are padded by the app shell; the
 // full-height routes (/shops, /ads) get no wrapper, so pad like
 // `PageShell fullHeight` there.
-const FULL_HEIGHT = new Set(['/shops', '/ads']);
+const FULL_HEIGHT = new Set(['/shops', '/ads', '/products']);
 
 export default function Loading() {
   const fullHeight = FULL_HEIGHT.has(usePathname());

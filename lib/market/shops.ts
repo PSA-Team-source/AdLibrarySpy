@@ -7,7 +7,7 @@ import type { Shop, Product, Point, SimilarWebFacts } from '@/lib/types';
 import { marketGet, marketPost, unwrapItems, unwrapTotal } from './client';
 import { monthlyTraffic, monthlyTrafficMany, trafficConfigured } from '@/lib/traffic/provider';
 import { cruxRanks, cruxRank } from '@/lib/traffic/crux';
-import { safeFetch } from '@/lib/safe-fetch';
+import { safeGet } from '@/lib/safe-fetch';
 import { mapFacts, mapDetail, previousMonth } from '@/lib/traffic/similarweb';
 
 const CCY: Record<string, string> = {
@@ -652,16 +652,14 @@ export async function getShops(ids: string[]): Promise<Shop[]> {
  */
 export async function shopifyProducts(domain: string, limit = 8): Promise<Product[]> {
   if (!domain) return [];
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), 6000);
   try {
-    const res = await safeFetch(`https://${domain}/products.json?limit=${limit}`, {
-      headers: { 'User-Agent': 'AdLibrarySpy/1.0 (+https://adlibraryspy.com/bot)' },
-      signal: ac.signal,
-      next: { revalidate: 3600 },
-    } as RequestInit);
-    if (!res.ok) return [];
-    const data = (await res.json()) as { products?: Record<string, unknown>[] };
+    // node:https, not fetch(): Shopify challenges fetch() from the production host (lib/safe-fetch.ts).
+    const res = await safeGet(`https://${domain}/products.json?limit=${limit}`, {
+      headers: { 'User-Agent': 'AdLibrarySpy/1.0 (+https://adlibraryspy.com/bot)', Accept: 'application/json' },
+      timeoutMs: 6000,
+    });
+    if (res.status !== 200) return [];
+    const data = JSON.parse(res.text) as { products?: Record<string, unknown>[] };
     const out: Product[] = [];
     for (const p of data.products ?? []) {
       const images = p.images as { src?: string }[] | undefined;
@@ -682,8 +680,6 @@ export async function shopifyProducts(domain: string, limit = 8): Promise<Produc
     return out;
   } catch {
     return [];
-  } finally {
-    clearTimeout(timer);
   }
 }
 

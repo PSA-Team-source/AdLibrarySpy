@@ -5,7 +5,7 @@ import { SITE_URL } from '@/lib/public/site';
 // Everything behind a login (the (app) group), the auth screens and the rest of
 // /api stay out of the crawl; their layouts also carry noindex.
 const PRIVATE = [
-  '/home', '/shops', '/ads', '/advertisers', '/brandtracker', '/trends',
+  '/home', '/shops', '/ads', '/advertisers', '/brandtracker', '/searches', '/trends',
   '/favorites', '/team', '/settings', '/connect',
   '/login', '/signup', '/forgot', '/reset', '/verify', '/invite', '/oauth',
   '/api/',

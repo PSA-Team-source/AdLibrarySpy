@@ -1,7 +1,7 @@
 // Outbound-fetch guard (lib/safe-fetch.ts) and the OAuth loopback check. Run with `npm test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isPrivateAddress, isLoopbackHost, bareHost, safeFetch, BlockedUrlError } from '../lib/safe-fetch.ts';
+import { isPrivateAddress, isLoopbackHost, bareHost, safeFetch, safeGet, BlockedUrlError } from '../lib/safe-fetch.ts';
 
 test('private, loopback, link-local, CGNAT and metadata addresses are refused', () => {
   for (const ip of ['127.0.0.1', '10.1.2.3', '172.16.0.1', '172.20.0.1', '192.168.1.1', '169.254.169.254',
@@ -29,5 +29,12 @@ test('safeFetch refuses private hosts and non-http schemes before any request', 
   for (const u of ['http://127.0.0.1/', 'https://[::1]/', 'http://169.254.169.254/latest/meta-data/', 'http://2130706433/',
     'http://localhost/', 'file:///etc/passwd', 'https://user:pw@example.com/']) {
     await assert.rejects(safeFetch(u), BlockedUrlError, u);
+  }
+});
+
+test('safeGet refuses private hosts (literal or resolved) and non-http schemes', async () => {
+  for (const u of ['http://127.0.0.1/', 'https://[::1]/', 'http://169.254.169.254/latest/meta-data/',
+    'http://localhost/', 'file:///etc/passwd', 'https://user:pw@example.com/']) {
+    await assert.rejects(safeGet(u, { timeoutMs: 3000 }), BlockedUrlError, u);
   }
 });

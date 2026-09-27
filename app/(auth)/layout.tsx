@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Store } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
+import { MetaPixel } from '@/components/public/MetaPixel';
 import { countShops } from '@/lib/market/shops';
 import type { Metadata } from 'next';
 
@@ -21,6 +22,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   ].filter((t): t is { icon: typeof Store; label: string; value: number } => typeof t.value === 'number' && t.value > 0);
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
+      <MetaPixel />
       <div className="flex flex-col justify-center px-4 py-12 sm:px-12">
         <div className="mx-auto w-full max-w-md">
           <Link href="/" className="mb-6 flex items-center gap-2 transition-opacity hover:opacity-80">
@@ -30,6 +32,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
           <div className="rounded-xl border border-border bg-card p-6 sm:p-8">
             {children}
           </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground hover:underline">Privacy policy</Link>
+          </p>
         </div>
       </div>
       <div className="hidden flex-col justify-center border-l border-border bg-[var(--surface)] px-12 lg:flex">

@@ -1,6 +1,7 @@
-// Weekly newsletter unsubscribe.
+// One-click unsubscribe for the weekly newsletter and (with l=alerts) the
+// alerts digest.
 //
-//   GET  ?u=<user id>&t=<signed token>  — the link in the mail footer. Shows a
+//   GET  ?u=<user id>&t=<signed token>[&l=alerts]  — the link in the mail footer. Shows a
 //        one-button confirmation instead of acting, because mail scanners
 //        prefetch GET links and would otherwise unsubscribe people silently.
 //   POST ?u=&t=                          — the button above, and RFC 8058
@@ -11,7 +12,7 @@
 // can only ever unsubscribe the person it was mailed to.
 import { NextResponse, type NextRequest } from 'next/server';
 import { query } from '@/lib/db';
-import { verifyUnsubscribe } from '@/lib/weekly/unsubscribe';
+import { verifyUnsubscribe, isMailList, type MailList } from '@/lib/weekly/unsubscribe';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,36 +37,59 @@ a{color:var(--accent)}
   });
 }
 
-function params(req: NextRequest): { u: string; t: string } {
+function params(req: NextRequest): { u: string; t: string; l: MailList } {
   const sp = req.nextUrl.searchParams;
-  return { u: (sp.get('u') ?? '').trim().toLowerCase(), t: (sp.get('t') ?? '').trim() };
+  const l = sp.get('l');
+  return { u: (sp.get('u') ?? '').trim().toLowerCase(), t: (sp.get('t') ?? '').trim(), l: isMailList(l) ? l : 'newsletter' };
 }
 
-const invalid = () => page('Link not valid',
-  `<h1>This link is not valid</h1><p>It may have been cut off by your mail app. You can turn the weekly report off any time in <a href="/settings/newsletter">Settings → Newsletter</a>.</p>`, 400);
+const COPY: Record<MailList, { settings: string; tab: string; ask: string; askBody: string; done: string; doneBody: string; cta: string }> = {
+  newsletter: {
+    settings: '/settings/newsletter', tab: 'Newsletter',
+    ask: 'Stop the Monday report?', askBody: 'You will no longer get the weekly AdLibrarySpy report by email. Your account is not affected.',
+    done: 'The weekly report will not be mailed to you again.', doneBody: 'Turn it back on', cta: `<a class="btn" href="/weekly">Read this week's report</a>`,
+  },
+  alerts: {
+    settings: '/settings/notifications', tab: 'Notifications',
+    ask: 'Stop alert emails?', askBody: 'You will no longer get Brandtracker and saved-search alerts by email. Your trackers and saved searches stay as they are.',
+    done: 'Alert emails are off.', doneBody: 'Turn them back on', cta: '<a class="btn" href="/brandtracker">Open Brandtracker</a>',
+  },
+};
+
+const invalid = (l: MailList) => page('Link not valid',
+  `<h1>This link is not valid</h1><p>It may have been cut off by your mail app. You can turn these emails off any time in <a href="${COPY[l].settings}">Settings → ${COPY[l].tab}</a>.</p>`, 400);
 
 export async function GET(req: NextRequest) {
-  const { u, t } = params(req);
-  if (!verifyUnsubscribe(u, t)) return invalid();
-  const action = `/api/newsletter/unsubscribe?u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}`;
+  const { u, t, l } = params(req);
+  if (!verifyUnsubscribe(u, t, l)) return invalid(l);
+  const action = `/api/newsletter/unsubscribe?u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}${l === 'newsletter' ? '' : `&l=${l}`}`;
   return page('Unsubscribe',
-    `<h1>Stop the Monday report?</h1><p>You will no longer get the weekly AdLibrarySpy report by email. Your account is not affected.</p>
+    `<h1>${COPY[l].ask}</h1><p>${COPY[l].askBody}</p>
 <form method="post" action="${esc(action)}"><button type="submit">Unsubscribe</button></form>`);
 }
 
 export async function POST(req: NextRequest) {
-  const { u, t } = params(req);
-  if (!verifyUnsubscribe(u, t)) return invalid();
-  await query(
-    `UPDATE newsletter_subscribers SET unsubscribed_at = now()
-      WHERE user_id = $1 AND unsubscribed_at IS NULL`,
-    [u],
-  );
+  const { u, t, l } = params(req);
+  if (!verifyUnsubscribe(u, t, l)) return invalid(l);
+  if (l === 'alerts') {
+    await query(
+      `INSERT INTO alert_prefs (user_id, frequency) VALUES ($1, 'off')
+       ON CONFLICT (user_id) DO UPDATE SET frequency = 'off', updated_at = now()`,
+      [u],
+    );
+  } else {
+    await query(
+      `UPDATE newsletter_subscribers SET unsubscribed_at = now()
+        WHERE user_id = $1 AND unsubscribed_at IS NULL`,
+      [u],
+    );
+  }
   // RFC 8058 clients POST `List-Unsubscribe=One-Click` and only read the status.
   const oneClick = (req.headers.get('content-type') ?? '').includes('application/x-www-form-urlencoded')
     && (await req.text()).includes('List-Unsubscribe=One-Click');
   if (oneClick) return new NextResponse(null, { status: 200 });
+  const c = COPY[l];
   return page('Unsubscribed',
-    `<h1>You are unsubscribed</h1><p>The weekly report will not be mailed to you again. Changed your mind? Turn it back on in <a href="/settings/newsletter">Settings → Newsletter</a>.</p>
-<a class="btn" href="/weekly">Read this week's report</a>`);
+    `<h1>You are unsubscribed</h1><p>${c.done} Changed your mind? ${c.doneBody} in <a href="${c.settings}">Settings → ${c.tab}</a>.</p>
+${c.cta}`);
 }

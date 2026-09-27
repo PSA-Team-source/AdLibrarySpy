@@ -8,14 +8,15 @@ import { creativeCountFor } from '@/lib/market/creatives';
 import { storefrontFacts, storeAdHistory, storeProfile, type StorefrontFacts } from '@/lib/market/storefront';
 import { ageOf, compact, flag, monthYear, pct } from '@/lib/format';
 import type { Shop } from '@/lib/types';
-import { growthTitle, trafficCaption, trafficTitle } from '@/lib/traffic/similarweb';
+import { growthTitle, monthLabel, trafficCaption, trafficTitle } from '@/lib/traffic/similarweb';
+import { storeAnswers } from '@/lib/public/store-answers';
 import { ShopLogo } from '@/components/ShopMedia';
 import { PlatformIcon } from '@/components/market/PlatformIcon';
 import { ShareButton } from '@/components/market/ShareButton';
 import { countryName } from '@/components/market/CreativeCard';
 import { CountryShares, JsonLd, PublicCreativeTile, PublicShopCard, SignupGate } from '@/components/public/PublicCards';
 import { SITE_URL, measuredVisits, publicDomain, signupFor, storePath } from '@/lib/public/site';
-import TrendChart from '@/app/(app)/shops/[id]/trend-chart';
+import TrendChart from '@/components/market/TrendChart';
 import ProductsPanel from '@/app/(app)/shops/[id]/products-panel';
 
 // Anonymous + identical for every visitor → ISR, served from the Cloudflare edge.
@@ -119,6 +120,11 @@ export default async function PublicStorePage({ params }: { params: Params }) {
   const age = ageOf(shop.createdOn);
   const dossier = `/shops/${shop.id}`;
   const url = `${SITE_URL}${storePath(shop.domain)}`;
+  const answers = storeAnswers({
+    name: shop.name, domain: shop.domain, visits, visitsMonth: period ? monthLabel(period) : '', growthPct: growth,
+    liveAds: shop.metaAds, platform: shop.platform, createdOn: shop.createdOn, country: shop.country ? countryName(shop.country) : '',
+    niche: categoryPath[categoryPath.length - 1] ?? '', apps, pixels, similar: similar.map(o => o.name),
+  });
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -141,6 +147,10 @@ export default async function PublicStorePage({ params }: { params: Params }) {
           { '@type': 'ListItem', position: 3, name: shop.name, item: url },
         ],
       },
+      ...(answers.length ? [{
+        '@type': 'FAQPage', '@id': `${url}#answers`,
+        mainEntity: answers.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+      }] : []),
     ],
   };
 
@@ -261,6 +271,20 @@ export default async function PublicStorePage({ params }: { params: Params }) {
               <div className="flex flex-wrap gap-2">{apps.map(a => <span key={a} className="rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground">{a}</span>)}</div>
             </div>
           )}
+        </section>
+      )}
+
+      {answers.length > 0 && (
+        <section className={CARD} aria-labelledby="answers-heading">
+          <h2 id="answers-heading" className="text-base font-semibold text-foreground">{shop.name} at a glance</h2>
+          <dl className="mt-3 divide-y divide-border">
+            {answers.map(([q, a]) => (
+              <div key={q} className="py-3 first:pt-0 last:pb-0">
+                <dt className="text-sm font-medium text-foreground">{q}</dt>
+                <dd className="mt-1 text-sm text-muted-foreground">{a}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       )}
 

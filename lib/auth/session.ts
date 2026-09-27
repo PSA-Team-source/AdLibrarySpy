@@ -6,6 +6,9 @@ import { query, one } from '@/lib/db';
 import { randomToken, hashToken } from './tokens';
 
 export const SESSION_COOKIE = 'ml_session';
+/** Readable "signed in on this browser" hint for edge-cached pages (One Tap on
+ *  the homepage stays quiet). Grants nothing: auth is only ever ml_session. */
+export const SIGNED_IN_HINT_COOKIE = 'als_in';
 const SESSION_DAYS = 30;
 
 export interface SessionUser {
@@ -34,6 +37,9 @@ export async function createSession(userId: string): Promise<string> {
     path: '/',
     maxAge: SESSION_DAYS * 86400,
   });
+  jar.set(SIGNED_IN_HINT_COOKIE, '1', {
+    httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_DAYS * 86400,
+  });
   return token;
 }
 
@@ -58,6 +64,7 @@ export async function destroySession(): Promise<void> {
     await query('UPDATE sessions SET revoked_at = now() WHERE token_hash = $1', [hashToken(token)]);
   }
   jar.delete(SESSION_COOKIE);
+  jar.delete(SIGNED_IN_HINT_COOKIE);
 }
 
 /** Revoke every session for a user — used after a password reset. */

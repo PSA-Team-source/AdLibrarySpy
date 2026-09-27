@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { UserRound, Users, KeyRound, LockKeyhole, Settings, CreditCard, History, Mail, type LucideIcon } from 'lucide-react';
+import { UserRound, Users, KeyRound, LockKeyhole, Settings, CreditCard, History, Mail, Bell, type LucideIcon } from 'lucide-react';
 import { PageShell } from '@/components/layouts/page-shell';
 import { SETTINGS_NAV, isNavActive } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,7 @@ const ICONS: Record<string, LucideIcon> = {
   '/settings/members': Users,
   '/settings/api': KeyRound,
   '/settings/newsletter': Mail,
+  '/settings/notifications': Bell,
   '/settings/activity': History,
 };
 

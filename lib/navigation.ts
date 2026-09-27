@@ -1,5 +1,5 @@
 import {
-  Home, ScanEye, Store, Clapperboard, Radio, TrendingUp, Folder, Users,
+  Home, ScanEye, Bookmark, Store, Package, Clapperboard, Radio, TrendingUp, Folder, Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -26,9 +26,11 @@ export const APP_NAV: NavSection[] = [
   { section: 'Overview', items: [
     { href: '/home', label: 'Home', icon: Home, description: 'Overview of your workspace' },
     { href: '/brandtracker', label: 'Brandtracker', icon: ScanEye, description: 'Brands you track and what changed' },
+    { href: '/searches', label: 'Saved searches', icon: Bookmark, description: 'Saved Shops and Ads filters, with email alerts' },
   ]},
   { section: 'Analyse', items: [
     { href: '/shops', label: 'Shops', icon: Store, description: 'Search the store index' },
+    { href: '/products', label: 'Products', icon: Package, description: 'Winning products: the products ads point at' },
     { href: '/ads', label: 'Ads', icon: Clapperboard, description: 'Browse the ad creative library' },
     { href: '/advertisers', label: 'Advertisers', icon: Radio, description: 'Brands ranked by creatives' },
     { href: '/trends', label: 'Trends', icon: TrendingUp, description: 'Trending niches, stores and products' },
@@ -50,6 +52,7 @@ export const SETTINGS_NAV: { href: string; label: string; description: string }[
   { href: '/settings/members', label: 'Members', description: 'Invite and manage teammates' },
   { href: '/settings/api', label: 'API', description: 'Keys for the AdLibrarySpy API' },
   { href: '/settings/newsletter', label: 'Newsletter', description: 'The Monday report by email' },
+  { href: '/settings/notifications', label: 'Notifications', description: 'Brandtracker and saved-search alert emails' },
 ];
 
 /** Active on exact match, or on a sub-route (`/shops/123` keeps Shops lit). */

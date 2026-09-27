@@ -1,0 +1,3 @@
+# Rendered by scripts/render-fb-video.mjs: captures + the two >10MB videos stay local.
+.work/
+*.mp4

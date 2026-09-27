@@ -1,0 +1,468 @@
+{
+  "captured_at": "2026-09-27T03:16:44.680Z",
+  "ads": [
+    {
+      "id": "i01",
+      "file_4x5": "i01.jpg",
+      "file_9x16": "i01_9x16.jpg",
+      "concept": "Big-number hook: one store's live Meta ad count, with its live-ads chart",
+      "store": "mellowsleep.com",
+      "primary_text": "mellow sleep has 15,706 Facebook ads live right now. I looked it up on AdLibrarySpy, the free ad spy tool I built for ecom sellers. Type any store and see its live Meta ads, traffic and products. Free, no credit card.",
+      "headline": "See every ad a store is running",
+      "description": "Live Meta ads for any store. Free, no card.",
+      "numbers_shown": [
+        {
+          "value": "15,706",
+          "source_page": "https://adlibraryspy.com/shops/shp_aecb59bd1b6966d51220ea2d79379d43"
+        }
+      ]
+    },
+    {
+      "id": "i02",
+      "file_4x5": "i02.jpg",
+      "file_9x16": "i02_9x16.jpg",
+      "concept": "Product UI hero: live Shops table with callouts on traffic, growth and ad columns",
+      "store": "Shops table (top stores by live ads)",
+      "primary_text": "This is the Shops table in AdLibrarySpy. Each row is a real store: its monthly visits (SimilarWeb), growth and how many Facebook ads it runs today. Right now mellowsleep.com is at the top with 15.7K ads. Sort by what matters to you and open any store. It's free, no card.",
+      "headline": "Every store's traffic and ads, free",
+      "description": "14.7M stores. No card needed.",
+      "numbers_shown": [
+        {
+          "value": "14,738,862",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "mellowsleep.com: 2.1M visits, +56.9%, 15.7K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "spiralbible.com: 248K visits, +12.4%, 10K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "resilia.shop: 9.9M visits, +52.9%, 8.8K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "skool.com: 37.7M visits, -0.7%, 8.1K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "puppies-yoga.com: 118K visits, -16.3%, 7.1K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        },
+        {
+          "value": "veinci.com: 119K visits, -8.8%, 7.1K ads",
+          "source_page": "https://adlibraryspy.com/shops"
+        }
+      ]
+    },
+    {
+      "id": "i03",
+      "file_4x5": "i03.jpg",
+      "file_9x16": "i03_9x16.jpg",
+      "concept": "Price comparison: TrendTrack plans vs AdLibrarySpy $0, claims from /vs/trendtrack",
+      "store": "TrendTrack comparison",
+      "primary_text": "TrendTrack costs $49 to $159 a month. AdLibrarySpy is free: live Meta ads, store traffic, products and a brandtracker with no brand cap, and your team joins free. TrendTrack still does things we don't (Google and TikTok ads), and our comparison page says so. If Meta ads are what you need, try it free.",
+      "headline": "$159/month vs $0",
+      "description": "A free TrendTrack alternative. No card.",
+      "numbers_shown": [
+        {
+          "value": "$49–$159/month (TrendTrack Starter–Business)",
+          "source_page": "https://adlibraryspy.com/vs/trendtrack"
+        },
+        {
+          "value": "2–20 tracked brands",
+          "source_page": "https://adlibraryspy.com/vs/trendtrack"
+        },
+        {
+          "value": "$29 per extra seat",
+          "source_page": "https://adlibraryspy.com/vs/trendtrack"
+        },
+        {
+          "value": "$0",
+          "source_page": "https://adlibraryspy.com/vs/trendtrack"
+        }
+      ]
+    },
+    {
+      "id": "i04",
+      "file_4x5": "i04.jpg",
+      "file_9x16": "i04_9x16.jpg",
+      "concept": "Listicle: top 5 stores adding the most Facebook ads this week (Monday report)",
+      "store": "smappliance.com, powercrunch.com, roostys.co, ea.com, antisocialsocialclub.com",
+      "primary_text": "Every Monday AdLibrarySpy lists the stores that added the most Facebook ads that week, with their measured traffic. This week SM Appliance added 251 ads. It's how I spot what's working before everyone copies it. Sign up free and switch the report on. No card.",
+      "headline": "Stores scaling their ads this week",
+      "description": "The free Monday report for ecom sellers.",
+      "numbers_shown": [
+        {
+          "value": "SM Appliance: +251 ads this week",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "344 ads running in the Meta Ad Library (+69%) · 309K visits in Aug 2026 (SimilarWeb)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "Power Crunch: +115 ads this week",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "114 ads running in the Meta Ad Library · 33K visits in Aug 2026 (SimilarWeb)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "Roosty's: +78 ads this week",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "99 ads running in the Meta Ad Library (+49%) · 110K visits in Aug 2026 (SimilarWeb)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "Official EA Site: +68 ads this week",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "137 ads running in the Meta Ad Library · 77M visits in Aug 2026 (SimilarWeb)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "AntiSocialSocialClub: +68 ads this week",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "154 ads running in the Meta Ad Library (+425%) · 183K visits in Aug 2026 (SimilarWeb)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        }
+      ]
+    },
+    {
+      "id": "i05",
+      "file_4x5": "i05.jpg",
+      "file_9x16": "i05_9x16.jpg",
+      "concept": "Product grid: 6 products from this month's fastest-growing stores, with store growth",
+      "store": "dysonoficial.com.br, optimallyorganic.com, cokodive.com, lamaretail.com, kleineskraftwerk.de, fcb.ch",
+      "primary_text": "These products come from stores whose traffic jumped the most this month (Dyson Brasil is up +331%). AdLibrarySpy ranks stores by measured SimilarWeb visits and shows what they sell, so you can see what's moving before you test it. Free, no card.",
+      "headline": "Products from stores that just grew",
+      "description": "Updated monthly from measured traffic. Free.",
+      "numbers_shown": [
+        {
+          "value": "Dyson Brasil +331% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "Optimally Organic-Fulvic Acid +328% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "COKODIVE +311% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "Lama Retail +293% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "Kleines Kraftwerk +245% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "Offizielle Website des FC Basel 1893 +165% visits MoM",
+          "source_page": "https://adlibraryspy.com/trending"
+        }
+      ]
+    },
+    {
+      "id": "i06",
+      "file_4x5": "i06.jpg",
+      "file_9x16": "i06_9x16.jpg",
+      "concept": "Competitor spy: Brandtracker table (traffic + live ads, daily snapshots)",
+      "store": "comfrt.com, gymshark.com, aloyoga.com, skims.com",
+      "primary_text": "Add a competitor to your Brandtracker and AdLibrarySpy records their traffic and live Facebook ads every day. You see when they scale up or pull back without checking the Ad Library by hand. There's no cap on brands, and your team can join free.",
+      "headline": "Track competitors' ads daily",
+      "description": "No brand cap. Free forever, no card.",
+      "numbers_shown": [
+        {
+          "value": "Comfrt: 16.1M visits, 3.6K live ads",
+          "source_page": "https://adlibraryspy.com/brandtracker"
+        },
+        {
+          "value": "Gymshark Official Store: 15.8M visits, 621 live ads",
+          "source_page": "https://adlibraryspy.com/brandtracker"
+        },
+        {
+          "value": "Alo Yoga: 11.8M visits, 622 live ads",
+          "source_page": "https://adlibraryspy.com/brandtracker"
+        },
+        {
+          "value": "SKIMS: 10.4M visits, 387 live ads",
+          "source_page": "https://adlibraryspy.com/brandtracker"
+        }
+      ]
+    },
+    {
+      "id": "i07",
+      "file_4x5": "i07.jpg",
+      "file_9x16": "i07_9x16.jpg",
+      "concept": "Native \"Notes app\" founder story",
+      "store": "—",
+      "primary_text": "I started ecom with $300. Ad spy tools cost $200/month, which was my whole ad budget, so I guessed and almost quit. So I built AdLibrarySpy, a free TrendTrack alternative: search live Meta ads, see the stores behind them, their traffic and products. Free, no credit card. If it saves one beginner from quitting, it's worth it.",
+      "headline": "The ad spy tool I couldn't afford",
+      "description": "A free TrendTrack alternative. No card.",
+      "numbers_shown": []
+    },
+    {
+      "id": "i08",
+      "file_4x5": "i08.jpg",
+      "file_9x16": "i08_9x16.jpg",
+      "concept": "Native social-post (tweet-style) founder note with 4 real ad creatives attached",
+      "store": "DMFIT Moda Fitness com os melhores preços e fabricação própria, Freemen Exclusive Collection, The Floral Atelier, Wander Prints Global",
+      "primary_text": "Ad spy tools cost $200/month when I started, and that was my whole ad budget. So I built a free one. AdLibrarySpy lets you browse real Facebook ads, click through to the store running them and see its traffic and products. No card, no trial clock.",
+      "headline": "So I built a free ad spy tool",
+      "description": "Search live Meta ads. Free, no card.",
+      "numbers_shown": []
+    },
+    {
+      "id": "i09",
+      "file_4x5": "i09.jpg",
+      "file_9x16": "i09_9x16.jpg",
+      "concept": "Search-bar hero: type a store, get its dossier (visits, live ads, products)",
+      "store": "gymshark.com",
+      "primary_text": "Type a store into AdLibrarySpy and you get its monthly visits (SimilarWeb), how many Facebook ads it's running, its products and the apps and pixels it uses. Gymshark Official Store: 15.8M visits a month, 621 live ads. Works for any of the 14.7M stores we index. Free, no card.",
+      "headline": "Type any store. See what's working.",
+      "description": "Traffic, live ads and products. Free.",
+      "numbers_shown": [
+        {
+          "value": "15.8M monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_f5f76c09a555263ff84346241947485a"
+        },
+        {
+          "value": "621 live Meta ads",
+          "source_page": "https://adlibraryspy.com/shops/shp_f5f76c09a555263ff84346241947485a"
+        },
+        {
+          "value": "2,443 products",
+          "source_page": "https://adlibraryspy.com/shops/shp_f5f76c09a555263ff84346241947485a"
+        }
+      ]
+    },
+    {
+      "id": "i10",
+      "file_4x5": "i10.jpg",
+      "file_9x16": "i10_9x16.jpg",
+      "concept": "Creative wall: grid of real ads from the ads library with a center message card",
+      "store": "RYZE Mushroom Coffee, DMFIT Moda Fitness com os melhores preços e fabricação própria, Freemen Exclusive Collection, The Floral Atelier, Wander Prints Global, Babylist, Brilliance: Diamonds, Engagement Rings & Fine Jewelry, Megelin, Inito Fertility Monitor, DeerRun® Official Store: Empowering Women in Fitness, Home Page, Rosegal",
+      "primary_text": "Every ad in the background is from AdLibrarySpy's ads library. Filter by niche, country, format or placement, save the ones you like, and click through to see the store behind each one, its traffic and its products. Free, no card.",
+      "headline": "Search real Facebook ads, free",
+      "description": "See the store behind every ad. No card.",
+      "numbers_shown": []
+    },
+    {
+      "id": "i11",
+      "file_4x5": "i11.jpg",
+      "file_9x16": "i11_9x16.jpg",
+      "concept": "Store dossier card: one store's visits, growth, live ads, pixels, apps and products",
+      "store": "resilia.shop",
+      "primary_text": "Resilia® gets 9.9M visits a month (+53%) and runs 8,787 Facebook ads. AdLibrarySpy shows that plus its products, 16 tracking pixels and 19 apps on one page. That's the whole playbook of a store in one look. Free, no card.",
+      "headline": "Everything a store runs on, one page",
+      "description": "Traffic, ads, products, pixels, apps. Free.",
+      "numbers_shown": [
+        {
+          "value": "9.9M monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_471db76327de2ce2c4bf84dd495406ba"
+        },
+        {
+          "value": "+53% month over month",
+          "source_page": "https://adlibraryspy.com/shops/shp_471db76327de2ce2c4bf84dd495406ba"
+        },
+        {
+          "value": "8,787 live Meta ads",
+          "source_page": "https://adlibraryspy.com/shops/shp_471db76327de2ce2c4bf84dd495406ba"
+        },
+        {
+          "value": "16 pixels",
+          "source_page": "https://adlibraryspy.com/shops/shp_471db76327de2ce2c4bf84dd495406ba"
+        },
+        {
+          "value": "19 apps & integrations",
+          "source_page": "https://adlibraryspy.com/shops/shp_471db76327de2ce2c4bf84dd495406ba"
+        }
+      ]
+    },
+    {
+      "id": "i12",
+      "file_4x5": "i12.jpg",
+      "file_9x16": "i12_9x16.jpg",
+      "concept": "Tech-stack reveal: the pixels and apps a competitor runs (dossier card crop)",
+      "store": "glovbeauty.com",
+      "primary_text": "Want to know which reviews app, email tool or pixels a store uses? AdLibrarySpy lists them on every store page. glovbeauty.com runs 10 pixels and 19 apps, right next to its traffic and live Facebook ads. Free, no card.",
+      "headline": "See the apps behind any store",
+      "description": "Pixels, apps and integrations. Free.",
+      "numbers_shown": [
+        {
+          "value": "10 pixels",
+          "source_page": "https://adlibraryspy.com/shops/shp_d392d7ff8150bcf16b644b2bf2cdbcdc"
+        },
+        {
+          "value": "19 apps & integrations",
+          "source_page": "https://adlibraryspy.com/shops/shp_d392d7ff8150bcf16b644b2bf2cdbcdc"
+        }
+      ]
+    },
+    {
+      "id": "i13",
+      "file_4x5": "i13.jpg",
+      "file_9x16": "i13_9x16.jpg",
+      "concept": "Two-panel meme (no/yes format), text-only, tasteful",
+      "store": "—",
+      "primary_text": "Stop paying every month just to see what's working. AdLibrarySpy is a free ad spy tool for ecom: search live Meta ads, see the Shopify stores behind them, their traffic and top products, and spot winners early. Free forever, no credit card.",
+      "headline": "Stop paying to see what's working",
+      "description": "Free ad spy for ecom. No card.",
+      "numbers_shown": []
+    },
+    {
+      "id": "i14",
+      "file_4x5": "i14.jpg",
+      "file_9x16": "i14_9x16.jpg",
+      "concept": "Before/after traffic curve: one store's 3-month visits climb (dossier chart)",
+      "store": "emmafy.com",
+      "primary_text": "Emmafy went from 765K to 2.9M monthly visits in two months (SimilarWeb). AdLibrarySpy shows every store's traffic trend next to its live Facebook ads, so you can see which products are taking off while it's still early. Free, no card.",
+      "headline": "Spot stores before they blow up",
+      "description": "Store traffic trends next to live ads. Free.",
+      "numbers_shown": [
+        {
+          "value": "765K monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_c32fcc80c12d596ae3063fdf18795fdb"
+        },
+        {
+          "value": "1.1M monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_c32fcc80c12d596ae3063fdf18795fdb"
+        },
+        {
+          "value": "2.9M monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_c32fcc80c12d596ae3063fdf18795fdb"
+        },
+        {
+          "value": "+156% MoM",
+          "source_page": "https://adlibraryspy.com/shops/shp_c32fcc80c12d596ae3063fdf18795fdb"
+        }
+      ]
+    },
+    {
+      "id": "i15",
+      "file_4x5": "i15.jpg",
+      "file_9x16": "i15_9x16.jpg",
+      "concept": "Newest winner: a store created weeks ago that already draws real traffic (calendar card)",
+      "store": "lichtbild.com",
+      "primary_text": "Lichtbild (lichtbild.com) was created on July 17, 2026 and had 322K visits in Aug (SimilarWeb). AdLibrarySpy's Monday report lists new stores like this every week, so you see them before everyone else does. Free, no card.",
+      "headline": "This store is 10 weeks old",
+      "description": "Find new stores while they're still new.",
+      "numbers_shown": [
+        {
+          "value": "created 2026-07-17",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "322K visits in Aug 2026",
+          "source_page": "https://adlibraryspy.com/weekly"
+        },
+        {
+          "value": "10 weeks old (created → capture date)",
+          "source_page": "https://adlibraryspy.com/weekly"
+        }
+      ]
+    },
+    {
+      "id": "i16",
+      "file_4x5": "i16.jpg",
+      "file_9x16": "i16_9x16.jpg",
+      "concept": "Niche trend: how many stores in one niche grew 50%+ last month (Trends card)",
+      "store": "Beauty & Fitness › Face & Body Care",
+      "primary_text": "1,953 Face & Body Care stores grew their traffic 50% or more last month (24% of the ones we measure). AdLibrarySpy ranks every niche this way from SimilarWeb data and shows the stores leading each one. Pick your next niche from data, not guesses. Free, no card.",
+      "headline": "See which niches are heating up",
+      "description": "Measured traffic, updated monthly. Free.",
+      "numbers_shown": [
+        {
+          "value": "1,953 Face & Body Care stores grew 50%+",
+          "source_page": "https://adlibraryspy.com/trending"
+        },
+        {
+          "value": "24% of 8,058 measured stores",
+          "source_page": "https://adlibraryspy.com/trending"
+        }
+      ]
+    },
+    {
+      "id": "i17",
+      "file_4x5": "i17.jpg",
+      "file_9x16": "i17_9x16.jpg",
+      "concept": "Scale statement: size of the store index over a typographic wall of real store domains",
+      "store": "index",
+      "primary_text": "AdLibrarySpy indexes 14,738,862 online stores. Filter by niche, country, traffic, growth, product count and the apps they run, then open any store to see its live Facebook ads. It's how I find stores worth studying. Free, no card.",
+      "headline": "14.7M stores, one free search",
+      "description": "Filter by niche, traffic, growth and ads.",
+      "numbers_shown": [
+        {
+          "value": "14,738,862",
+          "source_page": "https://adlibraryspy.com/shops"
+        }
+      ]
+    },
+    {
+      "id": "i18",
+      "file_4x5": "i18.jpg",
+      "file_9x16": "i18_9x16.jpg",
+      "concept": "Advertiser spotlight: the Facebook page with the most live ads, with one of its real creatives",
+      "store": "RYZE Superfoods",
+      "primary_text": "RYZE Superfoods has 20,360 Facebook ads live and launched 41 new ones in the last 14 days. On AdLibrarySpy you can see every advertiser like this, sorted by how many ads they run, with their landing pages and the store behind them. Free, no card.",
+      "headline": "RYZE runs 20,360 ads",
+      "description": "See every ad any brand runs. Free.",
+      "numbers_shown": [
+        {
+          "value": "20,360 live ads",
+          "source_page": "https://adlibraryspy.com/advertisers"
+        },
+        {
+          "value": "41 ads launched in 14 days",
+          "source_page": "https://adlibraryspy.com/advertisers"
+        },
+        {
+          "value": "614K followers",
+          "source_page": "https://adlibraryspy.com/advertisers"
+        }
+      ]
+    },
+    {
+      "id": "i19",
+      "file_4x5": "i19.jpg",
+      "file_9x16": "i19_9x16.jpg",
+      "concept": "Checklist: everything included free (from the comparison page), no plans or credits",
+      "store": "—",
+      "primary_text": "Everything in AdLibrarySpy is free for every workspace: the Meta ads library, store traffic, daily live-ad counts, products, pixels and apps, a Brandtracker with no brand cap and free seats for your team. There are no plans, trials or credits, and you don't need a card.",
+      "headline": "Every feature free. No card.",
+      "description": "No plans, no trial clock, no credits.",
+      "numbers_shown": []
+    },
+    {
+      "id": "i20",
+      "file_4x5": "i20.jpg",
+      "file_9x16": "i20_9x16.jpg",
+      "concept": "How-it-works storyboard: 3 steps on one store (find it, see traffic + ads, see products)",
+      "store": "macorner.co",
+      "primary_text": "Here's how I research a competitor: search the store, check its traffic and live Facebook ads, then look at what it sells. Macorner: 1.3M visits a month, 5,227 ads live. AdLibrarySpy puts all three on one page, for any store. Free, no card.",
+      "headline": "Research any competitor in 3 steps",
+      "description": "Search a store. See traffic, ads, products.",
+      "numbers_shown": [
+        {
+          "value": "1.3M monthly visits",
+          "source_page": "https://adlibraryspy.com/shops/shp_8c5625728a4b90a12c1deafaad98a716"
+        },
+        {
+          "value": "5,227 live Meta ads",
+          "source_page": "https://adlibraryspy.com/shops/shp_8c5625728a4b90a12c1deafaad98a716"
+        }
+      ]
+    }
+  ]
+}

@@ -20,18 +20,18 @@ export function PlatformIcon({ platform, className = 'w-4 h-4' }: { platform: st
   }
 }
 
-/** Rank pill — top three get a filled badge, the rest plain numerals. */
+/** Rank — top three get a filled capsule, the rest plain numerals. */
 export function RankBadge({ rank }: { rank: number }) {
   if (rank <= 3) {
-    const shade = rank === 1 ? 'bg-foreground' : rank === 2 ? 'bg-foreground/80' : 'bg-foreground/60';
+    const shade = rank === 1 ? 'bg-foreground' : rank === 2 ? 'bg-foreground/75' : 'bg-foreground/55';
     return (
-      <div className={`w-6 h-6 ${shade} rounded-full flex items-center justify-center text-xs font-bold shadow-lg text-background`}>
+      <div className={`h-6 min-w-6 ${shade} inline-flex items-center justify-center rounded-full px-1.5 text-[13px] font-semibold tabular-nums text-background`}>
         {rank}
       </div>
     );
   }
   return (
-    <div className="w-6 h-6 flex items-center justify-center text-xs font-medium text-muted-foreground">
+    <div className="inline-flex h-6 min-w-6 items-center justify-center text-[13px] font-medium tabular-nums text-muted-foreground">
       {rank}
     </div>
   );

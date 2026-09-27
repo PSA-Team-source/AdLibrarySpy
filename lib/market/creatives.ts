@@ -1,6 +1,6 @@
 // Ad creatives, mapped from the market index (Elastic-backed creatives store).
 // Requires the service token (see lib/market/token.ts).
-import type { Ad, CountryShare, MetaPage } from '@/lib/types';
+import type { Ad, CountryShare } from '@/lib/types';
 import { marketGet, unwrapItems, unwrapTotal } from './client';
 import { cleanDomain, displayBrand } from './shops';
 import { EU_UK_COUNTRIES, AD_SORTS, type AdSort } from './ad-options';
@@ -236,6 +236,21 @@ export async function listAds(f: AdFilter = {}): Promise<AdPage> {
     return out;
   };
 
+  // hasMedia makes the index return only renderable creatives, and every other
+  // filter is applied by the index, so a logical page IS an API page: one call.
+  // Walking API pages 1..N serially to reach page N cost N cold calls (page 50:
+  // ~3.4s) and stopped at MAX_API_PAGES, so every page past 24 rendered empty.
+  if (!localOnly) {
+    const p = new URLSearchParams(base);
+    p.set('limit', String(limit));
+    p.set('page', String(page));
+    const payload = await marketGet(`/adlibs/findproduct/creatives-es/${mode}?${p}`, { auth: true, revalidate: 300 });
+    const raw = unwrapItems(payload);
+    const items = localFilters(raw.map(mapCreative).filter(ad => ad.id && ad.image));
+    const total = unwrapTotal(payload);
+    return { items, total, page, limit, hasMore: total !== null ? page * limit < total : raw.length === limit };
+  }
+
   const need = page * limit;
   const collected: Ad[] = [];
   let total: number | null = null;
@@ -397,34 +412,6 @@ export async function storeAdPreviews(domains: string[], limit = 3): Promise<Map
     }
   } catch {
     // Preview media is optional; the shop rows still render without it.
-  }
-  return out;
-}
-
-/**
- * The Facebook page behind each store's ads (most live ads, then most ads), so
- * the Meta Ad Library opens on that page instead of a keyword search that also
- * matches other advertisers. Domains with no creatives are absent. Not cached
- * here: the API caches it, and a per-page-of-rows key would only grow Next's
- * fetch cache.
- */
-export async function storeMetaPages(domains: string[]): Promise<Map<string, MetaPage>> {
-  // Keyed by the domain exactly as passed in; the API answers under the bare host.
-  const bare = (d: string) => cleanDomain(d).replace(/^www\./, '');
-  const unique = [...new Set(domains.map(bare).filter(Boolean))].slice(0, 50);
-  const out = new Map<string, MetaPage>();
-  if (!unique.length) return out;
-  try {
-    const payload = await marketGet(`/adlibs/findproduct/creatives-es/pages?domains=${encodeURIComponent(unique.join(','))}`, {
-      auth: true, revalidate: 0, retries: 1,
-    });
-    const data = ((payload as { data?: unknown })?.data ?? {}) as Record<string, { page_id?: string; page_name?: string }>;
-    for (const d of domains) {
-      const p = data[bare(d)];
-      if (p?.page_id) out.set(d, { id: String(p.page_id), name: String(p.page_name ?? '') });
-    }
-  } catch {
-    // Optional: without it the row links to a keyword search instead.
   }
   return out;
 }

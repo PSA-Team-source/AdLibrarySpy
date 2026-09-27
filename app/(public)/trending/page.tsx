@@ -4,7 +4,8 @@ import { Suspense } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { ShareButton } from '@/components/market/ShareButton';
 import { nichePathsById } from '@/lib/seo/directory';
-import { signupFor, storePath } from '@/lib/public/site';
+import { SITE_URL, signupFor, storePath } from '@/lib/public/site';
+import { JsonLd } from '@/components/public/PublicCards';
 import { NichesSection, ProductsSection, RisersSection, Skeleton, type TrendLinks } from '@/app/(app)/trends/sections';
 
 // Public, shareable twin of the signed-in /trends screen: the same measured
@@ -29,6 +30,17 @@ export default async function TrendingPage() {
   };
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
+      <JsonLd data={{
+        '@context': 'https://schema.org',
+        '@graph': [
+          { '@type': 'CollectionPage', '@id': `${SITE_URL}/trending`, url: `${SITE_URL}/trending`, name: 'Trending Shopify niches, stores and products this month',
+            description: metadata.description, isPartOf: { '@id': `${SITE_URL}/#website` } },
+          { '@type': 'BreadcrumbList', itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'AdLibrarySpy', item: SITE_URL },
+            { '@type': 'ListItem', position: 2, name: 'Trending', item: `${SITE_URL}/trending` },
+          ] },
+        ],
+      }} />
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">Trending on Shopify</p>

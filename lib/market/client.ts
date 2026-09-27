@@ -1,57 +1,112 @@
 // HTTP client for the PlatformDTC market API (Go, internal/market).
-// Retries idempotent GETs on transient failure; surfaces everything else so a
-// page renders an explicit error state rather than silently-empty data.
-import { marketToken } from './token';
+//
+// The Go API is restarted by every backend deploy (several an hour on busy days), and
+// each restart closes :5900 for ~1–20s. Reads must ride that out, never fail the page:
+//   1. transient failures (connection refused/reset, timeout, 429, 5xx) retry with
+//      backoff until a deadline (OUTAGE_BUDGET_MS) rather than a fixed small count;
+//   2. every successful read is remembered (bounded LRU), and if the API is still
+//      down when the budget runs out, the last good copy is served. With a copy in
+//      hand the budget is short (STALE_BUDGET_MS) so a restart costs latency, not a page.
+// 4xx (except 429) is a real answer ("not found", our bug) and is thrown at once.
 
 const BASE = process.env.MARKET_API_BASE || 'https://api.platformdtc.com/api/v1';
 const TIMEOUT_MS = Number(process.env.MARKET_TIMEOUT_MS || 12_000);
+const OUTAGE_BUDGET_MS = Number(process.env.MARKET_OUTAGE_BUDGET_MS || 25_000);
+const STALE_BUDGET_MS = Number(process.env.MARKET_STALE_BUDGET_MS || 2_500);
+const LAST_GOOD_MAX = 1_500;              // entries, per process
+const LAST_GOOD_MAX_BYTES = 2_000_000;    // don't pin huge payloads in memory
 
 export class MarketError extends Error {
-  constructor(public readonly status: number, public readonly path: string, msg?: string) {
+  readonly status: number;
+  readonly path: string;
+  constructor(status: number, path: string, msg?: string) {
     super(msg || `market ${path} → ${status}`);
     this.name = 'MarketError';
+    this.status = status;
+    this.path = path;
   }
 }
 
 export interface GetOpts {
   auth?: boolean;
   revalidate?: number;
+  /** Any value marks an optional read (a headline count etc.): retry only briefly
+   *  (STALE_BUDGET_MS) and let the caller degrade, instead of holding the page. */
   retries?: number;
 }
 
-export async function marketGet<T = unknown>(path: string, opts: GetOpts = {}): Promise<T> {
-  const { auth = false, revalidate = 300, retries = 2 } = opts;
+// ponytail: per-process LRU (pm2 cluster x4 → each worker warms its own). Upgrade path is
+// Redis if a cold worker serving through a restart ever matters.
+const g = globalThis as unknown as { __ML_LAST_GOOD?: Map<string, unknown> };
+const lastGood = (g.__ML_LAST_GOOD ??= new Map<string, unknown>());
+
+function remember(key: string, value: unknown) {
+  lastGood.delete(key);
+  lastGood.set(key, value);
+  if (lastGood.size > LAST_GOOD_MAX) lastGood.delete(lastGood.keys().next().value as string);
+}
+
+/** Retry-worthy: the request never got a real answer (network, timeout, overload, restart). */
+export function isTransient(err: unknown): boolean {
+  if (err instanceof MarketError) return err.status === 0 || err.status === 429 || err.status >= 500;
+  return true; // fetch TypeError (ECONNREFUSED/ECONNRESET), AbortError (timeout), bad JSON mid-restart
+}
+
+export async function marketRequest<T>(
+  method: 'GET' | 'POST',
+  path: string,
+  opts: { auth?: boolean; revalidate?: number; body?: unknown; optional?: boolean } = {},
+  deps: { fetchImpl?: typeof fetch; now?: () => number; sleep?: (ms: number) => Promise<void> } = {},
+): Promise<T> {
+  const doFetch = deps.fetchImpl ?? fetch;
+  const now = deps.now ?? Date.now;
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>(r => setTimeout(r, ms)));
+  const body = opts.body === undefined ? undefined : JSON.stringify(opts.body);
+  const key = `${method} ${path} ${body ?? ''}`;
+  const stale = lastGood.get(key);
+  const deadline = now() + (stale !== undefined || opts.optional ? STALE_BUDGET_MS : OUTAGE_BUDGET_MS);
+
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (auth) headers.Authorization = `Bearer ${await marketToken()}`;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (opts.auth) {
+    // Lazy so the retry logic stays importable by `node --test` (tests/market-client.test.mjs).
+    const { marketToken } = await import('./token');
+    headers.Authorization = `Bearer ${await marketToken()}`;
+  }
 
   let lastErr: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
+  for (let attempt = 0; ; attempt++) {
     const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+    const timer = setTimeout(() => ac.abort(), Math.max(1_000, Math.min(TIMEOUT_MS, deadline - now())));
     try {
-      const res = await fetch(`${BASE}${path}`, {
-        headers,
-        signal: ac.signal,
-        next: { revalidate },
+      const res = await doFetch(`${BASE}${path}`, {
+        method, headers, body, signal: ac.signal,
+        next: { revalidate: opts.revalidate ?? 300 },
       } as RequestInit);
-      if (res.ok) return (await res.json()) as T;
-
-      // 4xx (except 429) is our bug or a genuine "not found" — don't retry.
-      if (res.status < 500 && res.status !== 429) {
-        throw new MarketError(res.status, path);
-      }
-      lastErr = new MarketError(res.status, path);
+      if (!res.ok) throw new MarketError(res.status, path);
+      const text = await res.text();
+      const value = JSON.parse(text) as T;
+      if (text.length <= LAST_GOOD_MAX_BYTES) remember(key, value);
+      return value;
     } catch (err) {
-      if (err instanceof MarketError && err.status < 500 && err.status !== 429) throw err;
+      if (!isTransient(err)) throw err;
       lastErr = err;
     } finally {
       clearTimeout(timer);
     }
-    if (attempt < retries) {
-      await new Promise(r => setTimeout(r, 250 * 2 ** attempt));
-    }
+    const wait = Math.min(1_500, 200 * 2 ** attempt);
+    if (now() + wait >= deadline) break;
+    await sleep(wait);
+  }
+  if (stale !== undefined) {
+    console.warn(`[market] ${key.trim()} unavailable (${String((lastErr as Error)?.message ?? lastErr)}); serving last good copy`);
+    return stale as T;
   }
   throw lastErr instanceof Error ? lastErr : new MarketError(0, path, String(lastErr));
+}
+
+export function marketGet<T = unknown>(path: string, opts: GetOpts = {}): Promise<T> {
+  return marketRequest<T>('GET', path, { auth: opts.auth, revalidate: opts.revalidate, optional: opts.retries !== undefined });
 }
 
 /** Unwrap the API's `{data:{items:[…]}}` / `{data:[…]}` / `[…]` shapes. */
@@ -82,28 +137,11 @@ export function unwrapTotal(payload: unknown): number | null {
 
 export function marketBase(): string { return BASE; }
 
-/** POST variant — /top-brands/filter takes its criteria as a JSON body. */
-export async function marketPost<T = unknown>(
+/** POST variant — /top-brands/filter takes its criteria as a JSON body (a read, so safe to retry). */
+export function marketPost<T = unknown>(
   path: string,
   body: unknown,
   opts: { auth?: boolean; revalidate?: number } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json', 'Content-Type': 'application/json' };
-  if (opts.auth) headers.Authorization = `Bearer ${await marketToken()}`;
-
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
-  try {
-    const res = await fetch(`${BASE}${path}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: ac.signal,
-      next: { revalidate: opts.revalidate ?? 300 },
-    } as RequestInit);
-    if (!res.ok) throw new MarketError(res.status, path);
-    return (await res.json()) as T;
-  } finally {
-    clearTimeout(timer);
-  }
+  return marketRequest<T>('POST', path, { ...opts, body });
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "tour",
+    "store": "comfrt.com",
+    "angle": "product-tour",
+    "duration": 19.5,
+    "files": [
+      {
+        "file": "tour-20260927.mp4",
+        "bytes": 2281790,
+        "kbps": 964
+      },
+      {
+        "file": "tour-20260927.webm",
+        "bytes": 1854374,
+        "kbps": 748
+      },
+      {
+        "file": "tour-20260927-m.mp4",
+        "bytes": 1072757,
+        "kbps": 452
+      },
+      {
+        "file": "tour-20260927-m.webm",
+        "bytes": 880173,
+        "kbps": 354
+      },
+      {
+        "file": "tour-20260927.webp",
+        "bytes": 59568
+      }
+    ],
+    "numbers_shown": [
+      {
+        "value": "comfrt.com in the shops explorer: 16.1M visits, 3.6K live ads",
+        "source_page": "https://adlibraryspy.com/shops?q=comfrt.com"
+      },
+      {
+        "value": "10.8M (June) → 16.1M (August) monthly visits, SimilarWeb",
+        "source_page": "https://adlibraryspy.com/shops/shp_982d18d8a0edfe514f9c0967051c32b4"
+      },
+      {
+        "value": "best sellers #1-#6: $99.00, $49.00, $25.00, $29.00, $19.00, $25.00",
+        "source_page": "https://adlibraryspy.com/shops/shp_982d18d8a0edfe514f9c0967051c32b4"
+      },
+      {
+        "value": "2,403 (Sep 16) → 3,639 (Sep 25) live Meta ads",
+        "source_page": "https://adlibraryspy.com/shops/shp_982d18d8a0edfe514f9c0967051c32b4"
+      },
+      {
+        "value": "Brandtracker: Comfrt 16.1M visits, 3.6K live ads",
+        "source_page": "https://adlibraryspy.com/brandtracker"
+      },
+      {
+        "value": "14.7M stores indexed",
+        "source_page": "https://adlibraryspy.com/shops"
+      }
+    ],
+    "captured_at": "2026-09-27T03:47:58.515Z",
+    "shared_captured_at": "2026-09-27T03:45:04.350Z"
+  }
+]

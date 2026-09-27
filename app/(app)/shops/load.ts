@@ -3,8 +3,8 @@
 // by the server render of /shops (first paint) and GET /api/shops (every
 // filter, sort and page change after it), so both always return the same rows.
 import type { Ctx } from '@/lib/auth/guard';
-import type { MetaPage, Shop, ShopRow } from '@/lib/types';
-import { queryShops, favoriteIds, storeMetaPages } from '@/lib/data';
+import type { Shop, ShopRow } from '@/lib/types';
+import { queryShops, favoriteIds } from '@/lib/data';
 import { applyCrux, countShops } from '@/lib/market/shops';
 import { shopRowSignals, applyRowSignals } from '@/lib/market/shop-signals';
 import { hiddenShopIds, storeIdOf, trackedShopIdList, viewedShopIds } from './data';
@@ -47,7 +47,7 @@ function createdAfter(value: string | undefined) {
   return new Date(Date.now() - days[value] * 86_400_000).toISOString();
 }
 
-function toRow(s: Shop, saved: boolean, viewed: boolean, metaPage: MetaPage | null): ShopsRow {
+function toRow(s: Shop, saved: boolean, viewed: boolean): ShopsRow {
   return {
     id: s.id, name: s.name, domain: s.domain, fullTitle: s.fullTitle, screenshot: s.screenshot,
     logo: s.logo, country: s.country, platform: s.platform, createdOn: s.createdOn,
@@ -59,11 +59,12 @@ function toRow(s: Shop, saved: boolean, viewed: boolean, metaPage: MetaPage | nu
     trafficSeries: s.trafficSeries, metaAds: s.metaAds,
     targetedCountries: s.targetedCountries, liveAdsSeries: s.liveAdsSeries,
     visitsGrowth: s.visitsGrowth, avgPrice: s.avgPrice, maxAds7d: s.maxAds7d,
-    metaPage, saved, viewed,
+    saved, viewed,
   };
 }
 
-export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>): Promise<ShopsPayload> {
+/** `limit` is the page size: the explorer uses PAGE_SIZE, the CSV export up to 100 (the index's cap). */
+export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>, limit = PAGE_SIZE): Promise<ShopsPayload> {
   const page = Math.max(1, num(sp.page) ?? 1);
   const showHidden = sp.hidden === 'show';
 
@@ -98,7 +99,7 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
     visitorCountry: sp.visitorCountry, createdAfter: createdAfter(sp.created),
     pixels: sp.pixel ? [sp.pixel] : undefined, tech: sp.tech ? [sp.tech] : undefined,
     storeIds: keepIds?.map(storeIdOf), excludeStoreIds: keepIds ? undefined : [...drop].map(storeIdOf),
-    sort: sp.sort, dir: sp.dir, view: sp.view, page, limit: PAGE_SIZE,
+    sort: sp.sort, dir: sp.dir, view: sp.view, page, limit,
   };
   const none = keepIds && keepIds.length === 0;
   // The list defaults to Shopify; the headline counts every platform under the
@@ -114,17 +115,15 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
   const rows = res.items.filter(s => !drop.has(s.id) && (!keepIds || keepIds.includes(s.id)));
 
   // Both are per-row lookups keyed off the page; neither needs the other.
-  const [signals, pages] = await Promise.all([
-    shopRowSignals(rows.map(s => s.storeId)), storeMetaPages(rows.map(s => s.domain)), applyCrux(rows),
-  ]);
+  const [signals] = await Promise.all([shopRowSignals(rows.map(s => s.storeId)), applyCrux(rows)]);
 
   return {
-    rows: rows.map(s => toRow(applyRowSignals(s, signals.get(s.storeId)), savedSet.has(s.id), viewedSet.has(s.id), pages.get(s.domain) ?? null)),
+    rows: rows.map(s => toRow(applyRowSignals(s, signals.get(s.storeId)), savedSet.has(s.id), viewedSet.has(s.id))),
     total: res.total,
     allPlatformsTotal: allPlatforms ?? null,
     page,
-    limit: PAGE_SIZE,
-    hasMore: res.items.length === PAGE_SIZE,
+    limit,
+    hasMore: res.items.length === limit,
     hiddenCount: hidden.length,
   };
 }

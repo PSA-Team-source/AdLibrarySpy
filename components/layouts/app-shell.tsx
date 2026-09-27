@@ -7,13 +7,17 @@ import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-
 import { useTheme } from 'next-themes';
 import { Command } from 'cmdk';
 import {
-  ChevronDown, ChevronRight, Home, LogOut, Menu, Moon, Search, Settings, Sun, User,
+  ChevronDown, ChevronRight, Home, LogOut, Menu, MessageSquare, Moon, Search, Settings, Sun, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { markAppNavigation } from '@/lib/app-history';
 import { logoutAction } from '@/lib/auth/actions';
 import { APP_NAV, SETTINGS_NAV, isNavActive, type NavItem } from '@/lib/navigation';
 import { BrandMark } from '@/components/brand/brand-mark';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { AgentSkillAnnouncement } from '@/components/AgentSkillAnnouncement';
+import { GitHubMark } from '@/components/public/OpenSourceAnnouncement';
+import { REPO_URL } from '@/lib/public/site';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
@@ -35,7 +39,7 @@ import {
  */
 
 // Keep in sync with the pages that render `PageShell fullHeight`.
-const FULL_HEIGHT_ROUTES = new Set(['/shops', '/ads']);
+const FULL_HEIGHT_ROUTES = new Set(['/shops', '/ads', '/products']);
 
 // Hover/touch upgrades the nav link to a FULL prefetch, so the screen's data is
 // already on its way from us-east-1 when the click lands (PlatformDTC does the
@@ -50,6 +54,8 @@ export interface AppShellProps {
   /** Every workspace the user belongs to; more than one shows the switcher. */
   workspaces?: { id: string; name: string }[];
   trackers: number;
+  /** False once the user dismissed the agent-skill announcement (cookie read by the layout). */
+  skillAnnouncement?: boolean;
   children: React.ReactNode;
 }
 
@@ -67,10 +73,11 @@ function switchWorkspace(to: string, next: string) {
   form.submit();
 }
 
-export function AppShell({ user, workspace, workspaces = [], trackers, children }: AppShellProps) {
+export function AppShell({ user, workspace, workspaces = [], trackers, skillAnnouncement = true, children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Route change closes the drawer.
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -103,7 +110,7 @@ export function AppShell({ user, workspace, workspaces = [], trackers, children 
   }, [mobileOpen]);
 
   const isFullHeight = FULL_HEIGHT_ROUTES.has(pathname);
-  const sidebar = <SidebarInner pathname={pathname} trackers={trackers} user={user} />;
+  const sidebar = <SidebarInner pathname={pathname} trackers={trackers} user={user} onFeedback={() => setFeedbackOpen(true)} />;
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
@@ -124,6 +131,7 @@ export function AppShell({ user, workspace, workspaces = [], trackers, children 
         workspaces={workspaces}
         onMobileMenu={() => setMobileOpen(true)}
         onOpenCommand={() => setCommandOpen(true)}
+        onFeedback={() => setFeedbackOpen(true)}
       />
 
       {/* Mobile drawer */}
@@ -163,10 +171,11 @@ export function AppShell({ user, workspace, workspaces = [], trackers, children 
             : { marginTop: 'var(--app-chrome-top)', height: 'calc(100dvh - var(--app-chrome-top))' }
         }
       >
-        {isFullHeight ? children : <div className="app-content-inner mx-4 py-6 pb-24 lg:mx-8">{children}</div>}
+        {isFullHeight ? children : <div className="app-content-inner mx-4 py-6 pb-24 lg:mx-8">{skillAnnouncement && <AgentSkillAnnouncement />}{children}</div>}
       </div>
 
       <CommandSearch open={commandOpen} onOpenChange={setCommandOpen} />
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
       <NavIdlePrefetch />
     </div>
   );
@@ -254,11 +263,12 @@ function NavLink({ it, pathname, trackers, nested = false }: {
 }
 
 function SidebarInner({
-  pathname, trackers, user,
+  pathname, trackers, user, onFeedback,
 }: {
   pathname: string;
   trackers: number;
   user: { name: string; email: string };
+  onFeedback: () => void;
 }) {
   // Expandable groups (Favorites, Team) start collapsed, except the one holding
   // the current screen, so the active row is never hidden. A click overrides.
@@ -306,6 +316,23 @@ function SidebarInner({
 
       <div className="flex-1" />
 
+      <div className="shrink-0 px-2 pb-1">
+        <ul className="flex flex-col gap-0.5">
+          <li>
+            <button type="button" onClick={onFeedback} className={rowClass(false) + ' w-full'}>
+              <MessageSquare className="h-[18px] w-[18px] flex-shrink-0" />
+              <span className="flex-1 text-left text-sm leading-snug">Feedback</span>
+            </button>
+          </li>
+          <li>
+            <a href={REPO_URL} target="_blank" rel="noopener" className={rowClass(false)}>
+              <GitHubMark className="h-[18px] w-[18px] flex-shrink-0" />
+              <span className="flex-1 text-sm leading-snug">GitHub</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
       <div className="sticky bottom-0 shrink-0 border-t border-[var(--border-subtle)] bg-[var(--chrome-bg)] px-2 py-2">
         <Link
           href="/settings/account"
@@ -330,13 +357,14 @@ function SidebarInner({
 // --- Header ----------------------------------------------------------------
 
 function AppHeader({
-  user, workspace, workspaces, onMobileMenu, onOpenCommand,
+  user, workspace, workspaces, onMobileMenu, onOpenCommand, onFeedback,
 }: {
   user: { name: string; email: string };
   workspace: { id: string; name: string };
   workspaces: { id: string; name: string }[];
   onMobileMenu: () => void;
   onOpenCommand: () => void;
+  onFeedback: () => void;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -492,6 +520,14 @@ function AppHeader({
                 <Link href="/settings/account" className="flex cursor-pointer items-center gap-2">
                   <Settings className="h-3.5 w-3.5" /> Settings
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={onFeedback} className="flex cursor-pointer items-center gap-2">
+                <MessageSquare className="h-3.5 w-3.5" /> Send feedback
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={REPO_URL} target="_blank" rel="noopener" className="flex cursor-pointer items-center gap-2">
+                  <GitHubMark className="h-3.5 w-3.5" /> GitHub
+                </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* A server action, so sign-out works before hydration too. */}

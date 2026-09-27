@@ -16,7 +16,7 @@ import { CreativeCard } from '@/components/market/CreativeCard';
 import { requireCtx } from '@/lib/auth/guard';
 import { growthTitle, trafficCaption, trafficTitle } from '@/lib/traffic/similarweb';
 import { PageShell } from '@/components/layouts/page-shell';
-import TrendChart from './trend-chart';
+import TrendChart from '@/components/market/TrendChart';
 import ProductsPanel from './products-panel';
 import { ShareButton } from '@/components/market/ShareButton';
 import { storePath } from '@/lib/public/site';
@@ -90,7 +90,8 @@ async function StorefrontProducts({ factsP, shop }: { factsP: Promise<Storefront
   const facts = await factsP;
   const fallback = facts?.currency ? shop.bestSellers.map(p => ({ ...p, currency: facts.currency })) : shop.bestSellers;
   const count = facts?.productCount ?? (shop.productCount > 0 ? shop.productCount : null);
-  return <ProductsPanel count={count} bestSelling={facts?.bestSelling ?? []} latest={facts?.latest ?? []} fallback={fallback} />;
+  return <ProductsPanel count={count} bestSelling={facts?.bestSelling ?? []} latest={facts?.latest ?? []} fallback={fallback}
+    catalog={facts?.catalog ?? []} domain={shop.domain} />;
 }
 
 export default async function ShopDossier({ params }: { params: Promise<{ id: string }> }) {

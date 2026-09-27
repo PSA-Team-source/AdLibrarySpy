@@ -1,6 +1,8 @@
 // Pure CrUX band + traffic-credibility helpers, split from crux.ts so client
 // components (the Shops table renders in the browser) can use them without
 // pulling the database client into the bundle. crux.ts re-exports all of it.
+import type { ShopRow } from '@/lib/types';
+import { monthLabel } from './similarweb';
 
 export interface CruxRank {
   domain: string;
@@ -98,4 +100,20 @@ export function trafficIsCredible(
   if (bucket == null) return true;         // nothing to contradict
   const floor = CREDIBLE_FLOOR.find(([b]) => b === bucket)?.[1];
   return floor == null ? true : visits >= floor;
+}
+
+/**
+ * The traffic a Shops row prints — one rule for the table and its CSV export.
+ * Visits only when measured or credible; growth from the same measurement as
+ * the visits (the index's 0 means "not computed"); `caption` names the source.
+ */
+export function shopTraffic(s: Pick<ShopRow, 'trafficSource' | 'monthlyVisits' | 'cruxBucket' | 'similarWebRank' | 'similarweb' | 'visitsGrowth'>) {
+  const measured = s.trafficSource === 'similarweb' && s.monthlyVisits > 0;
+  const shown = measured || trafficIsCredible(s.monthlyVisits, s.cruxBucket, s.similarWebRank);
+  const period = s.similarweb?.period ?? '';
+  const caption = measured ? (period ? monthLabel(period) : 'SimilarWeb')
+    : s.trafficSource === 'semrush' ? 'Semrush' : 'Index estimate';
+  const growth = !shown ? null : measured ? (s.similarweb?.growthPct ?? null) : (s.visitsGrowth || null);
+  const source = measured ? 'SimilarWeb' : caption;
+  return { visits: shown ? s.monthlyVisits : null, growth, caption, source, period };
 }

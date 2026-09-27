@@ -6,6 +6,7 @@
 // when calling it would return invented content.
 import { listShops, getShop, similarShops, categories } from '@/lib/market/shops';
 import { listAds, getAd, storeAds, labelFacets } from '@/lib/market/creatives';
+import { listWinningProducts } from '@/lib/market/products';
 import { LABEL_TAXONOMY, cleanLabelValues } from '@/lib/market/labels';
 import { trackersWithState, changeFeed } from '@/lib/trackers';
 import { addTracker, removeTracker, categoryAdRanking } from '@/lib/data';
@@ -212,6 +213,66 @@ export const TOOLS: ToolDef[] = [
       if (!shop) return { found: false, message: 'No store in the index matches that id or domain.' };
       const similar = await similarShops(shop, Math.min(20, Number(args.limit) || 6));
       return { found: true, basis: { id: shop.id, name: shop.name, categories: shop.niches }, shops: similar.map(shopSummary) };
+    },
+  },
+
+  {
+    name: 'search_products',
+    title: 'Search winning products',
+    description: 'Search storefront products that Meta ads send traffic to (each ad\u2019s landing URL is a product page), '
+      + 'ranked by the ads behind them. Every product carries its storefront title, price in the store\u2019s own currency, '
+      + 'product URL, active ad count, ads started in the last 14 days, advertiser pages, first-ad date and the store with its traffic.',
+    scope: 'discovery.read',
+    inputSchema: obj({
+      query: str('Words that must all appear in the product title, vendor, type or store domain.'),
+      category: str('Store category name, e.g. "Skincare & Body Care". Use list_categories for valid values.'),
+      country: str('Two-letter country code the ads run in, e.g. US.'),
+      currency: str('Three-letter currency code; required for minPrice/maxPrice and the price sort.'),
+      minPrice: { type: 'number', description: 'Minimum price in `currency`.' },
+      maxPrice: { type: 'number', description: 'Maximum price in `currency`.' },
+      store: str('Only this store\u2019s products (domain, e.g. example.com).'),
+      firstAdWithinDays: int('Only products whose first ad started within this many days.', 1, 365),
+      sortBy: {
+        type: 'string',
+        enum: ['ads', 'new_ads', 'pages', 'traffic', 'growth', 'first_ad', 'published', 'price'],
+        description: 'Ranking field. Defaults to ads (active ads landing on the product). new_ads = ads started in the '
+          + 'last 14 days; pages = distinct advertiser pages; traffic/growth = the store\u2019s monthly visits and their change.',
+      },
+      limit: int('Number of results, 1-50. Defaults to 10.', 1, 50),
+    }),
+    async handler(args) {
+      const cats = await categories();
+      const categoryId = args.category
+        ? Object.entries(cats).find(([, name]) => name.toLowerCase() === String(args.category).toLowerCase())?.[0]
+        : undefined;
+      const r = await listWinningProducts({
+        q: args.query as string | undefined,
+        category: categoryId,
+        country: args.country as string | undefined,
+        currency: args.currency as string | undefined,
+        priceMin: args.minPrice != null ? String(args.minPrice) : undefined,
+        priceMax: args.maxPrice != null ? String(args.maxPrice) : undefined,
+        store: args.store as string | undefined,
+        launched: args.firstAdWithinDays != null ? String(args.firstAdWithinDays) : undefined,
+        sort: args.sortBy as string | undefined,
+        limit: Math.min(50, Number(args.limit) || 10),
+      });
+      return {
+        total: r.total,
+        count: r.items.length,
+        products: r.items.map(p => ({
+          title: p.title, url: p.url, imageUrl: p.image || null,
+          price: p.price, compareAtPrice: p.compareAtPrice, currency: p.currency || null,
+          activeAds: p.activeAds, adsLast14Days: p.newAds14d, advertiserPages: p.pages,
+          firstAdAt: p.firstAdAt, publishedAt: p.publishedAt, adCountries: p.adCountries,
+          sampleAdIds: p.sampleAds.map(a => a.id),
+          store: {
+            shopId: p.store.id ? `shp_${p.store.id}` : null, domain: p.store.domain, country: p.store.country || null,
+            monthlyVisits: p.store.visits || null, visitsGrowthPct: p.store.visitsGrowthPct,
+            trafficSource: p.store.trafficSource,
+          },
+        })),
+      };
     },
   },
 

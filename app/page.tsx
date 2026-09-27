@@ -5,11 +5,18 @@ import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Eye, Filter, GitPullRe
 import { BrandMark } from '@/components/brand/brand-mark';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { RefBeacon } from '@/components/public/RefBeacon';
+import { MetaPixel } from '@/components/public/MetaPixel';
+import { GoogleSignIn } from '@/components/GoogleSignIn';
+import { EmailSignIn } from '@/components/EmailSignIn';
+import { StickyStartBar } from '@/components/public/StickyStartBar';
+import { googleClientId } from '@/lib/auth/actions';
 import { marketGet, unwrapTotal } from '@/lib/market/client';
 import { listAds } from '@/lib/market/creatives';
 import { directoryList, measuredMonth } from '@/lib/seo/directory';
-import { measuredVisits, storePath, adPath, SITE_URL, REPO_URL } from '@/lib/public/site';
+import { GitHubMark, OpenSourceAnnouncement } from '@/components/public/OpenSourceAnnouncement';
+import { measuredVisits, storePath, adPath, REPO_URL } from '@/lib/public/site';
 import { compact, flag } from '@/lib/format';
+import { HOME_FAQS as faqs, SITE_DESCRIPTION, siteJsonLd } from '@/lib/public/faq';
 import type { Ad, Shop } from '@/lib/types';
 
 // Marketing page, same for every visitor (edge-cached: zone Cache Rule + Cache-Tag
@@ -23,7 +30,7 @@ export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: 'AdLibrarySpy — 100% free Shopify store and Meta ads intelligence, built for the community',
-  description: '100% free ecommerce intelligence, built for the community: search millions of stores by traffic, platform, category and tech, study real Meta ad creatives, track competitors and get a weekly report. No card, no trial.',
+  description: SITE_DESCRIPTION,
   alternates: { canonical: '/' },
   // og:image / twitter:image come from app/opengraph-image.jpg (1200x630 JPEG).
   openGraph: { type: 'website', url: '/', siteName: 'AdLibrarySpy' },
@@ -53,30 +60,23 @@ async function liveData() {
   return { shops, top: top.filter(s => measuredVisits(s) > 0).slice(0, 8), wall };
 }
 
-const faqs: [string, string][] = [
-  ['Is AdLibrarySpy really free?', 'Yes. Every feature — shop search, the ads library, Brandtracker, team workspaces, the weekly report and AI access — is free. There is no card, no trial and no usage tier.'],
-  ['Where does the data come from?', 'Stores come from the PlatformDTC market index, traffic is measured by SimilarWeb for the exact store host, ads come from the Meta Ad Library, and products are read from each store\'s public Shopify feed. Every figure shows its source and month.'],
-  ['Does AdLibrarySpy estimate missing numbers?', 'No. When a store has no measured traffic or an ad has no media, the value is left out rather than invented. There are no modelled revenue, spend or rating figures.'],
-  ['Which ad networks are covered?', 'Meta (Facebook and Instagram). TikTok and Google ads are not covered today, and we say so on the comparison page.'],
-  ['Can my team use it together?', 'Yes. Invite teammates to your workspace for free and share saved shops, ads and tracked brands.'],
-  ['Is AdLibrarySpy open source?', 'Yes. The whole app, the Chrome extension, the MCP server and the CLI are MIT-licensed on GitHub. Read the code, open an issue or send a pull request.'],
-  ['Can I use it from ChatGPT or Claude?', 'Yes. The built-in MCP connection lets compatible AI assistants search shops and ads and manage tracked brands with your workspace access.'],
-];
 
 export default async function HomePage() {
   const { shops, top, wall } = await liveData();
   const month = measuredMonth(top);
   const extensionUrl = process.env.NEXT_PUBLIC_CHROME_EXTENSION_URL;
+  const google = await googleClientId();
 
   return (
     <main className="min-h-screen bg-[#050807] font-sans text-white antialiased">
       {/* Served from the Cloudflare edge (zone Cache Rule), so a shared link's hit often never reaches middleware's als_ref. */}
       <RefBeacon />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'AdLibrarySpy', url: SITE_URL,
-        applicationCategory: 'BusinessApplication', operatingSystem: 'Web', sameAs: [REPO_URL],
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-      }) }} />
+      <MetaPixel />
+      {google && <GoogleSignIn clientId={google} context="signup" landing="/" oneTapOnly />}
+      {/* Organization + WebSite + SoftwareApplication + the FAQ below, one graph (answer engines quote FAQPage). */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd()).replace(/</g, '\\u003c') }} />
+
+      <OpenSourceAnnouncement />
 
       {/* ---------- header ---------- */}
       <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050807]">
@@ -105,7 +105,7 @@ export default async function HomePage() {
       </header>
 
       {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden px-4 pb-10 pt-16 sm:px-6 sm:pt-24">
+      <section className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pt-24">
         <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[520px] max-w-4xl rounded-full opacity-40 blur-[120px]" style={{ background: `radial-gradient(closest-side, ${LIME}55, transparent)` }} />
         <div className="relative mx-auto max-w-4xl text-center">
           <p className="mx-auto inline-flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border px-4 py-1.5 text-sm"
@@ -115,38 +115,51 @@ export default async function HomePage() {
             <span className="font-semibold text-white">Built for the Community</span>
             <span className="text-xs text-white/55">no card, no trial</span>
           </p>
-          <h1 className="mt-6 text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl">
+          <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl">
             See what&apos;s winning in ecommerce <span style={{ color: LIME }}>right now</span>
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-pretty text-base text-white/65 sm:text-lg">
+          <p className="mx-auto mt-4 max-w-2xl text-pretty text-base text-white/65 sm:mt-5 sm:text-lg">
             Search stores by traffic, platform, category and tech stack, study the Meta ads behind them, and track your competitors. Every feature is{' '}
             <mark className="rounded bg-transparent px-0.5 font-semibold" style={{ color: LIME, boxShadow: `inset 0 -0.45em 0 ${LIME}33` }}>100% free</mark>, for everyone.
           </p>
-          <ul className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/75">
+          {/* Sign up right here: email, then the 6-digit code, without leaving the page
+              (an ad visitor in the Facebook/Instagram browser loses nothing to a page
+              load or to the emailed link opening elsewhere). Same actions as /signup. */}
+          <div id="start" className="mx-auto mt-7 max-w-md scroll-mt-24 sm:mt-9">
+            <EmailSignIn variant="hero" layout="inline" pendingLabel="Sending…"
+              submitLabel={<>Start free <ArrowRight className="h-4 w-4" aria-hidden /></>}>
+              <input type="hidden" name="landing" value="/" />
+              <input type="hidden" name="ref" value="home:hero" />
+              <label className="block min-w-0 flex-1">
+                <span className="sr-only">Work email</span>
+                <input name="email" type="email" autoComplete="email" inputMode="email" required placeholder="you@company.com"
+                  className="h-12 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 text-base text-white placeholder:text-white/45 focus:border-[#a7f45a] focus:outline-none focus:ring-2 focus:ring-[#a7f45a]/30" />
+              </label>
+            </EmailSignIn>
+            <p className="mt-3 text-xs text-white/55">No password, no card. We email you a 6-digit code.</p>
+          </div>
+          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/75">
             {shops != null && <li className="inline-flex items-center gap-2"><Store className="h-4 w-4" style={{ color: LIME }} aria-hidden />{compact(shops)} stores indexed</li>}
             <li className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4" style={{ color: LIME }} aria-hidden />Traffic measured by SimilarWeb</li>
           </ul>
-          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Link href="/signup?ref=home:hero" className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[15px] font-semibold text-[#071004] shadow-[0_0_40px_-8px_rgba(167,244,90,.7)] transition-transform hover:-translate-y-0.5" style={{ background: LIME }}>
-              Start free <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
-            <Link href="/stores" className="inline-flex h-12 items-center gap-2 rounded-xl border border-white/15 px-6 text-[15px] font-medium text-white/90 hover:bg-white/5">
-              Browse the shops directory
-            </Link>
-          </div>
+          <Link href="/stores" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white">
+            Or browse the shops directory <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
         </div>
 
-        {/* Real product walkthrough, recorded from production. */}
+        {/* Product tour: motion design over real production crops and live numbers
+            (scripts/fb-video-v2.mjs --set=home). Silent loop; phones get the 540p encode. */}
         <div className="relative mx-auto mt-14 max-w-5xl">
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-2 shadow-[0_40px_120px_-30px_rgba(167,244,90,.35)] sm:rounded-3xl sm:p-3">
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#0b0f0d] sm:rounded-2xl">
-              <BrowserBar url="adlibraryspy.com/shops" dark />
-              <video className="block aspect-[1440/790] w-full motion-reduce:hidden" autoPlay muted loop playsInline preload="metadata"
-                poster="/landing/flow-poster.webp" aria-label="AdLibrarySpy walkthrough: shops ranked by peak Meta ads, filtered by platform and category, re-sorted by monthly traffic, then a shop's analytics">
-                <source src="/landing/flow.webm" type="video/webm" />
-                <source src="/landing/flow.mp4" type="video/mp4" />
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050807] sm:rounded-2xl">
+              <video className="block aspect-video w-full motion-reduce:hidden" autoPlay muted loop playsInline preload="metadata"
+                poster="/landing/tour-20260927.webp" aria-label="AdLibrarySpy product tour: the live Meta ads library, the store behind an ad, its SimilarWeb traffic, its best sellers, its live ad count over time, and Brandtracker">
+                <source src="/landing/tour-20260927-m.webm" type="video/webm" media="(max-width: 639px)" />
+                <source src="/landing/tour-20260927-m.mp4" type="video/mp4" media="(max-width: 639px)" />
+                <source src="/landing/tour-20260927.webm" type="video/webm" />
+                <source src="/landing/tour-20260927.mp4" type="video/mp4" />
               </video>
-              <img src="/landing/flow-poster.webp" alt="AdLibrarySpy shops explorer" width={1440} height={790} className="hidden aspect-[1440/790] w-full motion-reduce:block" />
+              <img src="/landing/tour-20260927.webp" alt="AdLibrarySpy: spy on any Shopify store. Live Meta ads, SimilarWeb traffic, best sellers" width={1600} height={900} className="hidden aspect-video w-full motion-reduce:block" />
             </div>
           </div>
         </div>
@@ -175,7 +188,7 @@ export default async function HomePage() {
           <Card title="Analyze any store" body="Traffic over time, visitor countries, live ads over time, products, apps and similar shops — in one dossier.">
             <Shot src="/landing/dossier.webp" url="adlibraryspy.com/shops/gymshark" alt="Gymshark shop dossier with traffic and live ads charts" />
           </Card>
-          <Card title="Track your competitors" body="Add any store to Brandtracker. Snapshots record their traffic and ad activity so you see changes, not re-run research.">
+          <Card title="Track your competitors" body="Add any store to Brandtracker. Snapshots record their traffic and ad activity, and an email tells you when they move, so you see changes, not re-run research.">
             <Shot src="/landing/brandtracker.webp" url="adlibraryspy.com/brandtracker" alt="Brandtracker list of tracked brands with traffic and live ads" />
           </Card>
         </div>
@@ -259,7 +272,7 @@ export default async function HomePage() {
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
               <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-white/50"><Bot className="h-4 w-4" aria-hidden /> Tools your assistant gets</p>
               <ul className="mt-4 grid grid-cols-1 gap-2 font-mono text-[13px] sm:grid-cols-2">
-                {['search_shops', 'get_shop', 'find_similar_shops', 'search_ads', 'get_ad', 'creative_breakdown', 'trending_categories', 'track_brand', 'brand_changes', 'list_tracked_brands'].map(t => (
+                {['search_shops', 'search_products', 'get_shop', 'find_similar_shops', 'search_ads', 'get_ad', 'creative_breakdown', 'trending_categories', 'track_brand', 'brand_changes', 'list_tracked_brands'].map(t => (
                   <li key={t} className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-white/85"><Check className="h-3.5 w-3.5 shrink-0" style={{ color: LIME }} aria-hidden />{t}</li>
                 ))}
               </ul>
@@ -338,7 +351,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 px-4 py-10 sm:px-6">
+      <StickyStartBar target="start" />
+
+      <footer className="border-t border-white/10 px-4 py-10 pb-24 sm:px-6 sm:pb-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1"><BrandMark size={24} /><span className="text-sm font-semibold">AdLibrarySpy</span><span className="text-sm text-white/45">· Ecommerce intelligence on real data</span><span className="text-sm text-white/45">· Built by <a href="https://x.com/quantummaxing" target="_blank" rel="noopener" className="text-white/70 hover:text-white">@quantummaxing</a></span></div>
           <nav aria-label="Footer" className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/60">
@@ -348,7 +363,7 @@ export default async function HomePage() {
             <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
             {extensionUrl && <a href={extensionUrl} target="_blank" rel="noopener" className="hover:text-white">Chrome extension</a>}
             <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-white">GitHub</a>
-            <Link href="/privacy/extension" className="hover:text-white">Privacy</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/login" className="hover:text-white">Log in</Link>
           </nav>
         </div>
@@ -357,14 +372,6 @@ export default async function HomePage() {
   );
 }
 
-/** GitHub's official mark (github.com/logos); lucide 1.x dropped brand icons. */
-function GitHubMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
-      <path d="M12 .5C5.65.5.5 5.65.5 12.02c0 5.09 3.29 9.4 7.86 10.93.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.52 11.52 0 0 0 23.5 12.02C23.5 5.65 18.35.5 12 .5Z" />
-    </svg>
-  );
-}
 
 function Kicker({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
   return (
@@ -374,11 +381,11 @@ function Kicker({ children, dark = false }: { children: ReactNode; dark?: boolea
   );
 }
 
-function BrowserBar({ url, dark = false }: { url: string; dark?: boolean }) {
+function BrowserBar({ url }: { url: string }) {
   return (
-    <div className={`flex items-center gap-3 border-b px-3 py-2 ${dark ? 'border-white/10 bg-[#0b0f0d]' : 'border-black/[0.06] bg-[#f3f4f2]'}`}>
-      <span className="flex gap-1.5" aria-hidden>{[0, 1, 2].map(i => <i key={i} className={`h-2.5 w-2.5 rounded-full ${dark ? 'bg-white/15' : 'bg-black/15'}`} />)}</span>
-      <span className={`mx-auto rounded-md px-3 py-0.5 text-[11px] ${dark ? 'bg-white/5 text-white/50' : 'bg-white text-black/45'}`}>{url}</span>
+    <div className="flex items-center gap-3 border-b border-black/[0.06] bg-[#f3f4f2] px-3 py-2">
+      <span className="flex gap-1.5" aria-hidden>{[0, 1, 2].map(i => <i key={i} className="h-2.5 w-2.5 rounded-full bg-black/15" />)}</span>
+      <span className="mx-auto rounded-md bg-white px-3 py-0.5 text-[11px] text-black/45">{url}</span>
       <span className="w-10" aria-hidden />
     </div>
   );

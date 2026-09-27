@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { CategoryNode, TechFacets } from '@/lib/market/shops';
 import { MARKET_PLATFORM_FILTERS } from '@/lib/market-platforms';
 import { PlatformIcon } from './PlatformIcon';
+import { ExportCsv } from './ExportCsv';
 
 /** Debounce a value: returns the value only after `delay` ms of inactivity. */
 function useDebounce<T>(value: T, delay: number): T {
@@ -60,23 +61,22 @@ function useSetParam() {
   return { set, params, pending };
 }
 
-// Market filter recipes:
-// tabs are `rounded-xl` foreground-tinted pills, inactive ones sit on a
-// `bg-foreground/5` well; filter chips share the Input primitive's surface.
-const PILL = 'inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 sm:px-4';
+// Market filter recipes, in Apple's language: borderless capsules on the
+// system grey fill (--a-fill, base.css), the picked one filled with the label
+// colour, and a soft blue focus halo instead of a hard ring.
+const FOCUS = 'outline-none focus-visible:shadow-[0_0_0_4px_var(--a-focus)]';
+const PILL = `inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${FOCUS}`;
 const PILL_ON = 'bg-foreground text-background';
-const PILL_OFF = 'border border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10';
+const PILL_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
-// Top Brands' platform and category rows: rounded-full, muted until picked.
-const TB_PILL = 'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors';
+// Top Brands' platform and category rows: capsules, grey until picked.
+const TB_PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
 const TB_ON = 'bg-foreground text-background';
-const TB_OFF = 'bg-muted text-foreground hover:bg-border';
+const TB_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
-const CHIP =
-  'inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-[13px] shadow-sm outline-none ' +
-  'transition-colors focus-visible:ring-2 focus-visible:ring-ring';
-const CHIP_OFF = 'border-border bg-background text-foreground hover:border-foreground/30';
-const CHIP_ON = 'border-foreground bg-foreground text-background';
+const CHIP = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
+const CHIP_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
+const CHIP_ON = 'bg-foreground text-background';
 
 const compact = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n);
@@ -111,7 +111,7 @@ function chosen(label: string, option: string): string {
  * A filter chip: icon + label + chevron; picking an option sets one URL param.
  * `searchable` adds a type-to-filter box for long option lists (technologies).
  */
-function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable }: {
+export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable }: {
   icon: LucideIcon; label: string; value: string; options: Option[];
   onChange: (v: string) => void; badge?: string; searchable?: boolean;
 }) {
@@ -131,10 +131,10 @@ function FilterChip({ icon: Icon, label, value, options, onChange, badge, search
       <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
         <span>{active ? chosen(label, active.label) : label}</span>
-        {badge && !active && <span className="rounded bg-emerald-500 px-1.5 py-px text-[10px] font-semibold text-white">{badge}</span>}
+        {badge && !active && <span className="rounded-full bg-[var(--a-green)] px-1.5 py-px text-[10px] font-semibold text-white">{badge}</span>}
         <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto rounded-xl p-1.5">
         {searchable && (
           <div className="sticky -top-1 z-10 -mx-1 -mt-1 mb-1 bg-popover p-1">
           <input
@@ -146,7 +146,7 @@ function FilterChip({ icon: Icon, label, value, options, onChange, badge, search
             onKeyDown={e => e.stopPropagation()}
             placeholder={`Search ${label.toLowerCase()}…`}
             aria-label={`Search ${label.toLowerCase()}`}
-            className="w-full rounded-md border border-[hsl(var(--input-border))] bg-input px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-lg bg-[var(--a-fill)] px-2.5 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
           />
           </div>
         )}
@@ -266,7 +266,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
           className="relative min-w-0 flex-1"
           onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}
         >
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
           <input
             ref={termRef}
             type="search"
@@ -274,11 +274,11 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             onChange={e => setTerm(e.target.value)}
             placeholder="Search shops, keywords…"
             aria-label="Search shops, keywords"
-            className="h-9 w-full rounded-md border border-[hsl(var(--input-border))] bg-input pl-10 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
           />
           {term && (
             <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100"
               aria-label="Clear search">
               <X className="h-4 w-4" />
             </button>
@@ -293,8 +293,8 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
         <button type="button" onClick={() => set({ viewed: hideViewed ? '' : 'exclude' })}
           aria-pressed={hideViewed} title={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
           aria-label={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
-          className={cn('inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border transition-colors',
-            hideViewed ? 'border-foreground bg-foreground text-background' : 'border-border text-muted-foreground hover:text-foreground')}>
+          className={cn('inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors', FOCUS,
+            hideViewed ? CHIP_ON : CHIP_OFF)}>
           <EyeOff className="h-4 w-4" />
         </button>
         {(hiddenCount > 0 || showingHidden) && (
@@ -303,6 +303,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             {showingHidden ? 'Back to Shops' : `Hidden (${hiddenCount.toLocaleString()})`}
           </button>
         )}
+        <ExportCsv kind="shops" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
       </div>
 
       {filtersOpen && <div id="shop-filters" className="flex flex-wrap items-center gap-2">
@@ -343,7 +344,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
         {activeCount > 0 && (
           <button
             onClick={() => set(Object.fromEntries(FILTER_KEYS.map(k => [k, ''])))}
-            className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+            className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-[var(--a-blue)] transition-opacity hover:opacity-80', FOCUS)}
           >
             <X className="h-3 w-3" /> Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
           </button>
@@ -411,8 +412,8 @@ export function MarketPagination({ page, total, limit, hasMore }: {
     }
   }
 
-  // Pagination buttons share the filter pills' well and radius.
-  const btn = 'inline-flex items-center gap-1 whitespace-nowrap rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground transition-all hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-foreground/5 sm:px-4';
+  // Pagination buttons are the filter capsules: grey fill, the current page filled.
+  const btn = `inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full bg-[var(--a-fill)] px-3.5 text-sm font-medium text-foreground transition-colors hover:bg-[var(--a-fill-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[var(--a-fill)] sm:px-4 ${FOCUS}`;
 
   return (
     <nav className="flex shrink-0 flex-wrap items-center justify-center gap-2" aria-label="Pagination">
@@ -421,8 +422,8 @@ export function MarketPagination({ page, total, limit, hasMore }: {
       </button>
       {nums.length > 0 ? nums.map(n => (
         <button key={n} onClick={() => go(n)} aria-current={n === page ? 'page' : undefined}
-          className={cn('whitespace-nowrap rounded-xl border border-border px-3 py-2 text-sm transition-all sm:px-4',
-            n === page ? 'bg-foreground font-medium text-background' : 'bg-foreground/5 text-foreground hover:bg-foreground/10')}>
+          className={cn('inline-flex h-9 min-w-9 items-center justify-center whitespace-nowrap rounded-full px-3 text-sm font-medium tabular-nums transition-colors', FOCUS,
+            n === page ? 'bg-foreground text-background' : 'text-foreground hover:bg-[var(--a-fill)]')}>
           {n}
         </button>
       )) : (

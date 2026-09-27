@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 // Full-height routes (/shops, /ads) render without the shell's padding wrapper.
-const FULL_HEIGHT = new Set(['/shops', '/ads']);
+const FULL_HEIGHT = new Set(['/shops', '/ads', '/products']);
 
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error('[app] page error', error); }, [error]);

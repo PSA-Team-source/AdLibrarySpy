@@ -6,10 +6,10 @@ export function trafficChartColor(growthRate: number | null): string {
   // A flat series is neutral, not "bad". This must be a literal mid-grey rather
   // than a token: the design system forces --muted-foreground to pure black in
   // light mode and pure white in dark, so either would draw a hard, alarming
-  // line. gray-400 sits legibly on both grounds.
-  if (growthRate == null || growthRate === 0) return '#9ca3af';
-  if (growthRate > 0) return '#10b981';
-  return '#ef4444';
+  // line. Apple's systemGray / systemGreen / systemRed read on both grounds.
+  if (growthRate == null || growthRate === 0) return '#8e8e93';
+  if (growthRate > 0) return '#34c759';
+  return '#ff3b30';
 }
 
 function domainOf(points: Point[]) {
@@ -61,10 +61,10 @@ export function TrafficSparkline({ data, growthRate }: { data: Point[]; growthRa
   const d = linePath(points, xFor, yFor, padding, width - padding);
 
   return (
-    <div className="flex h-8 w-16 shrink-0 items-center justify-center rounded bg-foreground/5">
+    <div className="flex h-8 w-16 shrink-0 items-center justify-center rounded-lg bg-[var(--a-tray)]">
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden className="overflow-visible">
         <path d={d} stroke={trafficChartColor(growthRate)} strokeWidth="2" fill="none"
-          strokeLinecap="round" strokeLinejoin="round" opacity="0.6" />
+          strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
       </svg>
     </div>
   );

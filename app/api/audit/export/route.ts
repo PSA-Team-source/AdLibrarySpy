@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireRole } from '@/lib/auth/guard';
 import { auditCsv } from '@/lib/audit';
+import { csvFileName } from '@/lib/csv';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const ctx = await requireRole('admin');
   const csv = await auditCsv(ctx.workspaceId);
-  const fileName = `adlibraryspy-audit-${ctx.workspaceSlug}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const fileName = csvFileName(`audit-${ctx.workspaceSlug}`);
 
   return new NextResponse(csv, {
     headers: {

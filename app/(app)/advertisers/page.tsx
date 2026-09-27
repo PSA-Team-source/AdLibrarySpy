@@ -4,6 +4,7 @@ import { getShops, trackedShopIds } from '@/lib/data';
 import { queryAdvertisers, EU_UK, type MetaPage } from '@/lib/market/advertisers';
 import { ageOf, compact, flag } from '@/lib/format';
 import { Sparkline } from '@/components/charts';
+import { ChartDetail } from '@/components/market/DetailDialogs';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { MarketPagination } from '@/components/market/MarketToolbar';
 import { ProductImage } from '@/components/ShopMedia';
@@ -133,7 +134,13 @@ export default async function AdvertisersPage({ searchParams }: { searchParams: 
                 </div>
 
                 <div className="flex items-center gap-3 xl:border-r xl:border-border xl:pr-5">
-                  {p.launchSeries.some(d => d.v > 0) && <Sparkline data={p.launchSeries} w={96} h={34} />}
+                  {p.launchSeries.some(d => d.v > 0) && (
+                    <ChartDetail title={p.name} subtitle="New ads launched per day" data={p.launchSeries} valueLabel="Ads launched"
+                      headline={p.launched14d} caption="Last 14 days" countries={p.countries} countriesLabel="Targeted countries"
+                      shop={shop ? { id: shop.id, domain: shop.domain } : undefined}>
+                      <Sparkline data={p.launchSeries} w={96} h={34} />
+                    </ChartDetail>
+                  )}
                   <div className="text-center leading-tight">
                     <div className="text-xs text-muted-foreground">Last 14 days</div>
                     <div className="font-semibold tabular-nums text-foreground">{p.launched14d.toLocaleString()}</div>

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyBearer, issuer } from '@/lib/mcp/oauth';
 import { resolveApiKey } from '@/lib/apikeys';
 import { TOOLS, toolByName, type ToolContext } from '@/lib/mcp/tools';
-import { rateLimit } from '@/lib/ratelimit';
+import { FAIR_USE, clientIp, quotaHeaders, quotaWait, spendQuotas } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -51,7 +51,7 @@ async function dispatch(rpc: RpcRequest, ctx: ToolContext & { tokenId: string })
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: 'adlibraryspy', title: 'AdLibrarySpy', version: '1.0.0' },
         instructions:
-          'AdLibrarySpy indexes Shopify stores and their ad creatives. Search with search_shops / search_ads, '
+          'AdLibrarySpy indexes Shopify stores and their ad creatives. Search with search_shops / search_ads, find the products ads point at with search_products, '
           + 'open one with get_shop / get_ad, see how a store\'s creatives split by hook, angle and offer with creative_breakdown, '
           + 'and manage the workspace brandtracker with track_brand and brand_changes. '
           + 'AI creative labels are model classifications of ad text with a confidence; an absent label means the model was unsure, not that the trait is missing. '
@@ -126,16 +126,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(error(null, ERR.PARSE, 'Request body is not valid JSON.'), { status: 400 });
   }
 
-  // Every batch item spends one hit, so a batch cannot multiply the limit.
   const items = Array.isArray(body) ? body.length : 1;
   if (items > MAX_BATCH) {
     return NextResponse.json(error(null, ERR.INVALID_REQUEST, `Batches are limited to ${MAX_BATCH} requests.`), { status: 400 });
   }
-  const limit = await rateLimit(`mcp:${bearer.workspaceId}`, 600, 60, items);
+  // Free API: a burst limit plus daily fair-use caps per workspace, user and IP.
+  // Each tool call in a batch spends one hit, so a batch cannot multiply the
+  // limit; a request with no tool call (handshake, ping) spends only one burst
+  // hit and nothing from the daily caps.
+  const calls = (Array.isArray(body) ? body : [body])
+    .filter(i => (i as RpcRequest)?.method === 'tools/call').length;
+  const quotas = FAIR_USE.mcp(bearer.workspaceId, bearer.userId, clientIp(req.headers));
+  const limit = await spendQuotas(calls ? quotas : quotas.slice(0, 1), Math.max(1, calls));
   if (!limit.allowed) {
     return NextResponse.json(
-      { jsonrpc: '2.0', id: null, error: { code: ERR.INTERNAL, message: 'Rate limit exceeded. Try again shortly.' } },
-      { status: 429, headers: { 'Retry-After': String(Math.max(1, Math.ceil((limit.resetAt.getTime() - Date.now()) / 1000))) } },
+      { jsonrpc: '2.0', id: null, error: { code: ERR.INTERNAL, message: `Rate limit exceeded. ${quotaWait(limit)}` } },
+      { status: 429, headers: quotaHeaders(limit) },
     );
   }
 
@@ -170,7 +176,7 @@ export async function POST(req: NextRequest) {
   if (!responses.length) return new NextResponse(null, { status: 202 });
 
   return NextResponse.json(Array.isArray(body) ? responses : responses[0], {
-    headers: { 'Cache-Control': 'no-store' },
+    headers: { 'Cache-Control': 'no-store', ...quotaHeaders(limit) },
   });
 }
 

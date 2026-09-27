@@ -16,6 +16,12 @@ export function publicDomain(raw: string): string {
 /** Public source (MIT). Published by deploy/export-oss.sh, never pushed from this monorepo. */
 export const REPO_URL = 'https://github.com/PSA-Team-source/AdLibrarySpy';
 
+/** The line users paste into their AI agent (app/SKILL.md/route.ts). The public URL on
+ *  purpose: the agent is outside this deployment, and client code cannot read APP_BASE_URL. */
+export const AGENT_MESSAGE = "Read https://adlibraryspy.com/SKILL.md and follow it to research my competitors' Shopify stores and Meta ads.";
+/** Set when a user dismisses the in-app agent announcement; read server-side by app/(app)/layout.tsx. */
+export const SKILL_DISMISS_COOKIE = 'als_skill_ann';
+
 export const storePath = (domain: string) => `/store/${domain}`;
 export const adPath = (id: string) => `/ad/${encodeURIComponent(id)}`;
 /** Gated action → signup, landing on the signed-in screen afterwards. */

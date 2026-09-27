@@ -24,3 +24,32 @@ export function refFromUrl(pathname: string, params: URLSearchParams): string | 
   const utm = clean(params.get('utm_source') ?? '');
   return utm ? `utm:${utm}`.slice(0, MAX) : null;
 }
+
+/**
+ * The first touch for a request that has no als_ref yet. A click on a tagged
+ * internal link (`/signup?ref=home:hero`) made before the landing page hydrated
+ * reaches middleware before RefBeacon ever ran, so the landing page's own tag
+ * (`/?ref=fb:launch`) only survives in the same-site Referer: that wins.
+ */
+export function firstTouchRef(pathname: string, params: URLSearchParams, referer: string | null, host: string | null): string | null {
+  if (referer && host) {
+    try {
+      const r = new URL(referer);
+      if (r.host === host) {
+        const landed = refFromUrl(r.pathname, r.searchParams);
+        if (landed) return landed;
+      }
+    } catch { /* malformed Referer: fall through */ }
+  }
+  return refFromUrl(pathname, params);
+}
+
+/**
+ * Meta's click-id cookie `_fbc` = `fb.1.<creation ms>.<fbclid>` (Conversions API
+ * "fbc" parameter spec). fbevents.js writes it too, but only once it has loaded and
+ * only when not blocked; the server reads it at signup for the Conversions API.
+ */
+export function fbcFromFbclid(fbclid: string | null, nowMs: number): string | null {
+  const id = (fbclid ?? '').replace(/[^A-Za-z0-9_\-]/g, '').slice(0, 500);
+  return id ? `fb.1.${nowMs}.${id}` : null;
+}

@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { BrandLockup } from '@/components/brand/brand-mark';
 import { RefBeacon } from '@/components/public/RefBeacon';
-import { SITE_URL } from '@/lib/public/site';
+import { MetaPixel } from '@/components/public/MetaPixel';
+import { OpenSourceAnnouncement } from '@/components/public/OpenSourceAnnouncement';
+import { REPO_URL, SITE_URL } from '@/lib/public/site';
 
 /**
  * Public (anonymous, indexable, edge-cached) chrome for /store, /ad, /stores, /weekly, /vs.
@@ -26,6 +28,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <RefBeacon />
+      <MetaPixel />
+      <OpenSourceAnnouncement />
       <header className="sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-6 px-4 sm:px-7">
           <Link href="/" aria-label="AdLibrarySpy home" className="shrink-0 transition-opacity hover:opacity-80">
@@ -65,6 +69,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             {NAV.map(n => <Link key={n.href} href={n.href} className="hover:text-foreground">{n.label}</Link>)}
             <Link href="/login" className="hover:text-foreground">Log in</Link>
             <Link href="/signup" className="hover:text-foreground">Create free account</Link>
+            <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-foreground">GitHub</a>
           </nav>
         </div>
       </footer>

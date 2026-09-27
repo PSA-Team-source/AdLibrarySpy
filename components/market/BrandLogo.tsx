@@ -35,9 +35,11 @@ export function BrandLogo({ logo, domain, name, size = 64, onMissing }: {
 
   const inner = Math.round(size * 0.625);
   return (
+    // An app-icon tile: white, ~22% corner radius, hairline edge so a white
+    // logo still reads as a tile on the white card.
     <div
-      className="bg-white rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden"
-      style={{ width: size, height: size }}
+      className="flex flex-shrink-0 items-center justify-center overflow-hidden bg-white ring-1 ring-inset ring-black/[0.08]"
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.225) }}
     >
       <img
         src={src}

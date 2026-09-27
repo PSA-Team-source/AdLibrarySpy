@@ -16,11 +16,59 @@ body {
   color-scheme: light;
   /* Card elevation for the market tables. */
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -12px rgb(0 0 0 / 0.12);
+
+  /* Apple system palette (Human Interface Guidelines) for the market screens:
+     grey fills behind pills/fields, hairline separators, and the system tints.
+     Light tints are Apple's accessible variants so text on white stays >= 4.5:1. */
+  --a-canvas: #f5f5f7;
+  --a-card: #fff;
+  --a-glass: rgb(255 255 255 / 0.82);
+  --a-fill: rgb(120 120 128 / 0.12);
+  --a-fill-hover: rgb(120 120 128 / 0.2);
+  --a-tray: rgb(120 120 128 / 0.07);
+  --a-row-hover: rgb(120 120 128 / 0.06);
+  --a-sep: rgb(60 60 67 / 0.12);
+  --a-focus: rgb(0 113 227 / 0.35);
+  --a-blue: #0066cc;
+  --a-green: #248a3d;
+  --a-green-tint: rgb(52 199 89 / 0.14);
+  --a-red: #d70015;
+  --a-red-tint: rgb(255 59 48 / 0.12);
+  --a-purple: #8944ab;
 }
 
 .dark {
   color-scheme: dark;
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.5);
+
+  --a-canvas: #000;
+  --a-card: #1c1c1e;
+  --a-glass: rgb(28 28 30 / 0.82);
+  --a-fill: rgb(118 118 128 / 0.24);
+  --a-fill-hover: rgb(118 118 128 / 0.36);
+  --a-tray: rgb(118 118 128 / 0.14);
+  --a-row-hover: rgb(118 118 128 / 0.12);
+  --a-sep: rgb(84 84 88 / 0.55);
+  --a-focus: rgb(10 132 255 / 0.45);
+  --a-blue: #0a84ff;
+  --a-green: #30d158;
+  --a-green-tint: rgb(48 209 88 / 0.16);
+  --a-red: #ff453a;
+  --a-red-tint: rgb(255 69 58 / 0.16);
+  --a-purple: #bf5af2;
+}
+
+/* Apple type on the screens that opt in (Shops): San Francisco where the
+   platform has it, Inter elsewhere; titles are semibold with tight tracking
+   instead of the dashboard's extralight. */
+.apple-ui {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', var(--font-inter), 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.apple-ui .dash-title {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', var(--font-inter), 'Helvetica Neue', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.022em;
 }
 
 * {

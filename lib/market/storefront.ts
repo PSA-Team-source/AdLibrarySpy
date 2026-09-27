@@ -9,7 +9,7 @@
 import type { Point, Product } from '@/lib/types';
 import { marketGet, unwrapItems } from './client';
 import { parseHandles, parseLocale, parseTheme } from './storefront-parse';
-import { safeFetch } from '@/lib/safe-fetch';
+import { safeGet } from '@/lib/safe-fetch';
 
 const UA = 'AdLibrarySpy/1.0 (+https://adlibraryspy.com/bot)';
 const TIMEOUT_MS = 6000;
@@ -29,27 +29,48 @@ export interface StorefrontFacts {
   bestSelling: Product[];
   /** Storefront order for sort_by=created-descending. */
   latest: Product[];
+  /** Page 1 (CATALOG_PAGE rows) of /products.json — the published catalogue, priced; later pages via storefrontCatalogPage. */
+  catalog: Product[];
 }
 
 const EMPTY: StorefrontFacts = {
-  myshopifyDomain: '', currency: '', locale: '', theme: '', productCount: null, bestSelling: [], latest: [],
+  myshopifyDomain: '', currency: '', locale: '', theme: '', productCount: null, bestSelling: [], latest: [], catalog: [],
 };
 
+/**
+ * Catalogue page size for the dossier. Not Shopify's 250 ceiling: a 250-row
+ * page of a fashion store runs to ~8MB (hoooyi.com, every variant inline) and
+ * cannot arrive inside TIMEOUT_MS; 48 rows stay well under 2MB.
+ */
+export const CATALOG_PAGE = 48;
+
+// safeGet (node:https) instead of fetch: Shopify answers fetch() from the
+// production host with a bot challenge (see lib/safe-fetch.ts), so it also
+// bypasses Next's fetch cache — this per-process cache stands in for it.
+// ponytail: one cache per pm2 worker (x4); a shared one would be Redis.
+const g = globalThis as unknown as { __ML_SF?: Map<string, { at: number; v: unknown }> };
+const sfCache = (g.__ML_SF ??= new Map());
+const SF_CACHE_MAX = 400;
+const SF_CACHE_BYTES = 2_000_000;
+
 async function get(url: string, as: 'json' | 'text'): Promise<unknown> {
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
+  const hit = sfCache.get(url);
+  if (hit && Date.now() - hit.at < REVALIDATE * 1000) return hit.v;
   try {
-    const res = await safeFetch(url, {
+    const res = await safeGet(url, {
       headers: { 'User-Agent': UA, Accept: as === 'json' ? 'application/json' : 'text/html' },
-      signal: ac.signal,
-      next: { revalidate: REVALIDATE },
-    } as RequestInit);
-    if (!res.ok) return null;
-    return as === 'json' ? await res.json() : await res.text();
+      timeoutMs: TIMEOUT_MS,
+    });
+    if (res.status !== 200) return null;
+    const v: unknown = as === 'json' ? JSON.parse(res.text) : res.text;
+    if (res.text.length <= SF_CACHE_BYTES) {
+      sfCache.delete(url);
+      sfCache.set(url, { at: Date.now(), v });
+      if (sfCache.size > SF_CACHE_MAX) sfCache.delete(sfCache.keys().next().value as string);
+    }
+    return v;
   } catch {
     return null;
-  } finally {
-    clearTimeout(timer);
   }
 }
 
@@ -61,14 +82,18 @@ const img = (src: unknown): string => {
   return s.startsWith('//') ? `https:${s}` : s;
 };
 
-/** /products.json row (price is a decimal string). */
-function fromJson(p: Record<string, unknown>, currency: string): Product | null {
+/** /products.json row (price is a decimal string). `base` = https://<domain>, for the product's link. */
+function fromJson(p: Record<string, unknown>, currency: string, base = ''): Product | null {
   const image = img((p.images as { src?: string }[] | undefined)?.[0]?.src);
   if (!image) return null;
-  const price = Number((p.variants as { price?: string }[] | undefined)?.[0]?.price);
+  // The cheapest variant is the price a shopper sees as "from".
+  const prices = ((p.variants as { price?: string }[] | undefined) ?? [])
+    .map(v => Number(v?.price)).filter(n => Number.isFinite(n) && n > 0);
+  const handle = str(p.handle);
   return {
-    rank: 0, title: str(p.title).slice(0, 120), price: Number.isFinite(price) ? price : 0,
+    rank: 0, title: str(p.title).slice(0, 120), price: prices.length ? Math.min(...prices) : 0,
     currency, createdAt: str(p.created_at).slice(0, 10), image,
+    ...(base && handle ? { url: `${base}/products/${encodeURIComponent(handle)}` } : {}),
   };
 }
 
@@ -95,12 +120,13 @@ export async function storefrontFacts(domain: string): Promise<StorefrontFacts> 
   // product prices are requested in the store's own currency (meta.json) —
   // otherwise a server abroad reads VND 1,055,000 and labels it USD.
   const metaP = get(`${base}/meta.json`, 'json');
-  const [meta, home, best, latest, catalog] = await Promise.all([
+  const [meta, home, best, latest, catalog, firstPage] = await Promise.all([
     metaP,
     get(`${base}/`, 'text'),
     get(`${base}/collections/all?sort_by=best-selling`, 'text'),
     get(`${base}/collections/all?sort_by=created-descending`, 'text'),
     metaP.then(m => get(`${base}/products.json?limit=250${ccyParam(m)}`, 'json')),
+    metaP.then(m => get(`${base}/products.json?limit=${CATALOG_PAGE}&page=1${ccyParam(m)}`, 'json')),
   ]);
   const m = (meta && typeof meta === 'object' ? meta : {}) as Record<string, unknown>;
   const html = typeof home === 'string' ? home : '';
@@ -108,7 +134,8 @@ export async function storefrontFacts(domain: string): Promise<StorefrontFacts> 
   const count = Number(m.published_products_count);
 
   const byHandle = new Map<string, Record<string, unknown>>();
-  for (const p of ((catalog as { products?: Record<string, unknown>[] } | null)?.products ?? [])) {
+  const catalogRows = (catalog as { products?: Record<string, unknown>[] } | null)?.products ?? [];
+  for (const p of catalogRows) {
     if (p?.handle) byHandle.set(String(p.handle).toLowerCase(), p);
   }
   const bestHandles = typeof best === 'string' ? parseHandles(best) : [];
@@ -127,7 +154,7 @@ export async function storefrontFacts(domain: string): Promise<StorefrontFacts> 
     const out: Product[] = [];
     for (const h of handles) {
       const raw = byHandle.get(h);
-      const row = raw ? fromJson(raw, currency || 'USD') : extra.get(h) ?? null;
+      const row = raw ? fromJson(raw, currency || 'USD', base) : extra.get(h) ?? null;
       if (row) out.push({ ...row, rank: out.length + 1 });
     }
     return out;
@@ -141,7 +168,28 @@ export async function storefrontFacts(domain: string): Promise<StorefrontFacts> 
     productCount: Number.isFinite(count) && count > 0 ? count : null,
     bestSelling: resolve(bestHandles),
     latest: resolve(latestHandles),
+    // Priced only when the shop states its currency: a price labelled with a
+    // guessed currency is a wrong number.
+    catalog: currency
+      ? ((firstPage as { products?: Record<string, unknown>[] } | null)?.products ?? [])
+        .map(p => fromJson(p, currency, base)).filter((p): p is Product => !!p)
+      : [],
   };
+}
+
+/**
+ * Page `page` (1-based) of a store's published catalogue, priced in the shop's
+ * own currency. [] when the store does not serve it or states no currency.
+ */
+export async function storefrontCatalogPage(domain: string, page: number): Promise<Product[]> {
+  if (!domain || !Number.isInteger(page) || page < 1 || page > 500) return [];
+  const base = `https://${domain}`;
+  const meta = await get(`${base}/meta.json`, 'json');
+  const currency = str((meta as Record<string, unknown> | null)?.currency);
+  if (!/^[A-Z]{3}$/.test(currency)) return [];
+  const data = await get(`${base}/products.json?limit=${CATALOG_PAGE}&page=${page}${ccyParam(meta)}`, 'json');
+  return ((data as { products?: Record<string, unknown>[] } | null)?.products ?? [])
+    .map(p => fromJson(p, currency, base)).filter((p): p is Product => !!p);
 }
 
 /**

@@ -24,6 +24,7 @@ There are two ways to connect, and both give you the same tools.
 |---|---|
 | `search_shops` | Stores by keyword, category, country, catalogue size, live ads; sort by traffic, growth, ads, newest |
 | `get_shop` | Full dossier: traffic history, ranks, engagement, traffic-source mix, top countries and keywords |
+| `search_products` | Winning products: storefront products Meta ads land on, with title, price in the store's currency, active and new ads, advertiser pages, first-ad date and the store's traffic; filter by keyword, category, ad country, price, store |
 | `find_similar_shops` | Stores in the same category at a similar traffic level |
 | `search_ads` | Ad creatives by keyword, network, media, country, or AI label (hook, angle, funnel stage, offer, urgency) |
 | `get_ad` | One creative, with its AI labels and confidence |
@@ -32,6 +33,14 @@ There are two ways to connect, and both give you the same tools.
 | `list_tracked_brands`, `brand_changes`, `track_brand`, `untrack_brand` | Your workspace brandtracker: record a store on a schedule and see what moved (these need the matching scopes) |
 
 A free key comes from **https://adlibraryspy.com/settings/api**. It's free, and so is the whole product.
+
+## Any AI agent: one message
+
+Paste this into Claude, ChatGPT, Cursor or any agent that can read a URL:
+
+> Read https://adlibraryspy.com/SKILL.md and follow it to research my competitors' Shopify stores and Meta ads.
+
+[`/SKILL.md`](https://adlibraryspy.com/SKILL.md) tells the agent what to call (public JSON first, then the hosted MCP with your key), gives it recipes, and the rules for reading the data (`null` = not measured, name the traffic source). It is in the Agent Skills format, so it can also be saved as a skill.
 
 ## Claude Code
 
@@ -90,5 +99,7 @@ Leave the key empty to use the three keyless tools.
 
 ## Limits
 
-- **Rate limits:** the hosted index allows 600 calls a minute per workspace, and the public endpoints allow 60 a minute per IP (most of those are served from the edge cache).
+- **Fair use (the API is free, so it is capped):** 120 tool calls a minute and 1,000 a day per workspace, 1,500 a day per user across all their workspaces, and 3,000 a day per IP. Only `tools/call` counts toward the daily caps; `initialize`, `tools/list` and `ping` spend one burst hit. Daily windows start at the first call and last 24 hours.
+- **Public endpoints** (`/api/public/*`): 60 requests a minute and 1,000 a day per IP; most requests are served from the edge cache and never reach these limits.
+- **Headers:** every MCP response carries `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` (seconds until the tightest window resets). A refusal is HTTP 429 with `Retry-After`; back off for that many seconds.
 - **Missing values:** `null` means nothing measured that value. Assistants are told this in the tool descriptions, because reading a missing value as zero leads to false conclusions.

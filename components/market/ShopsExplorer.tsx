@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageShell } from '@/components/layouts/page-shell';
 import { MarketPagination, MarketToolbar, ShallowUrlProvider } from '@/components/market/MarketToolbar';
+import { SaveSearchButton } from '@/components/market/SaveSearchButton';
 import { ShopExplorerTable } from '@/components/market/ShopExplorerTable';
 import { SHOPS_KEY } from '@/components/market/shops-cache';
 import type { CategoryNode, TechFacets } from '@/lib/market/shops';
@@ -81,15 +82,17 @@ export function ShopsExplorer({ categories, tech, initial, initialParams, render
     <ShallowUrlProvider>
       <PageShell
         fullHeight
+        className="apple-ui gap-5 bg-[var(--a-canvas)]"
         title={showHidden ? 'Hidden shops' : 'Shops'}
+        actions={showHidden ? undefined : <SaveSearchButton kind="shops" />}
         titleAdornment={(data?.allPlatformsTotal ?? data?.total) != null
-          ? <span className="pill tabular-nums" title="Shops across all platforms">{(data!.allPlatformsTotal ?? data!.total)!.toLocaleString()}</span>
+          ? <span className="inline-flex items-center rounded-full bg-[var(--a-fill)] px-3 py-1 text-[13px] font-semibold tabular-nums text-foreground" title="Shops across all platforms">{(data!.allPlatformsTotal ?? data!.total)!.toLocaleString()}</span>
           : undefined}
       >
         <MarketToolbar categories={categories} hiddenCount={data?.hiddenCount ?? 0} tech={tech} />
 
         {q.isError && (
-          <div role="alert" className="alert-error flex shrink-0 items-center justify-between gap-3 text-sm">
+          <div role="alert" className="alert-error flex shrink-0 items-center justify-between gap-3 rounded-2xl text-sm">
             <span>{q.error instanceof Error ? q.error.message : 'Shops could not be loaded'}.</span>
             <button type="button" onClick={() => q.refetch()} className="font-medium underline">Try again</button>
           </div>

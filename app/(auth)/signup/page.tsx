@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { requestMagicLinkAction } from '@/lib/auth/actions';
+import { googleClientId } from '@/lib/auth/actions';
 import { currentUser } from '@/lib/auth/session';
 import { safeNext } from '@/lib/auth/safe-next';
-import { AuthFormShell, Field } from '@/components/AuthForm';
+import { Field } from '@/components/AuthForm';
+import { EmailSignIn } from '@/components/EmailSignIn';
+import { GoogleSignIn } from '@/components/GoogleSignIn';
 
 export const metadata = { title: 'Create your account' };
 export const dynamic = 'force-dynamic';
@@ -22,6 +24,7 @@ function landingFrom(referer: string | null, host: string | null): string {
 export default async function SignupPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams).next);
   if (await currentUser()) redirect(next ?? '/shops');
+  const google = await googleClientId();
   const h = await headers();
   const landing = landingFrom(h.get('referer'), h.get('x-forwarded-host') ?? h.get('host'));
   const invited = next?.startsWith('/invite?');
@@ -33,14 +36,15 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           ? 'Use the email address the invitation was sent to and you will join the workspace right away.'
           : 'Free for everyone — no card, no trial, no limits. Join teams finding winning ads and fast-growing shops.'}
       </p>
-      <AuthFormShell action={requestMagicLinkAction} submitLabel="Create my free account" pendingLabel="Sending…">
+      {google && <GoogleSignIn clientId={google} next={next} landing={landing} context="signup" />}
+      <EmailSignIn submitLabel="Create my free account" pendingLabel="Sending…">
         {next && <input type="hidden" name="next" value={next} />}
         {landing && <input type="hidden" name="landing" value={landing} />}
         <Field label="Your name" name="name" autoComplete="name" required={false} />
         <Field label="Work email" name="email" type="email" autoComplete="email" />
         {!invited && <Field label="Workspace name" name="workspace" required={false} hint="You can rename this later." />}
-        <p className="text-xs text-muted-foreground">No password: we email you a link to confirm your address and sign in.</p>
-      </AuthFormShell>
+        <p className="text-xs text-muted-foreground">No password: we email you a 6-digit code to enter here (the email has a sign-in link too).</p>
+      </EmailSignIn>
       <p className="mt-6 text-sm text-muted-foreground">
         Already registered? <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'} className="text-foreground font-medium hover:underline">Sign in</Link>
       </p>

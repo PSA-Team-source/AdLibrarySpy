@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ctxOrNull } from '@/lib/auth/guard';
-import { rateLimit } from '@/lib/ratelimit';
+import { FAIR_USE, clientIp, quotaHeaders, quotaWait, spendQuotas } from '@/lib/ratelimit';
 import { loadShops } from '@/app/(app)/shops/load';
 
 export const runtime = 'nodejs';
@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
 
   // Paging through results is a few requests a second at most; this only
   // stops a runaway script from scraping the index through us.
-  const rl = await rateLimit(`shops:${ctx.user.id}`, 240, 60);
-  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  const rl = await spendQuotas(FAIR_USE.shops(ctx.user.id, clientIp(req.headers)));
+  if (!rl.allowed) return NextResponse.json({ error: quotaWait(rl) }, { status: 429, headers: quotaHeaders(rl) });
 
   const sp = Object.fromEntries(req.nextUrl.searchParams);
   try {

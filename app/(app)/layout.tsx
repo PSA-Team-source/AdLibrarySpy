@@ -3,6 +3,10 @@
 import { AppShell } from '@/components/layouts/app-shell';
 import { requireCtx, userWorkspaces } from '@/lib/auth/guard';
 import { trackerCount } from '@/lib/data';
+import { one } from '@/lib/db';
+import { MetaPixel } from '@/components/public/MetaPixel';
+import { cookies } from 'next/headers';
+import { SKILL_DISMISS_COOKIE } from '@/lib/public/site';
 import type { Metadata } from 'next';
 
 // Behind a login: never indexed (the public directory lives in the (public) group).
@@ -12,9 +16,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCtx();
-  const [trackers, workspaces] = await Promise.all([
+  const [trackers, workspaces, fresh, jar] = await Promise.all([
     trackerCount(ctx.workspaceId).catch(() => 0),
     userWorkspaces(ctx.user.id).catch(() => []),
+    // Account under an hour old = the ad pixel's CompleteRegistration (sent once, see MetaPixel).
+    one<{ fresh: boolean }>(`SELECT created_at > now() - interval '1 hour' AS fresh FROM users WHERE id = $1`, [ctx.user.id])
+      .then(r => !!r?.fresh, () => false),
+    cookies(),
   ]);
 
   return (
@@ -23,7 +31,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       workspace={{ id: ctx.workspaceId, name: ctx.workspaceName, role: ctx.role }}
       workspaces={workspaces}
       trackers={trackers}
+      skillAnnouncement={!jar.has(SKILL_DISMISS_COOKIE)}
     >
+      <MetaPixel registeredUserId={fresh ? ctx.user.id : null} />
       {children}
     </AppShell>
   );

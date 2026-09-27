@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { SITE_URL } from '@/lib/public/site';
+import { GoogleAnalytics } from '@/components/public/GoogleAnalytics';
 
 // Same font wiring as PlatformDTC's dashboard: the CSS variable is what
 // tailwind.config.ts resolves `font-sans` to.
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );

@@ -9,20 +9,74 @@ app/(auth)/*      sign in, sign up, reset, verify, accept invite
 app/(app)/*       the product — every page behind requireCtx()
 app/(public)/*    anonymous, edge-cached pages: /store/{domain}, /stores, /trending, /weekly
 app/api/public/*  anonymous JSON (store card, weekly report) used by the extension, CLI and MCP
+app/api/export/*  signed-in CSV downloads of /shops and /ads (same loaders, lib/csv.ts)
 app/api/mcp       MCP server (JSON-RPC 2.0, OAuth 2.1 bearer)
 app/oauth/*       consent screen; app/api/oauth/* token + registration
 lib/market/*      index client, service token, shop and creative mappers
 lib/traffic/*     SimilarWeb mapping + labels, CrUX ranks, licensed-provider cache
-lib/auth/*        passwordless (magic link) sign-in, sessions, request guards
+lib/auth/*        passwordless sign-in (emailed code + magic link, Google ID token), sessions, request guards
 lib/migrations/   SQL, applied in filename order by npm run migrate
 packages/*        shopify-inspect (CLI) and adlibraryspy-mcp (stdio MCP), npm workspaces
 extension/        Chrome extension (Manifest V3, activeTab only)
 leaderboard/      the weekly README table and its GitHub Action
-scripts/          migrations runner, snapshot + weekly-report jobs
+scripts/          migrations runner, snapshot, alerts-digest + weekly-report jobs
 ```
 
 Multi-tenancy is enforced in `lib/auth/guard.ts`: a `workspace_id` is always
 resolved from the session, never accepted from a request.
+
+## CSV exports
+
+`GET /api/export/shops` and `GET /api/export/ads` take exactly the query string of
+`/shops` and `/ads` and run it through the screen's own loader (`app/(app)/shops/load.ts`,
+`lib/market/ads-params.ts`), so a file always holds the rows on screen, in the same sort,
+from row 1 up to `EXPORT_MAX_ROWS` (1,000). Each call spends one hit from `FAIR_USE.export`
+in `lib/ratelimit.ts` (10 a minute, 50 a day per user, 100 a day per IP) and writes an
+`export.shops` / `export.ads` audit row. `lib/csv.ts` writes RFC 4180 with a UTF-8 BOM and
+prefixes text starting with `= + - @` with `'` so a cell never runs as a spreadsheet formula;
+the workspace audit export uses the same writer. A cell the table leaves blank (traffic that
+fails the credibility check, an unmeasured 7-day peak) is blank in the file too.
+
+## Alerts
+
+`scripts/alerts-digest.mjs` runs daily at 13:00 UTC (9:00 ET; retries 14:30 and 16:00,
+`deploy/crontab.txt`) and mails each user one digest per period, **daily by default**
+(owner decision 2026-09-27; migration 018), weekly on Mondays, or off:
+
+- **Brandtracker changes** for every workspace the user belongs to: the board's own window
+  delta (`trackerBoard` in `lib/trackers.ts`, `1d` for daily, `7d` for weekly), reported
+  only when material (`trackerLines` in `lib/alerts/digest.ts`: new ads, a live-ad change,
+  monthly visits moving 10%+ with the same measurement source, product-count change).
+- **Saved searches** (`saved_searches`, personal per workspace + user, saved from the
+  **Save search** button on `/shops` and `/ads`, managed at `/searches`): page 1 is re-run
+  through `loadShops` / `queryAds(adFilterFromParams(...))`, the pages' own loaders
+  (`scripts/ts-paths.mjs` lets the job import them). A new alert is seeded with the current
+  results first; afterwards only ids never shown before are mailed.
+- **Today in the market** (`lib/alerts/market.ts`), after the personal sections: Shopify
+  stores whose running Meta ads rose 100+ from the day before to yesterday, from ClickHouse
+  `market_research.market__daily_summary_stores` (the crawler's daily running-ads count, the
+  only store metric that moves daily; SimilarWeb is monthly and is not used). In the user's
+  top niche (from the stores they track and save) when it has 3+ movers, else overall; fewer
+  than 3 movers and the section is left out. Logos only when they are https raster images.
+
+No personal news and no market section = no email that day. A `(user, period)` row in
+`alert_sends` is claimed before sending, so retries never double-send; a failed send drops
+its claim. If the market section or a user's search cannot be computed after retries, the
+run (or that user) waits for the next run — never a partial digest. Addresses on reserved
+TLDs (`.test`, `.example`) are skipped. Sends are paced (`ALERTS_SEND_GAP_MS`, 3 s).
+
+**Marketing envelope.** The digest goes through `sendMarketingMail` (`lib/mail.ts`) with
+envelope sender `mkt-bounce.no-reply@adlibraryspy.com` (a Stalwart alias of the no-reply
+mailbox), which Stalwart routes to the marketing IP `167.233.188.42` under the warm-up
+stages (DTCMail `infra/runbooks/IP-WARMUP.md` §9). It tries `mkt-bounce.no-reply@news.…`
+first (§10, not set up for adlibraryspy.com yet), and a refused envelope falls back to the
+next and finally to the mailbox itself, remembered 10 min — mail is never dropped. From is
+unchanged. Sign-in and invite mail stay on `sendMail` (mailbox envelope, transactional IP).
+
+One-click unsubscribe (`List-Unsubscribe` + RFC 8058) is the newsletter's signed link with
+`l=alerts` (`lib/weekly/unsubscribe.ts`, its own HMAC purpose).
+`--dry-run [--as-monday] [--only=<email>] [--render=<dir>] [--day=YYYY-MM-DD]` computes from
+live data and writes nothing; `--only=<email> --send-to=<addr>` mails one digest elsewhere.
 
 ## AI creative labels
 
@@ -68,6 +122,26 @@ measured month, nothing at all — never the index's rate beside a measured
 figure. A measured SimilarWeb figure is never gated by that test — the
 contradiction it catches is exactly what the crawl fixes. `Shop.trafficSource`
 says which of the two any figure is, on every surface and in the MCP tools.
+
+## Winning products
+
+`/products` (and `search_products` over MCP) lists storefront products that Meta
+ads land on. The Go API (`GET /market/winning-products`,
+`backend-v3-go/internal/port/httpapi/market_winning_products.go`) builds it in
+the background: ClickHouse groups every creative whose landing URL is
+`<host>/products/<handle>` (active ads, ads started in the last 14 days,
+advertiser pages, first-ad date, up to six ads with hosted media), the Shops
+index supplies the store (traffic, niche, dossier id), and the storefront's own
+`/meta.json` + `/products/<handle>.js` supply title, image and price in the
+shop's currency (cached 24h). A product whose storefront never described it is
+not listed. The market product index is not used: its `num_ads` is the store's
+total copied onto every product, `sales_score` is 0 everywhere and its currency
+is "USD" even for stores pricing in other currencies. `app/(app)/products/load.ts`
+is shared by the page's first render and `GET /api/products`.
+
+The shop dossier's Products panel shows the whole published catalogue with
+prices (`/products.json`, 48 a page; `GET /api/shops/products` serves the pages
+after the first).
 
 ## Licensed traffic
 

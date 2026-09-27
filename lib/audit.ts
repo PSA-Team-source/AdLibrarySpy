@@ -2,6 +2,7 @@
 // append-only row to `audit_log` (see lib/auth/guard.ts `audit()`); this module
 // is the read side — paged, filterable, and exportable for compliance.
 import { query } from '@/lib/db';
+import { toCsv } from '@/lib/csv';
 
 export interface AuditEntry {
   id: string;
@@ -47,6 +48,8 @@ const LABELS: Record<string, string> = {
   'tracker.folder_created': 'Created a tracker folder',
   'tracker.folder_deleted': 'Deleted a tracker folder',
   'tracker.moved': 'Moved a tracker to a folder',
+  'export.shops': 'Exported Shops to CSV',
+  'export.ads': 'Exported Ads to CSV',
 };
 
 function categoryOf(action: string): string {
@@ -130,12 +133,6 @@ export async function listAudit(
   return { items, total: countRow ? Number(countRow[0]?.n ?? 0) : null };
 }
 
-/** CSV-safe representation of a value (quoted only when it must be). */
-function cell(v: unknown): string {
-  const s = v == null ? '' : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 /**
  * Full export of a workspace's audit trail as CSV text. Immutable by design:
  * the trail cannot be edited or masked, so the export is a faithful dump.
@@ -165,5 +162,5 @@ export async function auditCsv(workspaceId: string): Promise<string> {
     r.target,
     r.ip,
   ]);
-  return [header.map(cell).join(','), ...lines.map(l => l.map(cell).join(','))].join('\n');
+  return toCsv(header, lines);
 }

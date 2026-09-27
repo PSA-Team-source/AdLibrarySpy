@@ -39,6 +39,7 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 - SimilarWeb visits and month-over-month growth for the exact store, with a trend line
 - AOV, live Meta ads, 7-day ad peak, top products and launch year on every row
 - Hide stores you've already seen, and save stores to shared folders
+- **Export CSV**: the current filters and sort, up to 1,000 rows, ready for Excel or Sheets
 
 ### Ads: the creative library
 
@@ -49,6 +50,7 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 - Run dates and placements for each ad, with video playback in the grid
 - **AI creative labels**: hook, angle, funnel stage, offer and urgency, each with the model's confidence
 - Save ads to folders and share them with your team. The **Advertisers** screen ranks brands by creative count
+- **Export CSV** of the current search: ad and page ids, run dates, status, format, placements, copy, landing and media URLs
 
 ### Store dossier: everything about one store
 
@@ -65,6 +67,9 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 
 - Track any store. A snapshot of its traffic, live ads and new ads is recorded every day
 - See what changed across 1, 7, 14 and 30 days, and organise tracked stores in folders
+- **Daily alerts by email** (or weekly, or off): new ads, live-ad and traffic moves for the brands you track, new
+  results for the Shops and Ads searches you save, and the stores that added the most live Meta ads the day
+  before, in your niche. Sent only when something changed
 
 ### Trends and the Monday report
 
@@ -81,12 +86,14 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 A built-in **MCP server** (OAuth 2.1) lets Claude, ChatGPT and other assistants search shops and ads,
 open dossiers and manage your brandtracker with your workspace's access. In Claude, go to Settings →
 Connectors → *Add custom connector* and paste `https://adlibraryspy.com/api/mcp`.
+Any other agent: paste *"Read https://adlibraryspy.com/SKILL.md and follow it to research my competitors' Shopify stores and Meta ads."*
 [All clients and tools →](docs/mcp.md)
 
 ### Teams, API and extension
 
-- Free team workspaces with roles, invites, shared saves and an activity log. Sign-in is passwordless (magic links)
+- Free team workspaces with roles, invites, shared saves and an activity log. Sign-in is passwordless (an emailed 6-digit code or magic link, or Sign in with Google)
 - API keys for the MCP endpoint (Settings → API)
+- In-app feedback (sidebar → Feedback): stored in the `feedback` table and emailed to `FEEDBACK_EMAIL`, with Reply-To set to the sender (10 messages an hour per user; `FAIR_USE.feedback`). Rate limits for agents: [/SKILL.md](https://adlibraryspy.com/SKILL.md#rate-limits)
 - A [Chrome extension](extension/) that shows any Shopify store's traffic, ads, products and apps in one click
 
 ## Why trust the numbers
@@ -172,9 +179,11 @@ All variables are listed, with placeholders, in [`.env.example`](.env.example).
 | `DATABASE_URL` | yes | App cannot start; `/api/health` returns 503 |
 | `PGSSL` | no | TLS on; set `off` for a local Postgres without TLS |
 | `PG_POOL_MAX` | no | Defaults to 10 connections |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | yes | Sign-in is an emailed magic link: nobody can sign in, and invites cannot send |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | yes | Sign-in is an emailed code + magic link: nobody can sign in, and invites cannot send |
+| `FEEDBACK_EMAIL` | no | Where in-app feedback is emailed (defaults to the maintainers). Every message is also kept in the `feedback` table |
+| `GOOGLE_CLIENT_ID` | no | OAuth "Web application" client id (Authorized JavaScript origins = your `APP_BASE_URL`). Set = Sign in with Google + One Tap on `/login` and `/signup`; unset = email link only |
 | `APP_BASE_URL` | yes in production | Links in mail and OAuth metadata point at `http://localhost:4311` |
-| `SESSION_SECRET` | for the newsletter | At least 16 characters; without it unsubscribe links cannot be signed |
+| `SESSION_SECRET` | yes | At least 16 characters; keys the emailed sign-in codes (stored as an HMAC) and signs unsubscribe links. Without it email sign-in cannot issue a code |
 | `MARKET_API_BASE` | no | Defaults to the public index, `https://api.platformdtc.com/api/v1` |
 | `MARKET_TIMEOUT_MS` | no | Defaults to 12000 |
 | `PLATFORM_JWT_SECRET`, `MARKET_SERVICE_ACCOUNT_ID`, `MARKET_SERVICE_EMAIL` | for ad creatives and MCP | Service account issued by the index operator; without it ad creatives return empty (shops still work) |
@@ -183,6 +192,7 @@ All variables are listed, with placeholders, in [`.env.example`](.env.example).
 | `NEXT_PUBLIC_CHROME_EXTENSION_URL` | no | The homepage shows no extension link |
 | `APP_VERSION` | no | `/api/health` reports `dev` |
 | `WEEKLY_MAIL_PER_SEC` | no | Weekly report sends 4 emails per second |
+| `ALERTS_SEND_GAP_MS` | no | Alerts digest waits 3000 ms between emails (steady warm-up traffic) |
 
 ### Tech stack
 

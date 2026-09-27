@@ -211,7 +211,7 @@ export default async function VsTrendTrackPage() {
       <section className="flex flex-col items-start gap-3 rounded-xl border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Try it free</h2>
-          <p className="text-sm text-muted-foreground">Sign up with just your email: we send a sign-in link, no password. No card.</p>
+          <p className="text-sm text-muted-foreground">Sign up with just your email: we send a 6-digit code, no password. No card.</p>
         </div>
         <Link href="/signup" className="btn-primary inline-flex items-center gap-1.5">Start free<ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link>
       </section>

@@ -3,7 +3,10 @@
 // 169.254.169.254 or a private service, so every hop is checked before it is
 // requested and redirects are followed here, never by fetch.
 import { lookup } from 'node:dns/promises';
-import net from 'node:net';
+import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
+import http from 'node:http';
+import https from 'node:https';
+import net, { type LookupFunction } from 'node:net';
 
 const BLOCKED = new net.BlockList();
 for (const [addr, bits] of [
@@ -72,4 +75,74 @@ export async function safeFetch(url: string, init: RequestInit = {}, maxRedirect
     await res.body?.cancel().catch(() => {});
     current = new URL(location, current);
   }
+}
+
+export interface SafeGetResult { status: number; text: string }
+
+/**
+ * GET an untrusted URL over node:http(s) rather than fetch(). Shopify's bot
+ * defence answers fetch()'s (undici's) connection from the production host with
+ * a 429 "Verifying your connection..." page on every storefront, while node's
+ * https client from the same box gets the JSON (measured 2026-09-27: goda.co,
+ * allbirds.com, hoooyi.com). Storefront reads use this.
+ *
+ * Every address a hop connects to is checked inside the socket's own DNS lookup,
+ * so a host cannot re-bind to a private address between check and connect.
+ * Redirects are followed here (same checks), the body is capped at `maxBytes`
+ * and the whole exchange at `timeoutMs`. Throws on a refused hop, a timeout or
+ * an oversized body.
+ */
+export async function safeGet(url: string, opts: {
+  headers?: Record<string, string>; timeoutMs?: number; maxBytes?: number; maxRedirects?: number;
+} = {}): Promise<SafeGetResult> {
+  const deadline = Date.now() + (opts.timeoutMs ?? 6000);
+  const maxRedirects = opts.maxRedirects ?? 3;
+  let current = new URL(url);
+  for (let hop = 0; ; hop++) {
+    if (current.protocol !== 'https:' && current.protocol !== 'http:') throw new BlockedUrlError(`scheme ${current.protocol}`);
+    if (current.username || current.password) throw new BlockedUrlError('credentials in URL');
+    const literal = bareHost(current.hostname);
+    if (net.isIP(literal) && isPrivateAddress(literal)) throw new BlockedUrlError(`non-public host ${current.hostname}`);
+    const res = await getOnce(current, opts.headers ?? {}, deadline, opts.maxBytes ?? 8_000_000);
+    if (!res.location) return { status: res.status, text: res.text };
+    if (hop >= maxRedirects) throw new BlockedUrlError('too many redirects');
+    current = new URL(res.location, current);
+  }
+}
+
+const checkedLookup: LookupFunction = (hostname, options, callback) => {
+  dnsLookup(hostname, { ...options, all: true, verbatim: true }, (err, addrs) => {
+    const list = (addrs ?? []) as unknown as LookupAddress[];
+    if (err) return callback(err, '', 4);
+    if (!list.length || list.some(a => isPrivateAddress(a.address))) {
+      return callback(new BlockedUrlError(`non-public host ${hostname}`), '', 4);
+    }
+    if (options.all) return (callback as unknown as (e: null, a: LookupAddress[]) => void)(null, list);
+    callback(null, list[0].address, list[0].family);
+  });
+};
+
+function getOnce(u: URL, headers: Record<string, string>, deadline: number, maxBytes: number):
+  Promise<{ status: number; location: string | null; text: string }> {
+  return new Promise((resolve, reject) => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return reject(new Error('timeout'));
+    const req = (u.protocol === 'https:' ? https : http).get(u, { headers, lookup: checkedLookup }, res => {
+      const status = res.statusCode ?? 0;
+      const location = status >= 300 && status < 400 ? res.headers.location ?? null : null;
+      if (location) { res.resume(); return resolve({ status, location, text: '' }); }
+      const chunks: Buffer[] = [];
+      let size = 0;
+      res.on('data', (c: Buffer) => {
+        size += c.length;
+        if (size > maxBytes) { req.destroy(new Error('response too large')); return; }
+        chunks.push(c);
+      });
+      res.on('end', () => resolve({ status, location: null, text: Buffer.concat(chunks).toString('utf8') }));
+      res.on('error', reject);
+    });
+    const timer = setTimeout(() => req.destroy(new Error('timeout')), remaining);
+    req.on('close', () => clearTimeout(timer));
+    req.on('error', reject);
+  });
 }

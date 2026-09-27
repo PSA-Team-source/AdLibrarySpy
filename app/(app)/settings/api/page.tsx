@@ -1,6 +1,8 @@
 import { requireCtx, hasRole } from '@/lib/auth/guard';
 import { listApiKeys } from '@/lib/apikeys';
 import { issuer } from '@/lib/mcp/oauth';
+import { FAIR_USE } from '@/lib/ratelimit';
+import { EXPORT_MAX_ROWS } from '@/lib/csv';
 import { timeAgo, dateShort } from '@/lib/format';
 import { CreateKeyForm, RevokeKeyButton } from '@/components/ApiKeys';
 import CopyField from '@/components/CopyField';
@@ -16,6 +18,8 @@ export default async function ApiSettingsPage() {
   const keys = await listApiKeys(ctx.workspaceId);
   const canManage = hasRole(ctx, 'admin');
   const endpoint = `${issuer()}/api/mcp`;
+  const [burst, perWorkspace] = FAIR_USE.mcp('', '', '');
+  const [, exportsPerDay] = FAIR_USE.export('', '');
 
   return (
     <div className="space-y-6">
@@ -65,6 +69,13 @@ export default async function ApiSettingsPage() {
   -H "Authorization: Bearer $ADLIBRARYSPY_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'`}</pre>
+          <p className="text-xs text-muted-foreground">
+            Fair use keeps the API free: up to {burst.limit} tool calls a minute and {perWorkspace.limit.toLocaleString('en-US')} a day per workspace.
+            Every response carries <code className="font-mono">X-RateLimit-Remaining</code> and <code className="font-mono">X-RateLimit-Reset</code> (seconds); a refusal is HTTP 429 with <code className="font-mono">Retry-After</code>.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Need a spreadsheet instead? <b>Export CSV</b> on Shops and Ads downloads the current filters and sort, up to {EXPORT_MAX_ROWS.toLocaleString('en-US')} rows per file and {exportsPerDay.limit} files a day.
+          </p>
         </div>
       </SectionCard>
     </div>

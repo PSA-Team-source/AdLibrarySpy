@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clientIp, rateLimit } from '@/lib/ratelimit';
+import { FAIR_USE, clientIp, quotaHeaders, quotaWait, spendQuotas } from '@/lib/ratelimit';
 import { latestWeeklyReport, weeklyReport, WEEK_RE } from '@/lib/weekly/data';
 
 export const runtime = 'nodejs';
@@ -56,10 +56,9 @@ export async function GET(req: NextRequest) {
   // first hop is whatever the client claimed, so it only stands in off-edge.
   const ip = req.headers.get('cf-connecting-ip')?.trim() || clientIp(req.headers);
   try {
-    const rl = await rateLimit(`pubweekly:${ip}`, 60, 60);
+    const rl = await spendQuotas(FAIR_USE.public('pubweekly', ip));
     if (!rl.allowed) {
-      const retry = Math.max(1, Math.ceil((rl.resetAt.getTime() - Date.now()) / 1000));
-      return json({ error: 'rate_limited', message: 'Too many requests — try again in a minute.' }, 429, NO_STORE, { 'Retry-After': String(retry) });
+      return json({ error: 'rate_limited', message: quotaWait(rl) }, 429, NO_STORE, quotaHeaders(rl));
     }
   } catch (err) {
     console.error('[api/public/weekly] rate limiter unavailable', err);

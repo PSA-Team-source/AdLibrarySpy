@@ -5,6 +5,7 @@ import { Search, X, ArrowDown, CalendarRange } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LabelFacets, LabelField, FacetEntry } from '@/lib/market/labels';
 import { AD_SORTS, EU_UK_COUNTRIES } from '@/lib/market/ad-options';
+import { ExportCsv } from './ExportCsv';
 
 /** Label filter selects, in reading order. The option text comes from the API. */
 const LABEL_SELECTS: { field: LabelField; any: string }[] = [
@@ -128,6 +129,7 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
             </button>
           )}
         </form>
+        <ExportCsv kind="ads" className="btn-ghost shrink-0 disabled:opacity-60" />
       </div>
 
       {storeFilter && (

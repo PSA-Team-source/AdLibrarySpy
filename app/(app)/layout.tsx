@@ -6,7 +6,8 @@ import { trackerCount } from '@/lib/data';
 import { one } from '@/lib/db';
 import { MetaPixel } from '@/components/public/MetaPixel';
 import { cookies } from 'next/headers';
-import { SKILL_DISMISS_COOKIE } from '@/lib/public/site';
+import { REPO_URL, SKILL_DISMISS_COOKIE } from '@/lib/public/site';
+import { sponsorUrl } from '@/lib/public/sponsor';
 import type { Metadata } from 'next';
 
 // Behind a login: never indexed (the public directory lives in the (public) group).
@@ -16,13 +17,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCtx();
-  const [trackers, workspaces, fresh, jar] = await Promise.all([
+  const [trackers, workspaces, fresh, jar, donateUrl] = await Promise.all([
     trackerCount(ctx.workspaceId).catch(() => 0),
     userWorkspaces(ctx.user.id).catch(() => []),
     // Account under an hour old = the ad pixel's CompleteRegistration (sent once, see MetaPixel).
     one<{ fresh: boolean }>(`SELECT created_at > now() - interval '1 hour' AS fresh FROM users WHERE id = $1`, [ctx.user.id])
       .then(r => !!r?.fresh, () => false),
     cookies(),
+    sponsorUrl(REPO_URL),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       workspaces={workspaces}
       trackers={trackers}
       skillAnnouncement={!jar.has(SKILL_DISMISS_COOKIE)}
+      donateUrl={donateUrl}
     >
       <MetaPixel registeredUserId={fresh ? ctx.user.id : null} />
       {children}

@@ -7,7 +7,7 @@ import { PrefetchKind } from 'next/dist/client/components/router-reducer/router-
 import { useTheme } from 'next-themes';
 import { Command } from 'cmdk';
 import {
-  ChevronDown, ChevronRight, Home, LogOut, Menu, MessageSquare, Moon, Search, Settings, Sun, User,
+  ChevronDown, ChevronRight, Coffee, Home, LogOut, Menu, MessageSquare, Moon, Search, Settings, Sun, User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { markAppNavigation } from '@/lib/app-history';
@@ -56,6 +56,8 @@ export interface AppShellProps {
   trackers: number;
   /** False once the user dismissed the agent-skill announcement (cookie read by the layout). */
   skillAnnouncement?: boolean;
+  /** GitHub Sponsors page once it is live (lib/public/sponsor.ts); null = no Donate link. */
+  donateUrl?: string | null;
   children: React.ReactNode;
 }
 
@@ -73,7 +75,7 @@ function switchWorkspace(to: string, next: string) {
   form.submit();
 }
 
-export function AppShell({ user, workspace, workspaces = [], trackers, skillAnnouncement = true, children }: AppShellProps) {
+export function AppShell({ user, workspace, workspaces = [], trackers, skillAnnouncement = true, donateUrl = null, children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -110,7 +112,7 @@ export function AppShell({ user, workspace, workspaces = [], trackers, skillAnno
   }, [mobileOpen]);
 
   const isFullHeight = FULL_HEIGHT_ROUTES.has(pathname);
-  const sidebar = <SidebarInner pathname={pathname} trackers={trackers} user={user} onFeedback={() => setFeedbackOpen(true)} />;
+  const sidebar = <SidebarInner pathname={pathname} trackers={trackers} user={user} onFeedback={() => setFeedbackOpen(true)} donateUrl={donateUrl} />;
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-background">
@@ -132,6 +134,7 @@ export function AppShell({ user, workspace, workspaces = [], trackers, skillAnno
         onMobileMenu={() => setMobileOpen(true)}
         onOpenCommand={() => setCommandOpen(true)}
         onFeedback={() => setFeedbackOpen(true)}
+        donateUrl={donateUrl}
       />
 
       {/* Mobile drawer */}
@@ -263,12 +266,13 @@ function NavLink({ it, pathname, trackers, nested = false }: {
 }
 
 function SidebarInner({
-  pathname, trackers, user, onFeedback,
+  pathname, trackers, user, onFeedback, donateUrl,
 }: {
   pathname: string;
   trackers: number;
   user: { name: string; email: string };
   onFeedback: () => void;
+  donateUrl: string | null;
 }) {
   // Expandable groups (Favorites, Team) start collapsed, except the one holding
   // the current screen, so the active row is never hidden. A click overrides.
@@ -330,6 +334,14 @@ function SidebarInner({
               <span className="flex-1 text-sm leading-snug">GitHub</span>
             </a>
           </li>
+          {donateUrl && (
+            <li>
+              <a href={donateUrl} target="_blank" rel="noopener" className={rowClass(false)}>
+                <Coffee className="h-[18px] w-[18px] flex-shrink-0" />
+                <span className="flex-1 text-sm leading-snug">Buy me a coffee</span>
+              </a>
+            </li>
+          )}
         </ul>
       </div>
 
@@ -357,7 +369,7 @@ function SidebarInner({
 // --- Header ----------------------------------------------------------------
 
 function AppHeader({
-  user, workspace, workspaces, onMobileMenu, onOpenCommand, onFeedback,
+  user, workspace, workspaces, onMobileMenu, onOpenCommand, onFeedback, donateUrl,
 }: {
   user: { name: string; email: string };
   workspace: { id: string; name: string };
@@ -365,6 +377,7 @@ function AppHeader({
   onMobileMenu: () => void;
   onOpenCommand: () => void;
   onFeedback: () => void;
+  donateUrl: string | null;
 }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -529,6 +542,13 @@ function AppHeader({
                   <GitHubMark className="h-3.5 w-3.5" /> GitHub
                 </a>
               </DropdownMenuItem>
+              {donateUrl && (
+                <DropdownMenuItem asChild>
+                  <a href={donateUrl} target="_blank" rel="noopener" className="flex cursor-pointer items-center gap-2">
+                    <Coffee className="h-3.5 w-3.5" /> Buy me a coffee
+                  </a>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               {/* A server action, so sign-out works before hydration too. */}
               <form action={logoutAction}>

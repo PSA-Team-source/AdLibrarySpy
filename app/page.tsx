@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Eye, Filter, GitPullRequest, Globe, Layers3, Scale, Search, Share2, Store, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Coffee, Eye, Filter, GitPullRequest, Globe, Layers3, Scale, Search, Share2, Store, Users } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { RefBeacon } from '@/components/public/RefBeacon';
@@ -15,6 +15,7 @@ import { listAds } from '@/lib/market/creatives';
 import { directoryList, measuredMonth } from '@/lib/seo/directory';
 import { GitHubMark, OpenSourceAnnouncement } from '@/components/public/OpenSourceAnnouncement';
 import { measuredVisits, storePath, adPath, REPO_URL } from '@/lib/public/site';
+import { sponsorUrl } from '@/lib/public/sponsor';
 import { compact, flag } from '@/lib/format';
 import { HOME_FAQS as faqs, SITE_DESCRIPTION, siteJsonLd } from '@/lib/public/faq';
 import type { Ad, Shop } from '@/lib/types';
@@ -62,7 +63,7 @@ async function liveData() {
 
 
 export default async function HomePage() {
-  const { shops, top, wall } = await liveData();
+  const [{ shops, top, wall }, donateUrl] = await Promise.all([liveData(), sponsorUrl(REPO_URL)]);
   const month = measuredMonth(top);
   const extensionUrl = process.env.NEXT_PUBLIC_CHROME_EXTENSION_URL;
   const google = await googleClientId();
@@ -93,6 +94,11 @@ export default async function HomePage() {
             <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
           </nav>
           <div className="flex items-center gap-2">
+            {donateUrl && (
+              <a href={donateUrl} target="_blank" rel="noopener" className="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-white/70 hover:text-white lg:inline-flex">
+                <Coffee className="h-4 w-4" aria-hidden /> Donate
+              </a>
+            )}
             <a href={REPO_URL} target="_blank" rel="noopener" aria-label="AdLibrarySpy on GitHub" className="hidden rounded-lg p-2 text-white/70 hover:text-white sm:block">
               <GitHubMark className="h-5 w-5" />
             </a>
@@ -295,6 +301,11 @@ export default async function HomePage() {
               <a href={`${REPO_URL}/contribute`} target="_blank" rel="noopener" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-medium text-white/90 hover:bg-white/5">
                 Find a first issue <ArrowRight className="h-4 w-4" aria-hidden />
               </a>
+              {donateUrl && (
+                <a href={donateUrl} target="_blank" rel="noopener" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-medium text-white/90 hover:bg-white/5">
+                  <Coffee className="h-4 w-4" aria-hidden /> Buy me a coffee
+                </a>
+              )}
             </div>
           </div>
           <ul className="grid grid-cols-1 gap-2 text-sm">
@@ -363,6 +374,7 @@ export default async function HomePage() {
             <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
             {extensionUrl && <a href={extensionUrl} target="_blank" rel="noopener" className="hover:text-white">Chrome extension</a>}
             <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-white">GitHub</a>
+            {donateUrl && <a href={donateUrl} target="_blank" rel="noopener" className="hover:text-white">Donate</a>}
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
             <Link href="/login" className="hover:text-white">Log in</Link>
           </nav>

@@ -6,6 +6,7 @@ import { RefBeacon } from '@/components/public/RefBeacon';
 import { MetaPixel } from '@/components/public/MetaPixel';
 import { OpenSourceAnnouncement } from '@/components/public/OpenSourceAnnouncement';
 import { REPO_URL, SITE_URL } from '@/lib/public/site';
+import { sponsorUrl } from '@/lib/public/sponsor';
 
 /**
  * Public (anonymous, indexable, edge-cached) chrome for /store, /ad, /stores, /weekly, /vs.
@@ -24,7 +25,8 @@ const NAV = [
   { href: '/weekly', label: 'Weekly' },
 ] as const;
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const donateUrl = await sponsorUrl(REPO_URL);
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <RefBeacon />
@@ -70,6 +72,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link href="/login" className="hover:text-foreground">Log in</Link>
             <Link href="/signup" className="hover:text-foreground">Create free account</Link>
             <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-foreground">GitHub</a>
+            {donateUrl && <a href={donateUrl} target="_blank" rel="noopener" className="hover:text-foreground">Donate</a>}
           </nav>
         </div>
       </footer>

@@ -7,6 +7,21 @@ const cell = s => String(s ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').tri
 const flag = cc => (/^[A-Z]{2}$/.test(cc ?? '') ? String.fromCodePoint(...[...cc].map(c => 0x1f1a5 + c.charCodeAt(0))) : '');
 const storeLink = i => `[${cell(i.name || i.domain)}](${SITE}/store/${encodeURIComponent(i.domain)})`;
 
+function productTable(products) {
+  const rows = products.map(p => {
+    const price = p.price ? `${p.currency} ${p.price}` : '';
+    return `| ${cell(p.title)} | [${cell(p.storeName || p.domain)}](${SITE}/store/${encodeURIComponent(p.domain)}) | ${price} |`;
+  });
+
+  return [
+    "### Products from this week's breakout stores",
+    '',
+    '| Product | Store | Price |',
+    '|---|---|---:|',
+    ...rows,
+  ].join('\n');
+}
+
 export function sectionTable(section, limit = 10) {
   const rows = section.items.slice(0, limit).map((i, n) =>
     `| ${n + 1} | ${storeLink(i)} | ${cell(i.niche)} | ${flag(i.country)} | **${cell(i.metric)}** | ${cell(i.detail)} |`);
@@ -31,6 +46,8 @@ export function weekMarkdown(report) {
       + `Interactive version: [${report.url.replace('https://', '')}](${report.url}).`,
     '',
     ...d.sections.filter(s => s.items.length).flatMap(s => [sectionTable(s, 25), '']),
+    '',
+    ...(d.products?.length ? [productTable(d.products)] : []),
   ].join('\n');
 }
 

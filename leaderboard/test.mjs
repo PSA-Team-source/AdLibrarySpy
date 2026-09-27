@@ -1,11 +1,27 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readmeBlock, replaceBlock, sectionTable } from './render.mjs';
+import { readmeBlock, replaceBlock, sectionTable, weekMarkdown } from './render.mjs';
 
 const item = { domain: 'a.com', name: 'A | B', niche: 'Apparel', country: 'US', metric: '+10%', detail: '1K → 1.1K visits' };
 const report = {
   week: '2026-w39', publishedAt: '2026-09-25T00:00:00Z', url: 'https://adlibraryspy.com/weekly/2026-w39',
-  data: { weekLabel: 'Week 39, 2026', weekStart: '2026-09-21', weekEnd: '2026-09-27', sections: [
+  data: { weekLabel: 'Week 39, 2026', weekStart: '2026-09-21', weekEnd: '2026-09-27',products: [
+    {
+      title: 'Test Product',
+      domain: 'example.com',
+      price: 25,
+      currency: 'USD',
+      storeName: 'Example Store',
+    },
+    {
+      title: 'Free Product',
+      domain: 'free.com',
+      price: 0,
+      currency: 'USD',
+      storeName: 'Free Store',
+    },
+   ],
+    sections: [
     { key: 'growth', title: 'Growth', blurb: 'b.', source: 's', items: [item] },
     { key: 'scaling', title: 'Scaling', blurb: 'b.', source: 's', items: [] },
   ] },
@@ -22,4 +38,12 @@ test('README block skips empty sections and replaces only between markers', () =
   assert.ok(b.includes('### Growth') && !b.includes('### Scaling'));
   assert.equal(replaceBlock('x\n<!-- leaderboard:start -->old<!-- leaderboard:end -->\ny', 'NEW'), 'x\nNEW\ny');
   assert.throws(() => replaceBlock('no markers', 'NEW'));
+});
+
+test('weekly markdown includes products with store links and omits zero prices', () => {
+  const md = weekMarkdown(report);
+
+  assert.match(md, /Products from this week's breakout stores/);
+  assert.match(md, /\| Test Product \| \[Example Store\]\(https:\/\/adlibraryspy\.com\/store\/example\.com\) \| USD 25 \|/);
+  assert.doesNotMatch(md, /Free Product.*\$0/);
 });

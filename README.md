@@ -9,6 +9,12 @@
 Find the stores that are winning, see the ads they run, and track your competitors.
 Every number comes from a real measurement with its source attached. Nothing is estimated.
 
+**Use it from any AI agent.** Paste this into Claude, ChatGPT, Cursor or any other agent:
+
+```
+Read https://adlibraryspy.com/SKILL.md and follow it to research my competitors' Shopify stores and Meta ads.
+```
+
 [**Open the app →**](https://adlibraryspy.com/?ref=gh:readme) · [Run it yourself](#run-it-yourself) · [Use it from Claude or ChatGPT](#ask-your-ai) · [This week's breakouts](#this-weeks-shopify-breakouts)
 
 [![CI](https://github.com/PSA-Team-source/AdLibrarySpy/actions/workflows/ci.yml/badge.svg)](https://github.com/PSA-Team-source/AdLibrarySpy/actions/workflows/ci.yml)

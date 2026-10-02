@@ -92,6 +92,10 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
     if (!styleValues) return;
     const current = params.get('style') ?? '';
     const run = () => {
+      // Ads are in every script; a result needing an Inter subset not yet
+      // loaded (Cyrillic, Greek, Latin-ext) held the swap ~1s on the font
+      // download. Fetch every subset now, while idle.
+      document.fonts.forEach(f => { if (f.status === 'unloaded') f.load().catch(() => {}); });
       for (const v of styleValues.split(',')) if (v !== current) prefetch({ style: v });
       if (current) prefetch({ style: '' });
     };

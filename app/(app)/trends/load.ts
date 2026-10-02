@@ -261,9 +261,9 @@ export const loadVideoStyles = unstable_cache(async (today: string): Promise<Vid
   const w = adWeeks(today);
   // CDC keeps several versions of a row; each ad counts once, by its newest style.
   const rows = await chQuery(`
-    SELECT s AS k, uniqExactIf(id, cur) AS cur, uniqExactIf(id, NOT cur) AS prev FROM (
+    SELECT s AS k, uniqExactIf(id, this_week) AS cur, uniqExactIf(id, NOT this_week) AS prev FROM (
       SELECT id, argMax(ai_style, _cdc_version) AS s, argMax(ai_style_conf, _cdc_version) AS c,
-             any(${CUR}) AS cur
+             any(${CUR}) AS this_week
         FROM market_research.market__creatives
        WHERE ${LIVE} AND ${WEEKS} AND display_format = 'video'
        GROUP BY id)

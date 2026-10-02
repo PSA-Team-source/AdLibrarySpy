@@ -6,12 +6,12 @@ import { windowDelta } from '../lib/tracker-window.ts';
 const snap = (o) => ({ monthlyVisits: 1000, liveAds: 10, productCount: 5, avgPrice: 20, monthlyVisitsSource: 'similarweb', creatives: 100, ...o });
 
 test('no baseline in the window -> no delta at all', () => {
-  assert.deepEqual(windowDelta(snap({}), null), { visits: null, visitsPct: null, liveAds: null, newAds: null, products: null });
+  assert.deepEqual(windowDelta(snap({}), null), { visits: null, visitsPct: null, liveAds: null, liveAdsPct: null, newAds: null, products: null });
 });
 
 test('visits, live ads and new creatives are diffed against the baseline', () => {
   const d = windowDelta(snap({ monthlyVisits: 1500, liveAds: 7, creatives: 130, productCount: 8 }), snap({}));
-  assert.deepEqual(d, { visits: 500, visitsPct: 50, liveAds: -3, newAds: 30, products: 3 });
+  assert.deepEqual(d, { visits: 500, visitsPct: 50, liveAds: -3, liveAdsPct: -30, newAds: 30, products: 3 });
 });
 
 test('a change of traffic source is not reported as growth', () => {

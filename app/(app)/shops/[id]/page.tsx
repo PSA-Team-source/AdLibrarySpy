@@ -6,7 +6,7 @@ import { getShop, similarShops, storeAdBundle, isTracked, favoriteIds } from '@/
 import { creativeCountFor } from '@/lib/market/creatives';
 import { categoryTree } from '@/lib/market/shops';
 import { storefrontFacts, storeAdHistory, storeProfile, type StorefrontFacts } from '@/lib/market/storefront';
-import { compact, pct, ageOf, monthYear, flag } from '@/lib/format';
+import { compact, pct, ageOf, monthYear, flag, dateShort } from '@/lib/format';
 import type { CountryShare, Shop } from '@/lib/types';
 import TrackButton from '@/components/TrackButton';
 import FavButton from '@/components/FavButton';
@@ -62,7 +62,7 @@ function SimilarCard({ shop }: { shop: Shop }) {
       </div>
       {screenshot && <ProductImage src={screenshot} alt={`${shop.name} homepage`} className="mt-3 aspect-[4/3] w-full rounded-lg border border-border object-cover object-top" />}
       {thumbs.length > 0 && (
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="mt-3 grid grid-cols-4 gap-2 empty:hidden">
           {thumbs.map(p => <ProductImage key={`${p.rank}-${p.title}`} src={p.image!} alt={p.title} className="aspect-square w-full rounded-md border border-border object-cover" />)}
         </div>
       )}
@@ -94,8 +94,11 @@ async function StorefrontProducts({ factsP, shop }: { factsP: Promise<Storefront
     catalog={facts?.catalog ?? []} domain={shop.domain} />;
 }
 
-export default async function ShopDossier({ params }: { params: Promise<{ id: string }> }) {
+export default async function ShopDossier({ params, searchParams }: {
+  params: Promise<{ id: string }>; searchParams: Promise<{ track?: string }>;
+}) {
   const { id } = await params;
+  const trackHint = (await searchParams).track === '1';
   const ctx = await requireCtx();
   const shop = await getShop(id);
   if (!shop) notFound();
@@ -144,11 +147,11 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
         <FavButton type="shop" id={shop.id} initial={savedShops.includes(shop.id)} label />
         {/* Shares the public /store page (openable without an account), tagged ?ref=share. */}
         <ShareButton path={storePath(shop.domain)} title={`${shop.name} on AdLibrarySpy`} />
-        <TrackButton shop={{ id: shop.id, domain: shop.domain, name: shop.name }} initial={tracked} />
+        <TrackButton shop={{ id: shop.id, domain: shop.domain, name: shop.name }} initial={tracked} highlight={trackHint} />
       </>}
     >
       <div className="-mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg bg-muted/70 px-4 py-2.5 text-sm text-muted-foreground">
-        <a href={`https://${shop.domain}`} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"><Globe className="h-3.5 w-3.5" />{shop.domain}<ArrowUpRight className="h-3.5 w-3.5" /></a>
+        <a href={`https://${shop.domain}`} target="_blank" rel="noopener nofollow" className="inline-flex items-center gap-1.5 font-medium text-foreground hover:underline"><Globe className="h-3.5 w-3.5" />{shop.domain}<ArrowUpRight className="h-3.5 w-3.5" /></a>
         {shop.createdOn && <span className="inline-flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" />{monthYear(shop.createdOn)}{age && (age === 'new' ? ' (new)' : ` (${age} ago)`)}</span>}
         {shop.country && <span className="inline-flex items-center gap-1.5">{shop.country} <span aria-hidden>{flag(shop.country)}</span></span>}
         {categoryPath.length > 0 && <span className="inline-flex items-center gap-1.5"><LayoutGrid className="h-3.5 w-3.5" />{categoryPath.join(' › ')}</span>}
@@ -158,12 +161,12 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
       <nav className="flex flex-wrap gap-1 border-b border-border" aria-label="Shop detail sections">
         <a href="#analytics" className="border-b-2 border-foreground px-4 py-3 text-sm font-semibold text-foreground">Shop Analytics</a>
         {similar.length > 0 && <a href="#similar" className="px-4 py-3 text-sm text-muted-foreground hover:text-foreground">Similar Shops</a>}
-        {ads.length > 0 && <a href="#meta-ads" className="px-4 py-3 text-sm text-muted-foreground hover:text-foreground">Meta Ads <span className="ml-1 tabular-nums text-emerald-600">● {adCount.toLocaleString()}</span></a>}
+        {ads.length > 0 && <a href="#meta-ads" className="px-4 py-3 text-sm text-muted-foreground hover:text-foreground">Ads in our library <span className="ml-1 tabular-nums text-muted-foreground">{adCount.toLocaleString()}</span></a>}
       </nav>
 
       <section id="analytics" className="scroll-mt-4 space-y-4">
         {(shop.monthlyVisits > 0 || liveAdsTile) && (
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {shop.monthlyVisits > 0 && (
               <div className={CARD} title={trafficTitle(shop.monthlyVisits, shop.trafficSource, shop.similarweb?.period ?? '', shop.domain)}>
                 <div className="text-sm font-semibold text-foreground">Monthly Visits</div>
@@ -177,7 +180,7 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
             )}
             {liveAdsTile && (
               <div className={CARD}>
-                <div className="text-sm font-semibold text-foreground">Live Meta Ads</div>
+                <div className="text-sm font-semibold text-foreground">Live ads on Meta</div>
                 {shop.metaAds > 0 && <div className="mt-3 text-2xl font-semibold tabular-nums">{shop.metaAds.toLocaleString()} <span className="text-base text-emerald-600">●</span></div>}
                 <CountryFooter label="Targeted Countries" data={adCountries} />
               </div>
@@ -186,7 +189,7 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
         )}
 
         {(trafficHistory.length >= 2 || liveAdsChart) && (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {trafficHistory.length >= 2 && (
               <div className={`${CARD} ${liveAdsChart ? '' : 'lg:col-span-2'}`}>
                 <div className="mb-4 text-sm font-semibold text-foreground">Traffic Over Time</div>
@@ -197,7 +200,8 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
             {liveAdsChart && (
               <div className={`${CARD} ${trafficHistory.length >= 2 ? '' : 'lg:col-span-2'}`}>
                 <div className="text-sm font-semibold text-foreground">Live Ads Over Time</div>
-                {shop.metaAds > 0 && <div className="mb-4 mt-2 text-2xl font-semibold tabular-nums">{shop.metaAds.toLocaleString()} <span className="text-base text-emerald-600">●</span></div>}
+                {/* The headline IS the chart's latest point, dated, so the two can never disagree. */}
+                <div className="mb-4 mt-2 text-2xl font-semibold tabular-nums">{adHistory[adHistory.length - 1].v.toLocaleString()} <span className="text-base text-emerald-600">●</span> <span className="text-xs font-normal text-muted-foreground">on {dateShort(adHistory[adHistory.length - 1].t)}</span></div>
                 <TrendChart data={adHistory} valueLabel="Live ads" />
                 <CountryFooter label="Targeted Countries" data={adCountries} />
               </div>
@@ -205,7 +209,7 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
           </div>
         )}
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className={pixels.length || apps.length ? 'lg:col-span-2' : 'lg:col-span-3'}>
             <Suspense fallback={<ProductsPanel count={shop.productCount > 0 ? shop.productCount : null} bestSelling={[]} latest={[]} fallback={shop.bestSellers} />}>
               <StorefrontProducts factsP={factsP} shop={shop} />
@@ -234,7 +238,7 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
         <section id="similar" className="scroll-mt-4 rounded-xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-foreground">Similar Shops</h2>
-            {topCategoryId && <Link href={`/shops?category=${topCategoryId}`} className="btn-ghost h-8 px-3 text-sm">See More <ArrowUpRight className="ml-1 h-3.5 w-3.5" /></Link>}
+            {topCategoryId && <Link href={`/shops?category=${topCategoryId}${shop.country ? `&country=${shop.country}` : ''}`} className="btn-ghost h-8 px-3 text-sm">See More <ArrowUpRight className="ml-1 h-3.5 w-3.5" /></Link>}
           </div>
           <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
             {similar.map(other => <SimilarCard key={other.id} shop={other} />)}
@@ -245,10 +249,10 @@ export default async function ShopDossier({ params }: { params: Promise<{ id: st
       {ads.length > 0 && (
         <section id="meta-ads" className="scroll-mt-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Meta Ads <span className="ml-1 tabular-nums text-muted-foreground">{adCount.toLocaleString()}</span></h2>
+            <h2 className="text-sm font-semibold text-foreground" title="Meta ads from this store that AdLibrarySpy has saved, live or ended. Live ads on Meta are counted above.">Ads in our library <span className="ml-1 tabular-nums text-muted-foreground">{adCount.toLocaleString()}</span></h2>
             <Link href={`/ads?store=${encodeURIComponent(shop.domain)}`} className="btn-ghost h-8 px-3 text-sm">See All Ads <ArrowUpRight className="ml-1 h-3.5 w-3.5" /></Link>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {ads.slice(0, 8).map(ad => <CreativeCard key={ad.id} ad={ad} saved={savedAds.includes(ad.id)} />)}
           </div>
         </section>

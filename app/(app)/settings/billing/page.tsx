@@ -40,7 +40,7 @@ export default async function BillingPage() {
       </SectionCard>
 
       <SectionCard title="Available plans" description="Monthly list prices recorded in the plan catalog.">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {plans.map(plan => {
             const current = plan.id === summary.currentPlan.id;
             return (
@@ -57,11 +57,11 @@ export default async function BillingPage() {
 
       <SectionCard title="Invoices" padded={false}>
         {summary.invoices.length === 0 ? <p className="p-6 text-sm text-muted-foreground">No invoices have been issued for this workspace.</p> : (
-          <Table className="min-w-[620px]" containerClassName="scroll-thin">
+          <Table className="sm:min-w-[620px] max-sm:[&_tr>*:nth-child(2):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(4):not([colspan])]:hidden" containerClassName="scroll-thin">
             <TableHeader><TableRow><TableHead>Invoice</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Receipt</TableHead></TableRow></TableHeader>
             <TableBody>{summary.invoices.map(invoice => (
               <TableRow key={invoice.id}>
-                <TableCell className="font-medium text-foreground">{invoice.number || invoice.description}</TableCell>
+                <TableCell className="font-medium text-foreground">{invoice.number || invoice.description}<span className="block text-xs font-normal text-muted-foreground sm:hidden">{dateShort(invoice.createdAt.toISOString())} · <span className="capitalize">{invoice.status}</span></span></TableCell>
                 <TableCell>{dateShort(invoice.createdAt.toISOString())}</TableCell>
                 <TableCell className="text-right tabular-nums">${((invoice.amountPaidCents || invoice.amountDueCents) / 100).toFixed(2)} {invoice.currency.toUpperCase()}</TableCell>
                 <TableCell><Badge variant={invoice.status === 'paid' ? 'success' : 'secondary'} className="capitalize">{invoice.status}</Badge></TableCell>

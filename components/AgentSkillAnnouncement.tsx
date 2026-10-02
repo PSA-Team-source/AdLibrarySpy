@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Bot, Check, Copy, X } from 'lucide-react';
 
 import { AGENT_MESSAGE, SKILL_DISMISS_COOKIE } from '@/lib/public/site';
+import { dismissSkillBannerAction } from '@/lib/account';
 
 /** App announcement: the one line a user pastes into Claude, ChatGPT, Cursor or any agent (app/SKILL.md). */
 export function AgentSkillAnnouncement() {
@@ -10,18 +11,22 @@ export function AgentSkillAnnouncement() {
   const [copied, setCopied] = useState(false);
   if (hidden) return null;
 
+  // Cookie hides it on this browser at once; the account flag on every device.
+  function dismiss() {
+    document.cookie = `${SKILL_DISMISS_COOKIE}=1; Max-Age=31536000; Path=/; SameSite=Lax`;
+    setHidden(true);
+    dismissSkillBannerAction().catch(() => { /* offline: the cookie still holds */ });
+  }
+
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(AGENT_MESSAGE);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      // Copied = done with it: show "Copied", then hide it for good.
+      setTimeout(dismiss, 1500);
     } catch {
       // Clipboard blocked by permissions: the message stays selectable.
     }
-  };
-  const dismiss = () => {
-    document.cookie = `${SKILL_DISMISS_COOKIE}=1; Max-Age=31536000; Path=/; SameSite=Lax`;
-    setHidden(true);
   };
 
   return (
@@ -32,8 +37,9 @@ export function AgentSkillAnnouncement() {
           <p className="text-sm font-medium text-foreground">
             New: AdLibrarySpy works from your AI agent. <span className="font-normal text-muted-foreground">Send it this message:</span>
           </p>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="min-w-0 flex-1 break-words rounded-md border border-border bg-background px-3 py-2 font-mono text-[13px] text-foreground">{AGENT_MESSAGE}</code>
+          {/* One line on a phone (Copy takes the whole message); wraps from sm up. */}
+          <div className="mt-2 flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-md border border-border bg-background px-3 py-2 font-mono text-[13px] text-foreground sm:whitespace-normal sm:break-words" title={AGENT_MESSAGE}>{AGENT_MESSAGE}</code>
             <button type="button" onClick={copy} className="btn-ghost shrink-0 justify-center gap-1.5">
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? 'Copied' : 'Copy'}

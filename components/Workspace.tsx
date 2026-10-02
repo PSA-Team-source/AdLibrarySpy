@@ -26,12 +26,12 @@ export function RenameWorkspaceForm({ name, slug }: { name: string; slug: string
     <form action={action} className="space-y-4">
       <Messages state={state} />
       <label className="block">
-        <span className="text-sm font-medium text-foreground">Edit Workspace Title</span>
+        <span className="text-sm font-medium text-foreground">Workspace name</span>
         <span className="block text-xs text-muted-foreground">The name your team sees in the header and in invitation emails.</span>
         <input name="name" value={v.name} onChange={e => setV(p => ({ ...p, name: e.target.value }))} required maxLength={80} className="field mt-2" />
       </label>
       <label className="block">
-        <span className="text-sm font-medium text-foreground">Edit Workspace Slug</span>
+        <span className="text-sm font-medium text-foreground">Short name for exports</span>
         <span className="block text-xs text-muted-foreground">Unique identifier used in exports. Lowercase letters, numbers and hyphens.</span>
         <input name="slug" value={v.slug} onChange={e => setV(p => ({ ...p, slug: e.target.value.toLowerCase() }))} required minLength={3} maxLength={40} pattern="[a-z0-9](?:[a-z0-9-]*[a-z0-9])?" className="field mt-2 font-mono" />
       </label>

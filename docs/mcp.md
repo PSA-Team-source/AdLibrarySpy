@@ -25,6 +25,7 @@ There are two ways to connect, and both give you the same tools.
 | `search_shops` | Stores by keyword, category, country, catalogue size, live ads; sort by traffic, growth, ads, newest |
 | `get_shop` | Full dossier: traffic history, ranks, engagement, traffic-source mix, top countries and keywords |
 | `search_products` | Winning products: storefront products Meta ads land on, with title, price in the store's currency, active and new ads, advertiser pages, first-ad date and the store's traffic; filter by keyword, category, ad country, price, store |
+| `search_landing_pages` | Landing pages Meta ads send people to (advertorial, listicle, quiz, collection, homepage), with active and new ads, advertisers, first/last seen, ad countries and the store's traffic; filter by keyword, category, ad country, page type, store |
 | `find_similar_shops` | Stores in the same category at a similar traffic level |
 | `search_ads` | Ad creatives by keyword, network, media, country, or AI label (hook, angle, funnel stage, offer, urgency) |
 | `get_ad` | One creative, with its AI labels and confidence |

@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: 'AdLibrarySpy', template: '%s — AdLibrarySpy' },
   description: 'Shopify store discovery, ad intelligence and brand tracking over a live market index.',
+  // iOS "Add to Home Screen" opens it full-screen like an app (app/manifest.ts for Android).
+  appleWebApp: { capable: true, title: 'AdLibrarySpy', statusBarStyle: 'default' },
   // Indexing is decided per route group: (public) pages and the homepage are
   // indexable; (app) and (auth) set noindex in their own layouts.
 };
@@ -29,6 +31,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans antialiased">
+        {/* Edge-cached pages are identical for everyone; this flips them to the signed-in
+            chrome (.signed-in-only / .signed-out-only, utilities.css) before first paint,
+            from the readable `als_in` hint (lib/auth/session.ts). Auth stays ml_session. */}
+        <script dangerouslySetInnerHTML={{ __html: `if(/(?:^|;\\s*)als_in=/.test(document.cookie))document.documentElement.dataset.signedIn=''` }} />
         <ThemeProvider>
           <QueryProvider>
             <TooltipProvider delayDuration={200} skipDelayDuration={300}>

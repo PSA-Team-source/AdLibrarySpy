@@ -23,3 +23,9 @@ export function catchEarlyImgError(onFail: () => void) {
     if (el && el.complete && el.naturalWidth === 0) onFail();
   };
 }
+
+/** A new workspace's name when the user gives none: "Jane's team" (first name, else the email's local part). */
+export function defaultWorkspaceName(name: string | null | undefined, email: string): string {
+  const first = (name ?? '').trim().split(/\s+/)[0] || email.split('@')[0] || 'My';
+  return `${first.slice(0, 60)}'s team`;
+}

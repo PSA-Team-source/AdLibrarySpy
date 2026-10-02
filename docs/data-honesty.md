@@ -23,6 +23,7 @@ PR is reviewed against them.
 | Figure | Source |
 |---|---|
 | Theme, currency, locale, product count, best sellers, newest, prices | The store's own public storefront (`/meta.json`, collection pages, `/products.json`), read live |
+| Product thumbnails and product count on the Shops list, directory and store cards | The same public `/products.json` (newest pictured products) and `/meta.json` (`published_products_count`), read by the index at most every 30 days. A store with no public feed (headless, password-protected, bot-walled, not Shopify) shows no products |
 | Apps and pixels | Vendor script hosts in the store's homepage HTML. Something loaded later isn't seen, so a missing app isn't proof the store doesn't use it |
 | Monthly visits, growth, traffic history | SimilarWeb's measurement of the exact store host, or the index's estimate, labelled as one |
 | Live Meta ads, ad peaks | Meta Ad Library counts recorded by the AdLibrarySpy index, with the recording date |

@@ -297,21 +297,23 @@
    `h-full` to resolve, every ancestor up to the viewport-height shell pane must
    be a definite height. The shell pane now carries an explicit height
    (calc(100vh - topbar)); this makes the inner padded wrapper fill it too — but
-   ONLY when the page inside declares itself full-height (root `.h-full`). So the
+   ONLY at lg and when the page declares itself full-height (root `.page-fill`). So the
    table card runs to the bottom of the screen with internal scroll, short tables
    still stretch the card (empty space lives inside the scroll region), and
    pagination stays pinned in the card footer.
 
-   Pages WITHOUT an `.h-full` root (settings, forms, detail views) don't match
-   `:has(> .h-full)`, so the inner wrapper stays auto-height and the pane keeps
+   Pages WITHOUT a `.page-fill` root (settings, forms, detail views) don't match
+   `:has(> .page-fill)`, so the inner wrapper stays auto-height and the pane keeps
    its normal `overflow-y-auto` document scroll — unchanged. Unlayered so it wins
    over the Tailwind `pb-24` utility on the same element. */
-.app-content-inner:has(> .h-full) {
-  height: 100%;
-  min-height: 0;
-  /* Replace the tall pb-24 dead space with a modest shell gutter so the table
-     card's pagination footer sits just above the viewport bottom. */
-  padding-bottom: 1.5rem;
+@media (min-width: 1024px) {
+  .app-content-inner:has(> .page-fill) {
+    height: 100%;
+    min-height: 0;
+    /* Replace the tall pb-24 dead space with a modest shell gutter so the table
+       card's pagination footer sits just above the viewport bottom. */
+    padding-bottom: 1.5rem;
+  }
 }
 
 /* Cosmos background star twinkle animation */
@@ -782,8 +784,17 @@ html:not(.dark) .composer-adaptive [class~="opacity-25"]:hover {
 .app-content-inner {
   padding-bottom: calc(6rem + var(--app-safe-bottom));
 }
-.app-content-inner:has(> .h-full) {
-  padding-bottom: calc(1.5rem + var(--app-safe-bottom));
+@media (min-width: 1024px) {
+  .app-content-inner:has(> .page-fill) {
+    padding-bottom: calc(1.5rem + var(--app-safe-bottom));
+  }
+}
+/* A full-height route on a phone scrolls the pane itself (no inner wrapper),
+   so it carries the wrapper's bottom gutter. */
+@media (max-width: 1023.98px) {
+  .app-content-pane > .page-fill {
+    padding-bottom: calc(6rem + var(--app-safe-bottom));
+  }
 }
 
 /* Landscape on a notched phone puts the inset on the sides instead of the top. */
@@ -1134,6 +1145,23 @@ body.app-scroll-locked {
     table:not([class*='min-w-'])
     tr
     > :first-child:has(:is(input[type='checkbox'], [role='checkbox']))
+    + * {
+    min-width: 11rem;
+  }
+
+  /* A first column that sizes itself (`w-10` rank "#" on the store directory,
+     weekly and trends tables) is not the identity column: the floor made it
+     176px of blank beside a one-digit rank. The name moves one column right. */
+  .data-table-scroll
+    table:not([class*='min-w-']):has(thead tr > th:first-child:is([class^='w-'], [class*=' w-']))
+    tr
+    > :first-child {
+    min-width: 0;
+  }
+  .data-table-scroll
+    table:not([class*='min-w-']):has(thead tr > th:first-child:is([class^='w-'], [class*=' w-']))
+    tr
+    > :first-child
     + * {
     min-width: 11rem;
   }

@@ -3,13 +3,15 @@ import { one } from '@/lib/db';
 import { hashToken } from '@/lib/auth/tokens';
 import { consumeMagicLinkAction } from '@/lib/auth/actions';
 import { AuthFormShell } from '@/components/AuthForm';
+import { AutoSubmit } from '@/components/AutoSubmit';
 
 export const metadata = { title: 'Confirm sign-in' };
 export const dynamic = 'force-dynamic';
 
 // Landing page of every emailed link. It only READS the link: mail scanners and
 // link previews fetch URLs, so the one-time link is consumed by the button
-// (consumeMagicLinkAction), never by opening the page.
+// (consumeMagicLinkAction), never by the server render. Sign-in links submit
+// themselves in the browser (AutoSubmit); email-change links wait for a click.
 export default async function MagicLinkPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const token = String((await searchParams).token ?? '');
   const row = token ? await one<{ purpose: 'login' | 'change_email' | 'confirm_new_email'; email: string; new_email: string | null; user_id: string | null }>(
@@ -47,6 +49,7 @@ export default async function MagicLinkPage({ searchParams }: { searchParams: Pr
       <AuthFormShell action={consumeMagicLinkAction}
         submitLabel={approve ? 'Approve the change' : confirm ? 'Confirm this address' : isNew ? 'Create my free account' : 'Sign in'} pendingLabel="One moment…">
         <input type="hidden" name="token" value={token} />
+        {!approve && !confirm && <AutoSubmit />}
       </AuthFormShell>
     </>
   );

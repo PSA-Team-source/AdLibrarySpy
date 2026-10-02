@@ -68,7 +68,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         </div>
       ) : (
         <section className="card overflow-hidden">
-          <Table className="min-w-[720px]" containerClassName="scroll-thin">
+          <Table className="sm:min-w-[720px] max-sm:[&_tr>*:nth-child(2):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(3):not([colspan])]:hidden" containerClassName="scroll-thin">
             <TableHeader>
               <TableRow>
                 <TableHead>Event</TableHead>
@@ -85,6 +85,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       <Badge variant="secondary" size="sm" className="capitalize">{e.category}</Badge>
                     </div>
+                    <div className="mt-1 truncate text-xs text-muted-foreground sm:hidden">by {e.actorName || e.actorEmail || 'System'}</div>
                   </TableCell>
                   <TableCell>
                     {e.actorName || e.actorEmail

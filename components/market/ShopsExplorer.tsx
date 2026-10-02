@@ -4,16 +4,17 @@
 // fetch (GET /api/shops) keyed by the query string. The previous rows stay on
 // screen, dimmed, until the next page lands, and every page already seen comes
 // back instantly from the cache while it revalidates in the background.
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageShell } from '@/components/layouts/page-shell';
-import { MarketPagination, MarketToolbar, ShallowUrlProvider } from '@/components/market/MarketToolbar';
+import { MarketPagination, MarketToolbar, Segments, ShallowUrlProvider } from '@/components/market/MarketToolbar';
 import { SaveSearchButton } from '@/components/market/SaveSearchButton';
 import { ShopExplorerTable } from '@/components/market/ShopExplorerTable';
 import { SHOPS_KEY } from '@/components/market/shops-cache';
 import type { CategoryNode, TechFacets } from '@/lib/market/shops';
 import type { ShopsPayload } from '@/app/(app)/shops/load';
+import type { AdPreview } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 /** Order-independent query string, so `?a=1&b=2` and `?b=2&a=1` share one cache entry. */
@@ -33,13 +34,33 @@ async function fetchShops(qs: string, signal: AbortSignal): Promise<ShopsPayload
   return res.json();
 }
 
-export function ShopsExplorer({ categories, tech, initial, initialParams, renderedAt }: {
+/** The rows' ad thumbnails, fetched after the rows (the creative lookup is the slow part). */
+async function fetchShopAds(domains: string[], signal: AbortSignal): Promise<Record<string, AdPreview[]>> {
+  const res = await fetch(`/api/shops/ads?domains=${encodeURIComponent(domains.join(','))}`, { signal, headers: { Accept: 'application/json' } });
+  if (!res.ok) return {};
+  return (await res.json()).ads ?? {};
+}
+
+/** Ready-made views over the whole index (lib/data SEGMENTS), one tap each — Trendtrack's preset row. */
+const VIEWS = [
+  { value: '', label: 'All shops' },
+  { value: 'top-scaling', label: '🚀 Scaling ads' },
+  { value: 'ad-peak', label: '🔥 Most ads now' },
+  { value: 'peak-ads-7d', label: '📈 Peak ads this week' },
+  { value: 'fastest-growing', label: '⚡ Fastest growing' },
+  { value: 'traffic-peak', label: '👑 Market leaders' },
+  { value: 'newest', label: '✨ New stores' },
+];
+
+export function ShopsExplorer({ categories, tech, initial, initialParams, renderedAt, intro }: {
   categories: CategoryNode[];
   tech: TechFacets | null;
   /** The page the server rendered for `initialParams` — first paint needs no fetch. */
   initial: ShopsPayload;
   initialParams: Record<string, string>;
   renderedAt: number;
+  /** Server-rendered "Picked for you" bell for the header. */
+  intro?: ReactNode;
 }) {
   const params = useSearchParams();
   const qs = canonical(params);
@@ -59,7 +80,19 @@ export function ShopsExplorer({ categories, tech, initial, initialParams, render
   if (!q.isPlaceholderData && q.data) shownKey.current = qs;
 
   const data = q.data;
-  const rows = useMemo(() => data?.rows ?? [], [data]);
+  // Thumbnails for the stores that run ads; rows render first, ads join when they land.
+  const adDomains = useMemo(() => (data?.rows ?? []).filter(r => r.metaAds > 0).map(r => r.domain).sort(), [data]);
+  const ads = useQuery({
+    queryKey: [SHOPS_KEY, 'ads', adDomains.join(',')],
+    queryFn: ({ signal }) => fetchShopAds(adDomains, signal),
+    enabled: adDomains.length > 0,
+    staleTime: 5 * 60_000,
+  });
+  const rows = useMemo(() => {
+    const base = data?.rows ?? [];
+    const byDomain = ads.data;
+    return byDomain ? base.map(r => (byDomain[r.domain]?.length ? { ...r, ads: byDomain[r.domain] } : r)) : base;
+  }, [data, ads.data]);
   const saved = useMemo(() => new Set(rows.filter(r => r.saved).map(r => r.id)), [rows]);
   const viewed = useMemo(() => new Set(rows.filter(r => r.viewed).map(r => r.id)), [rows]);
 
@@ -84,11 +117,12 @@ export function ShopsExplorer({ categories, tech, initial, initialParams, render
         fullHeight
         className="apple-ui gap-5 bg-[var(--a-canvas)]"
         title={showHidden ? 'Hidden shops' : 'Shops'}
-        actions={showHidden ? undefined : <SaveSearchButton kind="shops" />}
+        actions={showHidden ? undefined : <>{intro}<SaveSearchButton kind="shops" /></>}
         titleAdornment={(data?.allPlatformsTotal ?? data?.total) != null
           ? <span className="inline-flex items-center rounded-full bg-[var(--a-fill)] px-3 py-1 text-[13px] font-semibold tabular-nums text-foreground" title="Shops across all platforms">{(data!.allPlatformsTotal ?? data!.total)!.toLocaleString()}</span>
           : undefined}
       >
+        {!showHidden && <Segments items={VIEWS} />}
         <MarketToolbar categories={categories} hiddenCount={data?.hiddenCount ?? 0} tech={tech} />
 
         {q.isError && (

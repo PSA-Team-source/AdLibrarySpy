@@ -1,7 +1,7 @@
-# Default gitleaks rules plus one allowlisted value.
+# Default gitleaks rules plus allowlisted non-secrets.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "IndexNow ownership key: public by design, served at /bfc2b345b3d867338dd79061e7e54f93.txt"
-regexes = ['''bfc2b345b3d867338dd79061e7e54f93''']
+description = "IndexNow ownership key (public by design, served at /bfc2b345b3d867338dd79061e7e54f93.txt) and test-only fixture secrets"
+regexes = ['''bfc2b345b3d867338dd79061e7e54f93''', '''test-secret-0123456789abcdef''']

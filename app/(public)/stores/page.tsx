@@ -86,7 +86,7 @@ export default async function StoresHub() {
 
       {tops.length > 0 && (
         <Section id="niches" title="Browse by niche" lead={`${tops.length} niches and their subcategories, with the number of Shopify stores in each.`}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {tops.map(n => (
               <div key={n.slug} className="rounded-xl border border-border bg-card p-4">
                 <Link href={`/stores/niche/${n.slug}`} className="flex items-baseline justify-between gap-3 font-medium text-foreground hover:underline">

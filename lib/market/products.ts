@@ -82,7 +82,7 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 const numOrNull = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
 
-function mapStore(s: Record<string, unknown> | undefined): WinningProductStore {
+export function mapStore(s: Record<string, unknown> | undefined): WinningProductStore {
   const src = str(s?.traffic_source);
   return {
     id: str(s?.id),

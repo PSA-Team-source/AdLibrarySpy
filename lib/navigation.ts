@@ -1,5 +1,5 @@
 import {
-  Home, ScanEye, Bookmark, Store, Package, Clapperboard, Radio, TrendingUp, Folder, Users,
+  Home, ScanEye, Bookmark, Store, Package, PanelsTopLeft, Clapperboard, Radio, TrendingUp, Folder, Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -31,6 +31,7 @@ export const APP_NAV: NavSection[] = [
   { section: 'Analyse', items: [
     { href: '/shops', label: 'Shops', icon: Store, description: 'Search the store index' },
     { href: '/products', label: 'Products', icon: Package, description: 'Winning products: the products ads point at' },
+    { href: '/landing-pages', label: 'Landing pages', icon: PanelsTopLeft, description: 'The pages ads send people to' },
     { href: '/ads', label: 'Ads', icon: Clapperboard, description: 'Browse the ad creative library' },
     { href: '/advertisers', label: 'Advertisers', icon: Radio, description: 'Brands ranked by creatives' },
     { href: '/trends', label: 'Trends', icon: TrendingUp, description: 'Trending niches, stores and products' },

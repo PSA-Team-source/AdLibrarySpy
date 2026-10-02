@@ -5,7 +5,7 @@ import { normalizeQuery, newResultIds, mergeSeen, periodFor, trackerLines, build
 import { marketingEnvelopes } from '../lib/mail.ts';
 import { unsubscribeToken, verifyUnsubscribe } from '../lib/weekly/unsubscribe.ts';
 
-const delta = (o) => ({ visits: null, visitsPct: null, liveAds: 0, newAds: 0, products: 0, ...o });
+const delta = (o) => ({ visits: null, visitsPct: null, liveAds: 0, liveAdsPct: null, newAds: 0, products: 0, ...o });
 
 test('the same filters normalize to one saved search', () => {
   assert.equal(normalizeQuery('?page=3&q=shoes&country=US&ref=x&utm_source=a&tech='), 'country=US&q=shoes');
@@ -29,9 +29,13 @@ test('weekly digests are due on Mondays only; off never', () => {
 test('only material tracker moves become lines', () => {
   assert.deepEqual(trackerLines(delta({})), []);
   assert.deepEqual(trackerLines(delta({ visits: 50, visitsPct: 5 })), []);          // under the threshold
-  assert.deepEqual(trackerLines(delta({ visits: null, visitsPct: null, liveAds: null, newAds: null, products: null })), []);
-  assert.deepEqual(trackerLines(delta({ newAds: 3, liveAds: -2, visits: 1200, visitsPct: 12.5, products: 4 })),
-    ['3 new ads launched', 'Live ads −2', 'Monthly visits +1,200 (+12.5%)', '4 new products']);
+  assert.deepEqual(trackerLines(delta({ visits: null, visitsPct: null, liveAds: null, liveAdsPct: null, newAds: null, products: null })), []);
+  assert.deepEqual(trackerLines(delta({ newAds: 3, liveAds: -2, liveAdsPct: -66.7, visits: 1200, visitsPct: 12.5, products: 4 })),
+    ['3 new ads launched', 'Live ads −2 (−66.7%)', 'Monthly visits +1,200 (+12.5%)', '4 new products']);
+  // Live ads: a 50%+ jump is news, a small swing is not, starting from zero is.
+  assert.deepEqual(trackerLines(delta({ liveAds: 10, liveAdsPct: 50 })), ['Live ads +10 (+50%)']);
+  assert.deepEqual(trackerLines(delta({ liveAds: 4, liveAdsPct: 20 })), []);
+  assert.deepEqual(trackerLines(delta({ liveAds: 6, liveAdsPct: null })), ['Live ads +6 (went live)']);
 });
 
 test('no change means no email', () => {

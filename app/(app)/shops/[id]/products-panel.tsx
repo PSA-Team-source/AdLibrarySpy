@@ -80,8 +80,9 @@ export default function ProductsPanel({ count, bestSelling, latest, fallback, ca
       <ProductGallery products={items} title={active.label || 'Products'} ranked={active.ranked}>
       {open => (
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-        {items.map((p, i) => (
-          <div key={`${active.key}-${i}-${p.title}`} className="min-w-0">
+        {items.map((p, i) => p.image && (
+          // No picture, no tile: the tile shows only while its image exists.
+          <div key={`${active.key}-${i}-${p.title}`} className="hidden min-w-0 has-[img]:block">
             <div className="relative overflow-hidden rounded-lg">
               <ImageTrigger onOpen={() => open(i)} label={p.title} className="block w-full">
                 <ProductImage src={p.image!} alt={p.title} className="aspect-square w-full rounded-lg border border-border object-cover" />
@@ -89,7 +90,7 @@ export default function ProductsPanel({ count, bestSelling, latest, fallback, ca
               {active.ranked && <span className="absolute right-1.5 top-1.5 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-foreground">#{p.rank}</span>}
             </div>
             {p.url
-              ? <a href={p.url} target="_blank" rel="noopener noreferrer" className="mt-2 block truncate text-xs font-medium text-foreground hover:underline" title={p.title}>{p.title}</a>
+              ? <a href={p.url} target="_blank" rel="noopener" className="mt-2 block truncate text-xs font-medium text-foreground hover:underline" title={p.title}>{p.title}</a>
               : <div className="mt-2 truncate text-xs font-medium text-foreground" title={p.title}>{p.title}</div>}
             {p.price > 0 && <div className="text-sm font-semibold tabular-nums">{productPrice(p)}</div>}
             {p.createdAt && created(p.createdAt) && <div className="text-[11px] text-muted-foreground">Created: {created(p.createdAt)}</div>}

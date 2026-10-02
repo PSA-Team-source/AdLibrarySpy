@@ -77,7 +77,8 @@ export function SignupCta({ refTag, children }: { refTag: string; children?: Rea
 function Growth({ shop }: { shop: Shop }) {
   const g = shop.similarweb?.growthPct;
   if (g == null) return null;
-  const r = Math.round(g * 10) / 10;
+  // One decimal is noise past 100%, and it keeps the cell narrow on a phone.
+  const r = Math.abs(g) >= 100 ? Math.round(g) : Math.round(g * 10) / 10;
   return <span className={r > 0 ? 'text-emerald-600 dark:text-emerald-400' : r < 0 ? 'text-red-600 dark:text-red-400' : ''}>{r > 0 ? '+' : ''}{fmt(r)}%</span>;
 }
 
@@ -86,12 +87,12 @@ export function StoreTable({ list, caption }: { list: DirectoryList; caption: st
   const offset = (list.page - 1) * PAGE_SIZE;
   return (
     <div className="rounded-xl border border-border bg-card">
-      <Table aria-label={caption}>
+      <Table aria-label={caption} className="max-sm:table-fixed max-sm:[&_tr>*:nth-child(1)]:hidden max-sm:[&_tr>*:nth-child(5)]:hidden max-sm:[&_tr>*:nth-child(6)]:hidden max-sm:[&_tr>*:nth-child(7)]:hidden">
         <TableHeader>
           <TableRow>
             <TableHead className="w-10 text-right">#</TableHead>
-            <TableHead>Store</TableHead>
-            <TableHead className="text-right">Monthly visits</TableHead>
+            <TableHead className="max-sm:w-[44%]">Store</TableHead>
+            <TableHead className="text-right"><span className="sm:hidden">Visits</span><span className="max-sm:hidden">Monthly visits</span></TableHead>
             <TableHead className="text-right">Growth</TableHead>
             <TableHead className="text-right">Live Meta ads</TableHead>
             <TableHead className="text-right">Products</TableHead>

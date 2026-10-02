@@ -13,14 +13,30 @@ const EU_UK = new Set<string>(EU_UK_COUNTRIES);
  * Facebook CDN URL. Measured against live rows: fbcdn images return 403 and
  * fbcdn videos fail outright on hotlink, so only the cached copy is usable.
  * Anything else is treated as "no media" rather than rendered as a broken box.
+ * Hosts: the legacy crawler's cdn.shopquantum.ai, and our own media host
+ * media.adlibraryspy.com/creatives/. Rows written before 2026-10-02 still say
+ * storage.platformdtc.com/platformdtc/creatives/ — PlatformDTC storage is not
+ * ours to serve from, so those files were copied 1:1 and are rewritten to the
+ * media host here. Never /platformdtc/crawl/ — a July 2026 misconfig wrote
+ * 183k URLs there that 404 forever.
  */
 const MEDIA_HOST = 'cdn.shopquantum.ai';
+const OWN_HOST = 'media.adlibraryspy.com';
+const OWN_PATH = '/creatives/';
+const OLD_STORAGE_HOST = 'storage.platformdtc.com';
+const OLD_STORAGE_PATH = '/platformdtc/creatives/';
 
 function playableUrl(raw: unknown): string {
   const url = String(raw ?? '');
   if (!url) return '';
   try {
-    return new URL(url).host === MEDIA_HOST ? url : '';
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return '';
+    if (u.host === MEDIA_HOST || (u.host === OWN_HOST && u.pathname.startsWith(OWN_PATH))) return url;
+    if (u.host === OLD_STORAGE_HOST && u.pathname.startsWith(OLD_STORAGE_PATH)) {
+      return `https://${OWN_HOST}${OWN_PATH}${u.pathname.slice(OLD_STORAGE_PATH.length)}`;
+    }
+    return '';
   } catch {
     return '';
   }
@@ -40,6 +56,14 @@ function utmOf(linkUrl: string): Record<string, string> {
   }
 }
 
+const AD_LIBRARY_PREFIX = 'https://www.facebook.com/ads/library/?id=';
+
+/** The Ad Library permalink the API hands out for video ads we do not host. */
+function adLibraryUrl(raw: unknown): string {
+  const url = String(raw ?? '');
+  return url.startsWith(AD_LIBRARY_PREFIX) && /^\d+$/.test(url.slice(AD_LIBRARY_PREFIX.length)) ? url : '';
+}
+
 export type CreativeMode = 'all' | 'popular' | 'trending';
 
 function mapCreative(c: Record<string, unknown>): Ad {
@@ -56,11 +80,12 @@ function mapCreative(c: Record<string, unknown>): Ad {
   const linkUrl = String(c.link_url ?? '');
   const video = playableUrl(c.video_url);
   const image = playableUrl(c.image_url);
+  const watch = video ? '' : adLibraryUrl(c.ad_library_url);
 
   const related = (Array.isArray(c.related_creatives) ? c.related_creatives : [])
     .map(r => {
       const o = (r ?? {}) as Record<string, unknown>;
-      return { id: String(o.id ?? ''), image: playableUrl(o.image_url), isVideo: !!o.video_url };
+      return { id: String(o.id ?? ''), image: playableUrl(o.image_url), isVideo: !!(o.video_url || o.ad_library_url) };
     })
     .filter(r => r.id && r.image)
     .slice(0, 6);
@@ -80,7 +105,7 @@ function mapCreative(c: Record<string, unknown>): Ad {
     adCopy: copy,
     headline: title.slice(0, 200),
     cta: '',                       // the index stores no CTA label
-    mediaType: video ? 'video' : 'image',
+    mediaType: video || watch ? 'video' : 'image',
     image,
     reach: 0,                      // view_num is 0 across the whole index
     spendTotal: 0,                 // not licensed
@@ -98,6 +123,7 @@ function mapCreative(c: Record<string, unknown>): Ad {
     storeId: String(c.store_id ?? ''),
 
     videoUrl: video,
+    adLibraryVideoUrl: watch,
     linkUrl,
     utm: utmOf(linkUrl),
     placements: (Array.isArray(c.publisher_platform) ? c.publisher_platform : []).map(String).filter(Boolean),
@@ -122,7 +148,8 @@ export interface AdFilter extends LabelFilter {
   mode?: CreativeMode;
   q?: string;
   network?: string;
-  media?: 'image' | 'video';
+  /** 'vsl' = video sales letter: a video of 2+ minutes (measured server-side). */
+  media?: 'image' | 'video' | 'vsl';
   format?: string;
   placement?: string;
   country?: string;
@@ -140,6 +167,12 @@ export interface AdFilter extends LabelFilter {
    * copy, so a brand's panel could show other brands' ads.)
    */
   storeDomain?: string;
+  /**
+   * Only ads whose advertiser is a known online store (a store with an
+   * e-commerce platform on record). Filtered by the index, so totals and
+   * paging stay exact. Ignored when storeDomain names a brand explicitly.
+   */
+  storesOnly?: boolean;
   page?: number;
   limit?: number;
 }
@@ -199,6 +232,7 @@ export async function listAds(f: AdFilter = {}): Promise<AdPage> {
   // scoped by `storeDomain`, an exact match on store_url -- `search` is fuzzy
   // across copy and domains and let other brands' ads into a brand's list.
   if (f.storeDomain) base.set('storeDomain', f.storeDomain);
+  else if (f.storesOnly) base.set('storesOnly', 'true');
   if (f.q) base.set('search', f.q);
   // EU/UK is a server-side country list; a single EU country narrows it.
   const country = f.country?.toUpperCase();
@@ -229,7 +263,7 @@ export async function listAds(f: AdFilter = {}): Promise<AdPage> {
   const localOnly = !!(f.format || f.placement);
   const localFilters = (items: Ad[]): Ad[] => {
     let out = items;
-    if (f.media) out = out.filter(a => a.mediaType === f.media);
+    if (f.media) out = out.filter(a => a.mediaType === (f.media === 'vsl' ? 'video' : f.media));
     if (f.format) out = out.filter(a => a.format === f.format);
     if (f.placement) out = out.filter(a => a.placements.includes(f.placement!));
     if (f.euUk) out = out.filter(a => a.isEuUk);

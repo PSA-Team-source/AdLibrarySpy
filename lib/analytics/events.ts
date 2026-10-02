@@ -7,7 +7,10 @@
 // Server-only: reads the ClickHouse credential from the environment.
 import { randomUUID } from 'node:crypto';
 
-export type FunnelEvent = 'signup' | 'first_save' | 'first_track' | 'invite_sent' | 'invite_accepted';
+export type FunnelEvent = 'signup' | 'first_save' | 'first_track' | 'invite_sent' | 'invite_accepted'
+  // Email engagement: one `email_sent` per delivered digest/report (ref = campaign,
+  // e.g. alerts:daily, weekly:2026-w40), one `email_click` per tracked link hop (app/r).
+  | 'email_sent' | 'email_click';
 
 const TIMEOUT_MS = 2000;
 
@@ -34,18 +37,22 @@ export function eventRow(event: FunnelEvent, userId: string, opts: {
   };
 }
 
-/** Fire-and-forget. Safe to call anywhere on the server; never awaits the network. */
-export function emit(event: FunnelEvent, userId: string, opts: Parameters<typeof eventRow>[2] = {}): void {
+/**
+ * Fire-and-forget: safe to call anywhere on the server and never rejects. The
+ * returned promise settles when the insert is done — request handlers ignore
+ * it; a cron script that exits right after sending awaits it.
+ */
+export function emit(event: FunnelEvent, userId: string, opts: Parameters<typeof eventRow>[2] = {}): Promise<void> {
   const base = process.env.CLICKHOUSE_URL;
-  if (!base) return;
+  if (!base) return Promise.resolve();
   let row: EventRow;
-  try { row = eventRow(event, userId, opts); } catch { return; }
+  try { row = eventRow(event, userId, opts); } catch { return Promise.resolve(); }
   const url = new URL(base);
   url.searchParams.set('query', 'INSERT INTO dashboard.adlibraryspy_events FORMAT JSONEachRow');
   // Server-side batching: one row per request is fine for ClickHouse this way.
   url.searchParams.set('async_insert', '1');
   url.searchParams.set('wait_for_async_insert', '0');
-  fetch(url, {
+  return fetch(url, {
     method: 'POST',
     headers: {
       'X-ClickHouse-User': process.env.CLICKHOUSE_USER || 'default',

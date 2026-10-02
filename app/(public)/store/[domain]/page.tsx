@@ -171,12 +171,13 @@ export default async function PublicStorePage({ params }: { params: Params }) {
               <span className="truncate">{shop.name}</span>
               {shop.platform === 'shopify' && <span title="Shopify store"><PlatformIcon platform="shopify" className="h-5 w-5" /></span>}
             </h1>
-            <a href={`https://${shop.domain}`} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline">
+            <a href={`https://${shop.domain}`} target="_blank" rel="noopener nofollow" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline">
               <Globe className="h-3.5 w-3.5" aria-hidden />{shop.domain}<ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </a>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <a href={`https://${shop.domain}`} target="_blank" rel="noopener nofollow" className="btn-ghost inline-flex h-9 items-center gap-1.5">Visit store<ArrowUpRight className="h-3.5 w-3.5" aria-hidden /></a>
           <ShareButton path={storePath(shop.domain)} title={`${shop.name} on AdLibrarySpy`} label
             text={[
               `${shop.name} (${shop.domain})`,
@@ -194,7 +195,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
       </div>
 
       {(visits > 0 || shop.metaAds > 0) && (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {visits > 0 && (
             <div className={CARD} title={trafficTitle(visits, shop.trafficSource, period, shop.domain)}>
               <h2 className="text-sm font-semibold text-foreground">Monthly visits</h2>
@@ -217,7 +218,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
       )}
 
       {(swHistory.length >= 2 || adHistory.length >= 2) && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {swHistory.length >= 2 && (
             <section className={`${CARD} ${adHistory.length >= 2 ? '' : 'lg:col-span-2'}`}>
               <h2 className="mb-4 text-sm font-semibold text-foreground">Traffic over time</h2>
@@ -298,7 +299,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
             <h2 id="similar-heading" className="text-base font-semibold text-foreground">Similar shops</h2>
             <Link href="/stores" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">Shops directory<ArrowRight className="h-3.5 w-3.5" aria-hidden /></Link>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {similar.map(other => <PublicShopCard key={other.id} shop={other} />)}
           </div>
         </section>

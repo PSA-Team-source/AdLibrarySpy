@@ -19,6 +19,8 @@ export function BrandLogo({ logo, domain, name, size = 64, onMissing }: {
   const preferred = logo && !/\.ico(\?|$)/i.test(logo) ? logo : favicon;
   const [src, setSrc] = useState(preferred);
   const [dead, setDead] = useState(!preferred);
+  // Invisible until painted: a lazy or slow logo never shows as an empty tile.
+  const [shown, setShown] = useState(false);
   useEffect(() => { if (!preferred) onMissing?.(); }, [preferred, onMissing]);
   if (dead || !src) return null;
   const fail = () => {
@@ -31,6 +33,7 @@ export function BrandLogo({ logo, domain, name, size = 64, onMissing }: {
   const check = (el: HTMLImageElement | null) => {
     if (!el || !el.complete) return;
     if (el.naturalWidth === 0 || (src === favicon && el.naturalWidth <= 16)) fail();
+    else setShown(true);
   };
 
   const inner = Math.round(size * 0.625);
@@ -38,7 +41,7 @@ export function BrandLogo({ logo, domain, name, size = 64, onMissing }: {
     // An app-icon tile: white, ~22% corner radius, hairline edge so a white
     // logo still reads as a tile on the white card.
     <div
-      className="flex flex-shrink-0 items-center justify-center overflow-hidden bg-white ring-1 ring-inset ring-black/[0.08]"
+      className={`flex flex-shrink-0 items-center justify-center overflow-hidden bg-white ring-1 ring-inset ring-black/[0.08] ${shown ? '' : 'opacity-0'}`}
       style={{ width: size, height: size, borderRadius: Math.round(size * 0.225) }}
     >
       <img

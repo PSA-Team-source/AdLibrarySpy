@@ -143,6 +143,15 @@ The shop dossier's Products panel shows the whole published catalogue with
 prices (`/products.json`, 48 a page; `GET /api/shops/products` serves the pages
 after the first).
 
+Every other Shops surface (the table, `/stores`, store cards, the dossier's
+first paint) reads the thumbnails from the index's `news_products`. The Go job
+`market_products_sync` (`backend-v3-go/internal/services/marketproducts`) fills
+it for Shopify stores from their own `/products.json`, busiest first, with the
+count from `/meta.json` where the index has none. One read per store per 30
+days (cache `market.store_products`); reads are paced at a self-tuned rate that
+halves when Shopify starts returning 429s, because the API box's live dossier
+reads share its egress IP.
+
 ## Licensed traffic
 
 `lib/traffic/provider.ts` implements SimilarWeb and Semrush. Set

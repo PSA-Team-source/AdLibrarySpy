@@ -12,7 +12,8 @@ export function StickyStartBar({ target }: { target: string }) {
 
   useEffect(() => {
     const el = document.getElementById(target);
-    if (!el || !('IntersectionObserver' in window)) return;
+    // Signed-in visitors have no signup form to return to (app/layout.tsx sets the flag).
+    if (!el || !('IntersectionObserver' in window) || 'signedIn' in document.documentElement.dataset) return;
     // Shown only once the form has scrolled ABOVE the viewport, never before the visitor reached it.
     const io = new IntersectionObserver(([e]) => setShow(!e.isIntersecting && e.boundingClientRect.top < 0));
     io.observe(el);

@@ -22,6 +22,9 @@ function transport(): Transporter {
     auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } : undefined,
     pool: true,
     maxConnections: 3,
+    // Stalwart closes a session after 10 messages (session.data.limits.messages, 452 4.4.5);
+    // nodemailer's pool default is 100, so a digest run failed every send past the 10th.
+    maxMessages: 10,
   });
   return g.__ML_MAIL;
 }

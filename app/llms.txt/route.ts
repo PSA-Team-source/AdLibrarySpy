@@ -30,7 +30,7 @@ export async function GET() {
     ...(countries.length ? ['## Stores by country', ...countries.slice(0, 30).map(c => link(`${c.name} stores`, `/stores/country/${c.cc}`)), ''] : []),
     '## For AI assistants and developers',
     `- Agent skill: ${SITE_URL}/SKILL.md — step-by-step instructions any AI agent can follow (public JSON, hosted MCP, recipes, data rules)`,
-    `- MCP server (hosted, OAuth): ${SITE_URL}/api/mcp — tools: search_shops, search_products, get_shop, find_similar_shops, search_ads, get_ad, creative_breakdown, lookup_store, inspect_store, weekly_report, brandtracker`,
+    `- MCP server (hosted, OAuth): ${SITE_URL}/api/mcp — tools: search_shops, search_products, search_landing_pages, get_shop, find_similar_shops, search_ads, get_ad, creative_breakdown, lookup_store, inspect_store, weekly_report, brandtracker`,
     '- MCP server (local): `npx -y adlibraryspy-mcp`',
     `- Public store card JSON: ${SITE_URL}/api/public/store?domain={domain}`,
     `- Weekly report JSON: ${SITE_URL}/api/public/weekly`,

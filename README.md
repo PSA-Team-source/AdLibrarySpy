@@ -75,7 +75,9 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 
 <img src="public/landing/weekly.webp" alt="Weekly report" width="820">
 
-- **Trends**: niches, stores and products whose measured traffic is breaking out
+- **Trends**: what advertisers launched on Meta this week vs last — products getting the most new ads,
+  stores launching the most ads, brand-new advertisers, niches and ad formats gaining share — plus the
+  niches and stores whose measured traffic is breaking out this month
 - **The weekly report**: stores scaling their ads, the fastest traffic growth, ad peaks and the newest
   winners, published every Monday at [/weekly](https://adlibraryspy.com/weekly) and sent by email if you opt in
 - Public, shareable pages for every store (`/store/{domain}`), a store directory by niche, country and

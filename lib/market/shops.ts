@@ -9,6 +9,7 @@ import { monthlyTraffic, monthlyTrafficMany, trafficConfigured } from '@/lib/tra
 import { cruxRanks, cruxRank } from '@/lib/traffic/crux';
 import { safeGet } from '@/lib/safe-fetch';
 import { mapFacts, mapDetail, previousMonth } from '@/lib/traffic/similarweb';
+import { measured, rankSimilar } from './similar-rank';
 
 const CCY: Record<string, string> = {
   US: 'USD', GB: 'GBP', CA: 'CAD', AU: 'AUD', DE: 'EUR', FR: 'EUR', ES: 'EUR',
@@ -373,6 +374,8 @@ export interface ShopFilter {
   /** Detected storefront technology names (TechFacets): a shop matches a list
    *  when it carries ANY of its names; both lists must match when both are set. */
   pixels?: string[]; tech?: string[];
+  /** StoreLeads storefront profile (Language/Currency/Theme/Socials/Apps chips): any value per key. */
+  profile?: Partial<Record<ProfileKey, string[]>>;
   sortBy?: string; sortOrder?: 'asc' | 'desc';
   page?: number; limit?: number;
 }
@@ -414,7 +417,8 @@ function needsRangeQuery(f: ShopFilter): boolean {
       || f.growthMin != null || f.growthMax != null
       || !!f.visitorCountry || !!f.createdAfter
       || !!f.excludeStoreIds?.length || !!f.storeIds?.length
-      || !!f.pixels?.length || !!f.tech?.length;
+      || !!f.pixels?.length || !!f.tech?.length
+      || PROFILE_KEYS.some(k => !!f.profile?.[k]?.length);
 }
 
 /**
@@ -438,6 +442,7 @@ function rangeBody(f: ShopFilter): Record<string, unknown> {
   if (f.storeIds?.length) body.storeIds = f.storeIds;
   if (f.pixels?.length) body.pixels = f.pixels;
   if (f.tech?.length) body.tech = f.tech;
+  for (const k of PROFILE_KEYS) if (f.profile?.[k]?.length) body[k] = f.profile[k];
 
   if (f.productsMin != null || f.productsMax != null) {
     body.totalProducts = {
@@ -467,7 +472,15 @@ function rangeBody(f: ShopFilter): Record<string, unknown> {
 }
 
 export interface TechFacet { name: string; count: number }
-export interface TechFacets { monthYear: string; pixels: TechFacet[]; technologies: TechFacet[] }
+/** The profile filters, by the backend's query/body key. */
+export const PROFILE_KEYS = ['language', 'currency', 'theme', 'social', 'app'] as const;
+export type ProfileKey = typeof PROFILE_KEYS[number];
+
+export interface TechFacets {
+  monthYear: string; pixels: TechFacet[]; technologies: TechFacet[];
+  /** Options per profile filter; null until the profile enricher covers the month (same gate as technology). */
+  profile: Record<ProfileKey, TechFacet[]> | null;
+}
 
 /**
  * Share of the served month's shops the technology enricher must have processed
@@ -490,7 +503,13 @@ export async function techFacets(): Promise<TechFacets | null> {
     const list = (v: unknown): TechFacet[] => (Array.isArray(v) ? v : [])
       .map(x => ({ name: String((x as TechFacet)?.name ?? ''), count: Number((x as TechFacet)?.count) || 0 }))
       .filter(x => x.name && x.count > 0);
-    return { monthYear: String(d.monthYear ?? ''), pixels: list(d.pixels), technologies: list(d.technologies) };
+    const total = Number(d.total) || 0;
+    const raw = (d.profile ?? {}) as Record<string, unknown>;
+    // Same honesty gate as the technology chips: offered once the enricher has covered the month.
+    const profile = total > 0 && Number(d.profileSynced) / total >= TECH_MIN_COVERAGE
+      ? Object.fromEntries(PROFILE_KEYS.map(k => [k, list(raw[k])])) as Record<ProfileKey, TechFacet[]>
+      : null;
+    return { monthYear: String(d.monthYear ?? ''), pixels: list(d.pixels), technologies: list(d.technologies), profile };
   } catch {
     return null;
   }
@@ -686,11 +705,9 @@ export async function shopifyProducts(domain: string, limit = 8): Promise<Produc
 /**
  * Similar shops: same category, nearest traffic.
  *
- * The neighbour set is ordered by SimilarWeb visits (sw_visits), and the
- * log-distance below runs on whatever figure each store actually shows — a
- * measured one where the crawl has reached it, the index's estimate otherwise.
- * The tiles label which, so a mixed neighbourhood is never presented as one
- * measurement.
+ * Ranked by rankSimilar (similar-rank.ts): category, then origin / main
+ * visitor country, then closest measured traffic. Stores without their own
+ * measured visits are left out, so no card prints an estimate.
  */
 export async function similarShops(shop: Shop, limit = 6): Promise<Shop[]> {
   if (!shop.niches.length) return [];
@@ -700,16 +717,17 @@ export async function similarShops(shop: Shop, limit = 6): Promise<Shop[]> {
   const catId = tree.find(n => n.name === shop.niches[0])?.id
     ?? Object.entries(cats).find(([, name]) => name === shop.niches[0])?.[0];
   if (!catId) return [];
-  const payload = await marketGet(
-    // selectedStoreCategoryId is the name the list route reads; storeCategoryId was
-    // silently ignored and returned the whole index (news sites, marketplaces).
-    `/top-brands?limit=50&platform=${encodeURIComponent(shop.platform || 'shopify')}&selectedStoreCategoryId=${encodeURIComponent(catId)}&sortBy=sw_visits&sortOrder=desc`,
-    { revalidate: 600 },
-  );
-  return unwrapItems(payload)
-    .map(b => mapBrand(b, cats))
-    .filter(s => s.id !== shop.id && s.domain !== shop.domain)
-    .sort((a, b) => Math.abs(Math.log10(a.monthlyVisits || 1) - Math.log10(shop.monthlyVisits || 1))
-                  - Math.abs(Math.log10(b.monthlyVisits || 1) - Math.log10(shop.monthlyVisits || 1)))
-    .slice(0, limit);
+  // The pool must sit in the shop's own traffic band. It used to be the
+  // category's 50 BIGGEST stores, so a 2K-visit shop got the smallest of those
+  // (all ~3.7M) as its "closest" neighbours. Band = one decade either side.
+  const band = measured(shop)
+    ? { trafficMin: Math.floor(shop.monthlyVisits / 10), trafficMax: Math.ceil(shop.monthlyVisits * 10) }
+    : {};
+  const base: ShopFilter = { category: catId, platform: shop.platform || 'shopify', limit: 100, ...band };
+  const home = [...new Set([shop.country, shop.visitorCountries?.[0]?.code].filter(Boolean) as string[])];
+  const pages = await Promise.all([
+    listShops(base, { crux: false }),
+    ...home.map(country => listShops({ ...base, country }, { crux: false })),
+  ].map(p => p.catch(() => null)));
+  return rankSimilar(shop, pages.flatMap(p => p?.items ?? []), limit);
 }

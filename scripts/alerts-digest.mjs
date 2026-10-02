@@ -2,7 +2,13 @@
 // Alerts digest: one email per user and period with what moved in the brands
 // their workspaces track, the new results of their saved searches, and "Today
 // in the market" (stores whose running Meta ads jumped day over day, in the
-// user's niche when known). Daily by default. Sent on the marketing envelope
+// user's niche when known). A user with no personal news also gets "Winning
+// products today" (lib/alerts/products.ts: products with the most new Meta ads
+// in 48h); a user who tracks nothing gets a "track a competitor" nudge with up
+// to 3 stores they viewed — the nudge never causes a send on its own.
+// Every app link goes through the /r click hop (lib/email/click.ts) and each
+// send emits `email_sent` (lib/analytics/events.ts) — CTR by campaign in
+// research/launch-2026-09/FUNNEL.md. Daily by default. Sent on the marketing envelope
 // (lib/mail.ts sendMarketingMail, DTCMail IP-WARMUP.md §9), paced as steady
 // traffic. Runs from cron at 13:00 UTC, plus retry runs.
 //
@@ -55,6 +61,9 @@ const { loadShops } = await import('../app/(app)/shops/load.ts');
 const { queryAds, favoriteIds } = await import('../lib/data.ts');
 const { getShops } = await import('../lib/market/shops.ts');
 const { marketMovers } = await import('../lib/alerts/market.ts');
+const { winningProductsToday } = await import('../lib/alerts/products.ts');
+const { trackLinks, clickUrl } = await import('../lib/email/click.ts');
+const { emit } = await import('../lib/analytics/events.ts');
 const { adFilterFromParams } = await import('../lib/market/ads-params.ts');
 const D = await import('../lib/alerts/digest.ts');
 const { isoWeekOf } = await import('../lib/weekly/week.ts');
@@ -146,6 +155,15 @@ try {
   await pool().end();
   process.exit(1);
 }
+let products;
+try {
+  products = await withRetry('winning products', () => winningProductsToday(MARKET_DAY));
+} catch (err) {
+  console.error(`[alerts] winning products for ${MARKET_DAY} unavailable: ${err.message} — nothing sent, the next run resumes`);
+  await pool().end();
+  process.exit(1);
+}
+log(`winning products ${MARKET_DAY}: ${products.length} product(s)${products[0] ? ` (top: ${products[0].domain} "${products[0].title}" +${products[0].newAds} new ads)` : ''}`);
 log(`market ${MARKET_DAY}: ${movers.length} store(s) added ${D.MARKET_MIN_JUMP}+ live Meta ads${movers[0] ? ` (top: ${movers[0].domain} +${movers[0].jump})` : ''}`);
 
 /** The user's niches, from the stores their workspaces track and they saved. */
@@ -159,6 +177,17 @@ async function nichesOf(userId) {
   if (!ids.length) return [];
   const shops = await withRetry(`niches ${userId}`, () => getShops(ids));
   return D.topNiches(shops.map(s => s.niches));
+}
+
+/** The activation nudge for a user who tracks nothing (null when they track something). */
+async function nudgeFor(userId) {
+  const t = await one(`SELECT 1 FROM trackers t JOIN workspace_members m ON m.workspace_id = t.workspace_id WHERE m.user_id = $1 LIMIT 1`, [userId]);
+  if (t) return null;
+  const viewed = await query(
+    `SELECT entity_id, max(label) AS label, max(viewed_at) AS at FROM recent_views
+      WHERE user_id = $1 AND entity_type = 'shop' AND label <> ''
+      GROUP BY entity_id ORDER BY at DESC LIMIT 20`, [userId]);
+  return { suggestions: D.pickSuggestions(viewed.map(v => ({ shopId: v.entity_id, name: v.label }))) };
 }
 
 // ---------- 3. users with a digest due ----------
@@ -175,12 +204,21 @@ const users = await query(
       AND u.email !~* '\\.(test|example|invalid|localhost)$'
       AND COALESCE(p.frequency, '${D.DEFAULT_FREQUENCY}') <> 'off'
       ${ONLY ? 'AND lower(u.email) = $1' : ''}
-    ORDER BY u.id`,
+    -- Most recently active first, so a capped day reaches the people likeliest to come back.
+    ORDER BY (SELECT max(r.viewed_at) FROM recent_views r WHERE r.user_id = u.id) DESC NULLS LAST, u.created_at DESC, u.id`,
   ONLY ? [ONLY] : [],
 );
 log(`${DAY} (${WEEK}${MONDAY ? ', Monday' : ''}): ${users.length} candidate user(s), ${seeded} search(es) seeded${DRY ? ' — DRY RUN' : SEND_TO ? ` — test send to ${SEND_TO}` : ''}`);
 
 const gapMs = Math.max(200, Number(ALERTS_SEND_GAP_MS) || 3000);
+// Warm-up cap: emails per UTC day across all runs (the 14:30/16:00 retries share it).
+// The marketing IP is still warming; a 20x jump in one day reads as spam to inboxes.
+// ponytail: fixed env number; raise ALERTS_DAILY_CAP in .env.local as reputation builds
+// (e.g. +50%/day while bounces and complaints stay low), unset = no cap.
+const DAILY_CAP = Number(process.env.ALERTS_DAILY_CAP) || Infinity;
+let sentToday = WRITE && DAILY_CAP < Infinity
+  ? Number((await one("SELECT count(*)::int AS n FROM alert_sends WHERE sent_at >= date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'")).n)
+  : 0;
 let sent = 0, empty = 0, deferred = 0, failed = 0, skipped = 0, streak = 0, marketStreak = 0;
 
 for (const u of users) {
@@ -188,7 +226,7 @@ for (const u of users) {
   if (!period) { skipped++; continue; }
   if (WRITE && await one('SELECT 1 FROM alert_sends WHERE user_id=$1 AND period=$2', [u.id, period])) { skipped++; continue; }
 
-  let brands = [], searches = [], seenUpdates = [], market = null;
+  let brands = [], searches = [], seenUpdates = [], market = null, nudge = null;
   try {
     if (u.trackers) {
       const window = u.frequency === 'daily' ? '1d' : '7d';
@@ -217,6 +255,7 @@ for (const u of users) {
       }
     }
     if (u.market && movers.length) market = D.marketPicks(movers, await nichesOf(u.id));
+    nudge = await nudgeFor(u.id);
     marketStreak = 0;
   } catch (err) {
     // Never a partial digest: this user waits for the next run, unclaimed.
@@ -226,17 +265,19 @@ for (const u of users) {
     continue;
   }
 
-  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market });
+  if (sentToday >= DAILY_CAP) { log(`daily cap ${DAILY_CAP} reached — the rest wait for tomorrow`); break; }
+  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market, products: u.market ? products : null, nudge });
   if (!digest) { empty++; continue; }
 
+  const campaign = `alerts:${u.frequency}`;
   const unsub = unsubscribeUrl(APP, u.id, 'alerts');
   const message = {
     to: SEND_TO || u.email,
     subject: digest.subject,
     heading: digest.heading,
-    body: digest.body,
-    cta: digest.cta,
-    footer: `You get this because alerts are on in AdLibrarySpy. <a href="${APP}/settings/notifications" style="color:#6b7280">Change frequency</a> · <a href="${unsub}" style="color:#6b7280">Unsubscribe</a>.`,
+    body: trackLinks(digest.body, APP, campaign, u.id),
+    cta: { ...digest.cta, href: clickUrl(APP, digest.cta.href, campaign, u.id) },
+    footer: `You get this because alerts are on in AdLibrarySpy. <a href="${clickUrl(APP, `${APP}/settings/notifications`, campaign, u.id).replace(/&/g, '&amp;')}" style="color:#6b7280">Change frequency</a> · <a href="${unsub}" style="color:#6b7280">Unsubscribe</a>.`,
     headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
   };
 
@@ -244,6 +285,8 @@ for (const u of users) {
     log(`WOULD SEND ${period} to ${u.email}: "${digest.subject}"`);
     for (const b of brands) log(`   brand ${b.domain}: ${b.lines.join(' · ')}`);
     for (const s of searches) log(`   search "${s.name}" (${s.kind}): ${s.total} new — ${s.items.slice(0, 3).map(i => i.title).join(', ')}`);
+    if (nudge) log(`   nudge: ${nudge.suggestions.length ? nudge.suggestions.map(s => s.name).join(', ') : 'no viewed stores — link to Shops'}`);
+    if (digest.body.includes('Winning products today')) log(`   products: ${products.slice(0, D.PRODUCTS_ROWS).map(p => `${p.domain} +${p.newAds}`).join(', ')}`);
     if (market) log(`   market${market.niche ? ` [${market.niche}]` : ''}: ${market.items.map(m => `${m.domain} +${m.jump}`).join(', ')}`);
     if (RENDER) {
       fs.mkdirSync(RENDER, { recursive: true });
@@ -261,11 +304,12 @@ for (const u of users) {
   }
   try {
     const { envelope } = await mail.sendMarketingMail(message);
-    sent++; streak = 0;
+    sent++; sentToday++; streak = 0;
+    if (WRITE) await emit('email_sent', u.id, { ref: campaign, props: { period } });
     if (WRITE) {
       for (const x of seenUpdates) await query('UPDATE saved_searches SET seen_ids=$2, last_run_at=now() WHERE id=$1', [x.id, x.seen]);
       await query('UPDATE alert_sends SET summary=$3 WHERE user_id=$1 AND period=$2', [u.id, period,
-        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, niche: market?.niche ?? null, envelope })]);
+        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, products: digest.body.includes('Winning products today') ? Math.min(products.length, D.PRODUCTS_ROWS) : 0, nudge: nudge ? nudge.suggestions.length : null, niche: market?.niche ?? null, envelope })]);
     }
     log(`sent ${period} to ${message.to} (envelope ${envelope}): "${digest.subject}"`);
   } catch (err) {

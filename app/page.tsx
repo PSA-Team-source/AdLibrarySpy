@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { ArrowRight, BarChart3, Bot, CalendarDays, Check, Coffee, Eye, Filter, GitPullRequest, Globe, Layers3, Scale, Search, Share2, Store, Users } from 'lucide-react';
 import { BrandMark } from '@/components/brand/brand-mark';
 import { BrandLogo } from '@/components/market/BrandLogo';
+import { ProductImage } from '@/components/ShopMedia';
+import { SiteHeader } from '@/components/public/SiteHeader';
 import { RefBeacon } from '@/components/public/RefBeacon';
 import { MetaPixel } from '@/components/public/MetaPixel';
 import { GoogleSignIn } from '@/components/GoogleSignIn';
@@ -14,7 +16,8 @@ import { marketGet, unwrapTotal } from '@/lib/market/client';
 import { listAds } from '@/lib/market/creatives';
 import { directoryList, measuredMonth } from '@/lib/seo/directory';
 import { GitHubMark, OpenSourceAnnouncement } from '@/components/public/OpenSourceAnnouncement';
-import { measuredVisits, storePath, adPath, REPO_URL } from '@/lib/public/site';
+import { measuredVisits, storePath, adPath, REPO_URL, AGENT_MESSAGE } from '@/lib/public/site';
+import { AgentCopyLine } from '@/components/public/AgentConnect';
 import { sponsorUrl } from '@/lib/public/sponsor';
 import { compact, flag } from '@/lib/format';
 import { HOME_FAQS as faqs, SITE_DESCRIPTION, siteJsonLd } from '@/lib/public/faq';
@@ -48,7 +51,7 @@ async function liveData() {
     marketGet('/top-brands?platform=all&page=1&limit=1', { revalidate: 3600, retries: 1 }).then(unwrapTotal).catch(() => null),
     directoryList({ kind: 'all' }, 1).then(r => r.items).catch(() => [] as Shop[]),
     // The demo wall shows one niche (owner's pick: Health) so it reads as a real search.
-    listAds({ limit: 60, category: HOME_WALL_NICHE }).then(r => r.items).catch(() => [] as Ad[]),
+    listAds({ limit: 60, category: HOME_WALL_NICHE, storesOnly: true }).then(r => r.items).catch(() => [] as Ad[]),
   ]);
   // At most two tiles per advertiser, so one brand's campaign doesn't fill the wall.
   const perBrand = new Map<string, number>();
@@ -79,36 +82,7 @@ export default async function HomePage() {
 
       <OpenSourceAnnouncement />
 
-      {/* ---------- header ---------- */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#050807]">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AdLibrarySpy home">
-            <BrandMark size={28} />
-            <span className="text-[15px] font-semibold tracking-tight">AdLibrarySpy</span>
-          </Link>
-          <nav aria-label="Main" className="hidden items-center gap-7 text-sm text-white/70 md:flex">
-            <a href="#features" className="hover:text-white">Features</a>
-            <Link href="/stores" className="hover:text-white">Shops directory</Link>
-            <Link href="/trending" className="hover:text-white">Trending</Link>
-            <Link href="/weekly" className="hover:text-white">Weekly report</Link>
-            <Link href="/vs/trendtrack" className="hover:text-white">vs TrendTrack</Link>
-          </nav>
-          <div className="flex items-center gap-2">
-            {donateUrl && (
-              <a href={donateUrl} target="_blank" rel="noopener" className="hidden items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-white/70 hover:text-white lg:inline-flex">
-                <Coffee className="h-4 w-4" aria-hidden /> Donate
-              </a>
-            )}
-            <a href={REPO_URL} target="_blank" rel="noopener" aria-label="AdLibrarySpy on GitHub" className="hidden rounded-lg p-2 text-white/70 hover:text-white sm:block">
-              <GitHubMark className="h-5 w-5" />
-            </a>
-            <Link href="/login" className="rounded-lg px-3 py-2 text-sm text-white/80 hover:text-white">Log in</Link>
-            <Link href="/signup" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/5 px-3.5 py-2 text-sm font-medium hover:bg-white/10">
-              Start free <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader donateUrl={donateUrl} />
 
       {/* ---------- hero ---------- */}
       <section className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pt-24">
@@ -131,7 +105,12 @@ export default async function HomePage() {
           {/* Sign up right here: email, then the 6-digit code, without leaving the page
               (an ad visitor in the Facebook/Instagram browser loses nothing to a page
               load or to the emailed link opening elsewhere). Same actions as /signup. */}
-          <div id="start" className="mx-auto mt-7 max-w-md scroll-mt-24 sm:mt-9">
+          <div className="signed-in-only mt-7 sm:mt-9">
+            <Link href="/shops" className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[15px] font-semibold text-[#071004]" style={{ background: LIME }}>
+              Go to your dashboard <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+          <div id="start" className="signed-out-only mx-auto mt-7 max-w-md scroll-mt-24 sm:mt-9">
             <EmailSignIn variant="hero" layout="inline" pendingLabel="Sending…"
               submitLabel={<>Start free <ArrowRight className="h-4 w-4" aria-hidden /></>}>
               <input type="hidden" name="landing" value="/" />
@@ -151,6 +130,12 @@ export default async function HomePage() {
           <Link href="/stores" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white">
             Or browse the shops directory <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </Link>
+          <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+            <AgentCopyLine big label="Or paste into any AI agent" value={AGENT_MESSAGE} />
+            <a href="#ai" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
+              <Bot className="h-3.5 w-3.5" aria-hidden /> How it works <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          </div>
         </div>
 
         {/* Product tour: motion design over real production crops and live numbers
@@ -246,9 +231,9 @@ export default async function HomePage() {
             <div className="mx-auto max-w-6xl">
               <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
                 {wall.map(ad => (
-                  <li key={ad.id}>
-                    <Link href={adPath(ad.id)} className="group block overflow-hidden rounded-xl border border-black/[0.07] bg-white">
-                      <img src={ad.image} alt={`${ad.advertiser} ad`} loading="lazy" className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                  <li key={ad.id} className="hidden has-[img]:block">
+                    <Link href={adPath(ad.id)} className="group relative block overflow-hidden rounded-xl border border-black/[0.07] bg-white">
+                      <ProductImage src={ad.image} alt={`${ad.advertiser} ad`} className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
                       <span className="block truncate px-2.5 py-2 text-xs font-medium">{ad.advertiser}</span>
                     </Link>
                   </li>
@@ -270,18 +255,23 @@ export default async function HomePage() {
             <div>
               <Kicker dark>AI access</Kicker>
               <h2 id="ai" className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Ask your AI</h2>
-              <p className="mt-3 text-white/65">Connect Claude, ChatGPT or any MCP-compatible assistant to your workspace and ask about shops, ads and tracked brands in plain language.</p>
-              <Link href="/signup?ref=home:ai" className="mt-6 inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-4 py-2 text-sm font-medium hover:bg-white/5">
-                Connect your assistant <ArrowRight className="h-4 w-4" aria-hidden />
-              </Link>
+              <p className="mt-3 text-white/65">Send your agent one message. Claude, ChatGPT, Cursor or any agent that can open a link reads our guide and starts researching stores and Meta ads for you. No sign-up form, no password, no key to copy.</p>
+              <ol className="mt-6 space-y-2 text-sm text-white/75">
+                <li className="flex gap-2"><span style={{ color: LIME }}>1.</span> Copy the message.</li>
+                <li className="flex gap-2"><span style={{ color: LIME }}>2.</span> Paste it into your agent's chat.</li>
+                <li className="flex gap-2"><span style={{ color: LIME }}>3.</span> For full search it asks for your email, then the 6-digit code we send you. That's it.</li>
+                <li className="flex gap-2"><span style={{ color: LIME }}>4.</span> Ask about any store, product or ad.</li>
+              </ol>
+              <div className="mt-6 flex flex-wrap gap-2">
+                <a href="/SKILL.md" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-4 py-2 text-sm font-medium hover:bg-white/5">
+                  Read the guide your agent gets <ArrowRight className="h-4 w-4" aria-hidden />
+                </a>
+              </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <p className="flex items-center gap-2 text-xs uppercase tracking-wider text-white/50"><Bot className="h-4 w-4" aria-hidden /> Tools your assistant gets</p>
-              <ul className="mt-4 grid grid-cols-1 gap-2 font-mono text-[13px] sm:grid-cols-2">
-                {['search_shops', 'search_products', 'get_shop', 'find_similar_shops', 'search_ads', 'get_ad', 'creative_breakdown', 'trending_categories', 'track_brand', 'brand_changes', 'list_tracked_brands'].map(t => (
-                  <li key={t} className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-white/85"><Check className="h-3.5 w-3.5 shrink-0" style={{ color: LIME }} aria-hidden />{t}</li>
-                ))}
-              </ul>
+            <div className="space-y-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <AgentCopyLine label="Paste into any agent" value={AGENT_MESSAGE} />
+              <AgentCopyLine label="Claude Code (one command)" value="claude mcp add --transport http adlibraryspy https://adlibraryspy.com/api/mcp" />
+              <AgentCopyLine label="Claude app: Settings → Connectors → Add custom connector" value="https://adlibraryspy.com/api/mcp" />
             </div>
           </div>
         </section>
@@ -376,7 +366,8 @@ export default async function HomePage() {
             <a href={REPO_URL} target="_blank" rel="noopener" className="hover:text-white">GitHub</a>
             {donateUrl && <a href={donateUrl} target="_blank" rel="noopener" className="hover:text-white">Donate</a>}
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
-            <Link href="/login" className="hover:text-white">Log in</Link>
+            <Link href="/login" className="signed-out-only hover:text-white">Log in</Link>
+            <Link href="/shops" className="signed-in-only hover:text-white">Open app</Link>
           </nav>
         </div>
       </footer>

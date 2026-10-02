@@ -85,3 +85,41 @@ export function growthLabel(pct: number): string {
   const v = Math.abs(pct) >= 100 ? Math.round(pct).toLocaleString('en-US') : pct.toFixed(1);
   return `${pct > 0 ? '+' : ''}${v}%`;
 }
+
+// ---------- Meta ads, this week vs last ----------
+//
+// The ad library (ClickHouse market__creatives) grows as the crawler reaches
+// more of Meta: 2026-09-24..30 holds +63% more distinct new ads than the week before, so
+// a raw "+X% ads" mostly measures our own coverage. Niche and format changes
+// are therefore read as SHARE of all new ads, this week vs last (lift); a store's
+// own counts are shown as counted, both weeks side by side.
+
+/** Two back-to-back 7-day windows ending at `today` (exclusive, UTC dates). */
+export function adWeeks(today: string): { from: string; to: string; prevFrom: string } {
+  const t = Date.parse(`${today}T00:00:00Z`);
+  const d = (days: number) => new Date(t - days * 86_400_000).toISOString().slice(0, 10);
+  return { from: d(7), to: today, prevFrom: d(14) };
+}
+
+/** A niche/format needs this many new ads in BOTH weeks before its share change means anything. */
+export const AD_LIFT_MIN = 300;
+
+/** Share this week ÷ share last week (1 = same as the market). null when either week is too thin. */
+export function adLift(cur: number, prev: number, curTotal: number, prevTotal: number, min = AD_LIFT_MIN): number | null {
+  if (cur < min || prev < min || !curTotal || !prevTotal) return null;
+  return (cur / curTotal) / (prev / prevTotal);
+}
+
+/** "+42%" / "−18%" for a lift ratio; "same" inside ±1%. */
+export function liftLabel(lift: number): string {
+  const pct = Math.round((lift - 1) * 100);
+  if (pct === 0) return 'same';
+  return `${pct > 0 ? '+' : '−'}${Math.abs(pct)}%`;
+}
+
+/** "Sep 24 – Sep 30" for [from, to) dates. */
+export function weekLabel(from: string, to: string): string {
+  const f = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const last = new Date(Date.parse(`${to}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  return `${f(from)} – ${f(last)}`;
+}

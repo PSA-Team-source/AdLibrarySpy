@@ -100,8 +100,8 @@ export function CreativeCard({ ad, saved }: { ad: Ad; saved: boolean }) {
         <ExpandableCopy text={ad.adCopy} className="min-h-[2.5rem]" />
 
         <Link href={`/ads/${ad.id}`} scroll={false} className="block overflow-hidden rounded-lg" aria-label={`Details of this ad by ${ad.advertiser}`}>
-          <CreativeMedia image={ad.image} videoUrl={ad.videoUrl}
-            alt={ad.headline || `Ad by ${ad.advertiser}`} className="aspect-[4/5] w-full" />
+          <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} watchUrl={ad.adLibraryVideoUrl}
+            alt={ad.headline || `Ad by ${ad.advertiser}`} className="w-full" />
         </Link>
 
         {(destination || ad.headline) && (

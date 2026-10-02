@@ -35,10 +35,14 @@ export function middleware(req: NextRequest) {
   // in-app browser's "open in browser" hand-off, components/GoogleSignIn): the
   // `_fbc` cookie RefBeacon writes on public pages (format in lib/public/ref.ts).
   const fbc = isPublic || req.cookies.has('_fbc') ? null : fbcFromFbclid(searchParams.get('fbclid'), Date.now());
-  if (!isPublic && !ref && !fbc) return res;
+  // Sessions older than the `als_in` hint (lib/auth/session.ts) get it on their next
+  // app page, so the edge-cached homepage recognises them too. Never on public pages.
+  const hint = !isPublic && req.cookies.has('ml_session') && !req.cookies.has('als_in');
+  if (!isPublic && !ref && !fbc && !hint) return res;
 
   if (isPublic) res.headers.set('Cache-Tag', PUBLIC_CACHE_TAG);
   const secure = req.nextUrl.protocol === 'https:' || req.headers.get('x-forwarded-proto') === 'https';
+  if (hint) res.cookies.set('als_in', '1', { maxAge: 30 * 86400, path: '/', sameSite: 'lax', secure, httpOnly: false });
   if (fbc) res.cookies.set('_fbc', fbc, { maxAge: 60 * 60 * 24 * 90, path: '/', sameSite: 'lax', secure, httpOnly: false });
   if (ref) {
     res.cookies.set(REF_COOKIE, ref, {

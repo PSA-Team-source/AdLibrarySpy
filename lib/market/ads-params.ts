@@ -23,7 +23,7 @@ export function adFilterFromParams(sp: Record<string, string | undefined>): AdFi
   return {
     mode: 'all',
     q: sp.q,
-    media: sp.media === 'image' || sp.media === 'video' ? sp.media : undefined,
+    media: sp.media === 'image' || sp.media === 'video' || sp.media === 'vsl' ? sp.media : undefined,
     format: sp.format,
     placement: sp.placement,
     country: sp.country,
@@ -33,6 +33,8 @@ export function adFilterFromParams(sp: Record<string, string | undefined>): AdFi
     category: sp.niche,
     sort: isAdSort(sp.sort) ? sp.sort : undefined,
     storeDomain: sp.store,
+    // "Only online stores" is on unless the URL opts out (Filters toggle).
+    storesOnly: sp.allAdvertisers !== '1',
     ...adLabelsFromParams(sp),
     page: Math.max(1, num(sp.page) ?? 1),
     limit: ADS_PAGE_SIZE,

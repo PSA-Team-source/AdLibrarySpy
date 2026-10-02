@@ -140,7 +140,7 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
         )}
         {ad.linkUrl && (
           <Row icon={<Globe className={ico} />} label="Landing Page">
-            <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer nofollow" title={ad.linkUrl}
+            <a href={ad.linkUrl} target="_blank" rel="noopener nofollow" title={ad.linkUrl}
               className="inline-flex max-w-[260px] items-center gap-1 text-foreground hover:underline">
               <span className="truncate">{ad.linkUrl.replace(/^https?:\/\//, '')}</span><ExternalLink className="h-3 w-3 shrink-0" />
             </a>
@@ -175,11 +175,11 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
       {similar.length > 0 && (
         <section className="rounded-xl border border-border bg-card p-3">
           <h3 className="pb-2 text-sm font-semibold text-foreground">More from {ad.advertiser}</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 items-start gap-2">
             {similar.map(a => (
               <Link key={a.id} href={adHref(a.id)} replace={drawer} scroll={false} title={a.headline || 'Creative'}
                 className="overflow-hidden rounded-lg border border-border transition-opacity hover:opacity-80">
-                <CreativeMedia image={a.image} videoUrl={a.videoUrl} alt={a.headline || 'Creative'} className="aspect-[4/5] w-full" />
+                <CreativeMedia image={a.image} videoUrl={a.videoUrl} watchUrl={a.adLibraryVideoUrl} alt={a.headline || 'Creative'} className="w-full" />
               </Link>
             ))}
           </div>
@@ -196,7 +196,7 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-foreground">{shop?.name || ad.advertiser}</p>
             {ad.domain && (
-              <a href={`https://${ad.domain}`} target="_blank" rel="noopener noreferrer nofollow"
+              <a href={`https://${ad.domain}`} target="_blank" rel="noopener nofollow"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                 {ad.domain}<ExternalLink className="h-3 w-3" />
               </a>
@@ -240,7 +240,7 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
         <div className="ml-auto flex items-center gap-2">
           <ShareButton path={adPath(ad.id)} title={`${ad.advertiser} ad on AdLibrarySpy`} className="h-8 w-8" />
           {ad.linkUrl && (
-            <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer nofollow" title="Open the landing page" aria-label="Open the landing page" className={iconBtn}>
+            <a href={ad.linkUrl} target="_blank" rel="noopener nofollow" title="Open the landing page" aria-label="Open the landing page" className={iconBtn}>
               <ExternalLink className="h-4 w-4" />
             </a>
           )}
@@ -273,8 +273,8 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
           </div>
           <ExpandableCopy text={ad.adCopy} lines={3} className="mt-2" />
           <div className="mt-2 overflow-hidden rounded-lg">
-            <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} alt={ad.headline || `Ad by ${ad.advertiser}`}
-              className="aspect-[4/5] w-full" autoPlayOnHover={false} />
+            <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} watchUrl={ad.adLibraryVideoUrl} alt={ad.headline || `Ad by ${ad.advertiser}`}
+              className="w-full" autoPlayOnHover={false} />
           </div>
           {(destinationHost || ad.headline) && (
             <div className="mt-2 rounded-lg bg-foreground/[0.03] px-2.5 py-2">

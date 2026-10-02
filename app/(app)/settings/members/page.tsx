@@ -21,7 +21,7 @@ export default async function MembersPage() {
         actions={canManage ? <InviteUserDialog /> : undefined}
         padded={false}
       >
-        <Table className="min-w-[560px]" containerClassName="scroll-thin">
+        <Table className="sm:min-w-[560px] max-sm:[&_tr>*:nth-child(1):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(4):not([colspan])]:hidden" containerClassName="scroll-thin">
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead><TableHead>Name</TableHead><TableHead>Role</TableHead><TableHead>Joined On</TableHead>

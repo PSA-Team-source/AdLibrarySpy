@@ -16,6 +16,8 @@ export const isSearchKind = (v: unknown): v is SearchKind => v === 'shops' || v 
 
 /** Monthly-visits moves smaller than this are noise in a monthly estimate. */
 export const VISITS_MATERIAL_PCT = 10;
+/** Live ads must move by at least this much (or start from zero) to be emailed. */
+export const LIVE_ADS_MATERIAL_PCT = 50;
 /** Most results listed per saved search in one email; the rest are a link. */
 export const ITEMS_PER_SEARCH = 5;
 /** Remembered result ids per saved search (newest kept). */
@@ -37,6 +39,49 @@ export interface MarketMover {
   logo: string;
   niches: string[];
   before: number; after: number; jump: number;
+}
+
+// ---------- Winning products today (lib/alerts/products.ts) ----------
+/** A product needs at least this many new ads in the 48h window to be listed. */
+export const PRODUCTS_MIN_NEW_ADS = 10;
+/** Fewer products than this and the section is left out. */
+export const PRODUCTS_MIN_ROWS = 3;
+export const PRODUCTS_ROWS = 5;
+/** Most "track a store you viewed" suggestions in one email. */
+export const SUGGESTIONS = 3;
+
+export interface WinningToday {
+  title: string;
+  /** https raster image, or '' — then no image is drawn. */
+  image: string;
+  shopId: string; storeName: string; domain: string;
+  /** Distinct new Meta ads started from `from` through `to` (UTC dates). */
+  newAds: number; from: string; to: string;
+}
+
+/** A shop the user opened, offered as a first tracker. */
+export interface Suggestion { shopId: string; name: string }
+
+/** "Sep 29–30" / "Sep 30 – Oct 1": the window a count covers, in words. */
+export function dayRange(from: string, to: string): string {
+  const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const [, fm, fd] = from.split('-').map(Number);
+  const [, tm, td] = to.split('-').map(Number);
+  if (from === to) return `${M[tm - 1]} ${td}`;
+  return fm === tm ? `${M[fm - 1]} ${fd}–${td}` : `${M[fm - 1]} ${fd} – ${M[tm - 1]} ${td}`;
+}
+
+/** Up to SUGGESTIONS distinct viewed shops the user does not track yet, most recent first. */
+export function pickSuggestions(viewed: Suggestion[], tracked: Iterable<string> = []): Suggestion[] {
+  const skip = new Set(tracked);
+  const out: Suggestion[] = [];
+  for (const v of viewed) {
+    if (!v.shopId || skip.has(v.shopId)) continue;
+    skip.add(v.shopId);
+    out.push(v);
+    if (out.length >= SUGGESTIONS) break;
+  }
+  return out;
 }
 
 /**
@@ -122,7 +167,13 @@ const signed = (n: number) => `${n > 0 ? '+' : '−'}${fmt(n)}`;
 export function trackerLines(d: WindowDelta): string[] {
   const out: string[] = [];
   if (d.newAds !== null && d.newAds > 0) out.push(`${fmt(d.newAds)} new ad${d.newAds === 1 ? '' : 's'} launched`);
-  if (d.liveAds !== null && d.liveAds !== 0) out.push(`Live ads ${signed(d.liveAds)}`);
+  // Small day-to-day swings in live ads are noise; a jump (or drop) of 50%+,
+  // or going live from zero, is news. liveAdsPct null + liveAds > 0 = from zero.
+  if (d.liveAds !== null && d.liveAds !== 0) {
+    const pct = d.liveAdsPct;
+    if (pct !== null && Math.abs(pct) >= LIVE_ADS_MATERIAL_PCT) out.push(`Live ads ${signed(d.liveAds)} (${pct > 0 ? '+' : '−'}${Math.abs(pct)}%)`);
+    else if (pct === null && d.liveAds > 0) out.push(`Live ads ${signed(d.liveAds)} (went live)`);
+  }
   if (d.visits !== null && d.visitsPct !== null && Math.abs(d.visitsPct) >= VISITS_MATERIAL_PCT) {
     out.push(`Monthly visits ${signed(d.visits)} (${d.visitsPct > 0 ? '+' : '−'}${Math.abs(d.visitsPct)}%)`);
   }
@@ -143,11 +194,17 @@ const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'
 export function buildDigest(o: {
   app: string; frequency: 'daily' | 'weekly'; brands: DigestBrand[]; searches: DigestSearch[];
   market?: { niche: string | null; items: MarketMover[] } | null;
+  /** Shown only when the user has no personal news; under PRODUCTS_MIN_ROWS it is left out. */
+  products?: WinningToday[] | null;
+  /** Set for a user who tracks nothing: the activation nudge. Never a reason to send on its own. */
+  nudge?: { suggestions: Suggestion[] } | null;
 }): Digest | null {
   const brands = o.brands.filter(b => b.lines.length);
   const searches = o.searches.filter(s => s.total > 0 && s.items.length);
   const market = o.market && o.market.items.length ? o.market : null;
-  if (!brands.length && !searches.length && !market) return null;
+  const personal = brands.length > 0 || searches.length > 0;
+  const products = !personal && o.products && o.products.length >= PRODUCTS_MIN_ROWS ? o.products.slice(0, PRODUCTS_ROWS) : null;
+  if (!personal && !market && !products) return null;
   const app = o.app.replace(/\/$/, '');
   const ref = `ref=alerts:${o.frequency}`;
   const link = 'color:#4338ca;text-decoration:none;font-weight:600';
@@ -194,6 +251,33 @@ export function buildDigest(o: {
     parts.push('</table>');
   }
 
+  if (products) {
+    const lead = parts.length ? 'margin:24px 0 6px' : 'margin:0 0 6px';
+    parts.push(`<p style="${lead};font-weight:600;color:#111827">Winning products today</p>`);
+    parts.push(`<p style="margin:0 0 6px;${sub}">Shopify products with the most new Meta ads started ${esc(dayRange(products[0].from, products[0].to))} (UTC).</p>`);
+    parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0">');
+    for (const p of products) {
+      const img = p.image
+        ? `<td width="52" style="${row};padding-right:10px;vertical-align:top"><img src="${esc(p.image)}" width="44" height="44" alt="" style="display:block;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover"></td>`
+        : '';
+      parts.push(`<tr>${img}<td style="${row}"${p.image ? '' : ' colspan="2"'}><a href="${app}/shops/${encodeURIComponent(p.shopId)}?${ref}" style="${link}">${esc(p.title)}</a>`
+        + `<br><span style="${sub}">${esc(p.storeName)} · ${esc(p.domain)}</span></td>`
+        + `<td style="${row};padding-left:12px;text-align:right;white-space:nowrap;vertical-align:top"><span style="font-weight:600;color:#047857">+${fmt(p.newAds)}</span><br><span style="${sub}">new ads</span></td></tr>`);
+    }
+    parts.push('</table>');
+    parts.push(`<p style="margin:6px 0 0;font-size:13px"><a href="${app}/products?sort=new_ads&${ref}" style="${link}">See all winning products →</a></p>`);
+  }
+
+  if (o.nudge) {
+    const box = 'margin:24px 0 0;padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb';
+    const sugg = o.nudge.suggestions.slice(0, SUGGESTIONS);
+    const list = sugg.length
+      ? `<p style="margin:8px 0 0;font-size:13px;color:#374151">Stores you looked at: ${sugg.map(s =>
+          `<a href="${app}/shops/${encodeURIComponent(s.shopId)}?track=1&${ref}" style="${link}">Track ${esc(s.name)}</a>`).join(' · ')}</p>`
+      : `<p style="margin:8px 0 0;font-size:13px"><a href="${app}/shops?${ref}" style="${link}">Find a store to track →</a></p>`;
+    parts.push(`<div style="${box}"><p style="margin:0;font-weight:600;color:#111827">Track a competitor to get alerts when they launch products or ads</p>${list}</div>`);
+  }
+
   const newResults = searches.reduce((n, s) => n + s.total, 0);
   const bits = [
     brands.length ? `${fmt(brands.length)} tracked brand${brands.length === 1 ? '' : 's'} moved` : '',
@@ -202,8 +286,9 @@ export function buildDigest(o: {
   // Personal news leads the subject; a market-only digest names its biggest mover.
   const subject = bits.length
     ? bits.join(', ')
-    : `${market!.items[0].name} added ${fmt(market!.items[0].jump)} live Meta ads yesterday`;
-  const personal = brands.length || searches.length;
+    : market
+      ? `${market.items[0].name} added ${fmt(market.items[0].jump)} live Meta ads yesterday`
+      : `${products![0].title.slice(0, 70)} got ${fmt(products![0].newAds)} new Meta ads in 2 days`;
   return {
     subject: subject[0].toUpperCase() + subject.slice(1),
     heading: personal
@@ -214,6 +299,8 @@ export function buildDigest(o: {
       ? { label: 'Open Brandtracker', href: `${app}/brandtracker?window=${o.frequency === 'daily' ? '1d' : '7d'}&${ref}` }
       : searches.length
         ? { label: 'Open saved searches', href: `${app}/searches?${ref}` }
-        : { label: 'Explore scaling stores', href: `${app}/shops?${ref}` },
+        : market
+          ? { label: 'Explore scaling stores', href: `${app}/shops?${ref}` }
+          : { label: 'See winning products', href: `${app}/products?sort=new_ads&${ref}` },
   };
 }

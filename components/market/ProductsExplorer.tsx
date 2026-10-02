@@ -127,7 +127,7 @@ function Toolbar({ categories, currencies }: { categories: CategoryNode[]; curre
         </div>
       )}
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <form className="relative min-w-0 flex-1" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
+        <form className="relative min-w-0 flex-1 basis-full sm:basis-0" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
           <input type="search" value={term} onChange={e => setTerm(e.target.value)} placeholder="Search products, brands, stores…"
             aria-label="Search products, brands, stores"
@@ -199,12 +199,12 @@ function ProductRow({ p, rank }: { p: WinningProduct; rank: number }) {
       <TableCell>
         <div className="flex items-center gap-3 overflow-hidden">
           {p.image && (
-            <a href={p.url} target="_blank" rel="noopener noreferrer" className="shrink-0" tabIndex={-1} aria-hidden>
+            <a href={p.url} target="_blank" rel="noopener" className="shrink-0 empty:hidden" tabIndex={-1} aria-hidden>
               <ProductImage src={thumb(p.image, 112)} alt="" className="h-14 w-14 rounded-[10px] border border-[var(--a-sep)] bg-white object-cover" />
             </a>
           )}
           <div className="min-w-0 flex-1">
-            <a href={p.url} target="_blank" rel="noopener noreferrer" title={`${p.title} — open on ${s.domain}`}
+            <a href={p.url} target="_blank" rel="noopener" title={`${p.title} — open on ${s.domain}`}
               className="group/t inline-flex max-w-full items-center gap-1 rounded text-[15px] font-semibold tracking-[-0.015em] text-foreground outline-none hover:underline focus-visible:shadow-[0_0_0_4px_var(--a-focus)]">
               <span className="truncate">{p.title}</span>
               <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover/t:opacity-60" aria-hidden />
@@ -212,6 +212,11 @@ function ProductRow({ p, rank }: { p: WinningProduct; rank: number }) {
             <div className="mt-0.5 flex min-w-0 items-center gap-2 text-[12px] text-muted-foreground">
               {(p.productType || p.vendor) && <span className="truncate">{p.productType || p.vendor}</span>}
               {p.publishedAt && <span className="shrink-0">Published {day(p.publishedAt)}</span>}
+            </div>
+            {/* Phones show only this column, so its two key numbers ride along. */}
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 text-[13px] tabular-nums sm:hidden">
+              {p.price != null && p.currency && <span className="font-semibold text-foreground">{money(p.price, p.currency)}</span>}
+              {p.activeAds > 0 && <span className="text-foreground"><span className="font-semibold">{compact(p.activeAds)}</span> <span className="text-muted-foreground">active ads</span></span>}
             </div>
           </div>
         </div>
@@ -261,7 +266,7 @@ function ProductRow({ p, rank }: { p: WinningProduct; rank: number }) {
         {p.sampleAds.length > 0 && (
           <div className="flex items-center gap-1.5">
             {p.sampleAds.slice(0, 3).map(a => (
-              <Link key={a.id} href={`/ads/${a.id}`} className="shrink-0 overflow-hidden rounded-md" aria-label={`Ad for ${p.title}`}>
+              <Link key={a.id} href={`/ads/${a.id}`} className="shrink-0 overflow-hidden rounded-md empty:hidden" aria-label={`Ad for ${p.title}`}>
                 <ProductImage src={a.image} alt="" className="h-10 w-10 border border-[var(--a-sep)] object-cover" />
               </Link>
             ))}
@@ -289,8 +294,8 @@ function ProductsTable({ rows, rankOffset, priceSortable }: { rows: WinningProdu
   return (
     <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[22px] border border-[var(--a-sep)] bg-[var(--a-card)] shadow-[var(--card-shadow)]">
       <Table containerClassName="table-sticky-id min-h-0 flex-1"
-        className="min-w-[1300px] table-fixed tracking-[-0.01em] [&_tbody_td]:py-2.5 [&_tbody_tr]:border-[var(--a-sep)] [&_tbody_tr:hover]:bg-[var(--a-row-hover)]">
-        <colgroup>{COLUMNS.map(c => <col key={c.label} className={c.width} />)}</colgroup>
+        className="max-sm:[&_tr>*:not(:nth-child(2)):not([colspan])]:hidden sm:min-w-[1300px] table-fixed tracking-[-0.01em] [&_tbody_td]:py-2.5 [&_tbody_tr]:border-[var(--a-sep)] [&_tbody_tr:hover]:bg-[var(--a-row-hover)]">
+        <colgroup className="max-sm:hidden">{COLUMNS.map(c => <col key={c.label} className={c.width} />)}</colgroup>
         <TableHeader className="sticky top-0 z-10 [&_th]:bg-[var(--a-glass)] [&_th]:shadow-[inset_0_-1px_0_var(--a-sep)] [&_th]:backdrop-blur-xl [&_th]:text-[12px] [&_th]:font-semibold [&_th]:normal-case [&_th]:tracking-normal [&_th_button]:text-[12px] [&_th_button]:font-semibold [&_th_button]:normal-case [&_th_button]:tracking-normal [&_tr]:border-[var(--a-sep)]">
           <TableRow>
             {COLUMNS.map(c => c.sort && (c.sort !== 'price' || priceSortable) ? (

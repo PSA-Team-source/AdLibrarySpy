@@ -27,6 +27,7 @@ export default async function TrendingPage() {
     niche: n => niches.get(n.id) ?? null,
     band: null,
     seeAll: b => signupFor(`/shops?traffic=${b}&sort=growth`),
+    ads: d => signupFor(`/ads?store=${encodeURIComponent(d)}`),
   };
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">

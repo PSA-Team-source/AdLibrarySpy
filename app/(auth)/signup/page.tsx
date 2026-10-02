@@ -42,7 +42,6 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         {landing && <input type="hidden" name="landing" value={landing} />}
         <Field label="Your name" name="name" autoComplete="name" required={false} />
         <Field label="Work email" name="email" type="email" autoComplete="email" />
-        {!invited && <Field label="Workspace name" name="workspace" required={false} hint="You can rename this later." />}
         <p className="text-xs text-muted-foreground">No password: we email you a 6-digit code to enter here (the email has a sign-in link too).</p>
       </EmailSignIn>
       <p className="mt-6 text-sm text-muted-foreground">

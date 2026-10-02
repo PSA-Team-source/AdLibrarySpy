@@ -21,7 +21,7 @@ export function PublicCreativeTile({ ad }: { ad: Ad }) {
   return (
     <Link href={adPath(ad.id)} className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-foreground/20"
       aria-label={`Ad by ${ad.advertiser}${ad.headline ? `: ${ad.headline}` : ''}`}>
-      <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} alt={ad.headline || `Ad by ${ad.advertiser}`} className="aspect-[4/5] w-full" autoPlayOnHover={false} />
+      <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} watchUrl={ad.adLibraryVideoUrl} alt={ad.headline || `Ad by ${ad.advertiser}`} className="w-full" autoPlayOnHover={false} />
       <div className="flex flex-1 flex-col gap-1 p-3">
         {ad.headline && <div className="line-clamp-2 text-xs font-semibold text-foreground">{ad.headline}</div>}
         {period && (
@@ -56,7 +56,7 @@ export function PublicShopCard({ shop }: { shop: Shop }) {
         {shop.productCount > 0 && <span className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5"><LayoutGrid className="h-3 w-3" aria-hidden />{compact(shop.productCount)} products</span>}
       </div>
       {thumbs.length > 0 && (
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="mt-3 grid grid-cols-4 gap-2 empty:hidden">
           {thumbs.map(p => <ProductImage key={`${p.rank}-${p.title}`} src={p.image!} alt={p.title} className="aspect-square w-full rounded-md border border-border object-cover" />)}
         </div>
       )}

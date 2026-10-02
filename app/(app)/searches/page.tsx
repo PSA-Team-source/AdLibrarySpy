@@ -38,7 +38,7 @@ export default async function SavedSearchesPage() {
             <p>Filter <Link href="/shops" className="font-medium text-foreground underline underline-offset-2">Shops</Link> or <Link href="/ads" className="font-medium text-foreground underline underline-offset-2">Ads</Link>, then press <span className="font-medium text-foreground">Save search</span> to keep the filters and get new results by email.</p>
           </div>
         ) : (
-          <Table className="min-w-[640px]" containerClassName="scroll-thin">
+          <Table className="sm:min-w-[640px] max-sm:[&_tr>*:nth-child(2):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(3):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(4):not([colspan])]:hidden" containerClassName="scroll-thin">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead><TableHead>Type</TableHead><TableHead>Filters</TableHead>
@@ -50,6 +50,7 @@ export default async function SavedSearchesPage() {
                 <TableRow key={s.id}>
                   <TableCell className="max-w-[240px]">
                     <Link href={`/${s.kind}${s.query ? `?${s.query}` : ''}`} className="block truncate font-medium text-foreground hover:underline">{s.name}</Link>
+                    <span className="block truncate text-xs text-muted-foreground sm:hidden">{s.kind === 'shops' ? 'Shops' : 'Ads'} · {describeQuery(s.query)}</span>
                   </TableCell>
                   <TableCell><span className="pill">{s.kind === 'shops' ? 'Shops' : 'Ads'}</span></TableCell>
                   <TableCell className="max-w-[320px]"><span className="block truncate text-muted-foreground" title={describeQuery(s.query)}>{describeQuery(s.query)}</span></TableCell>

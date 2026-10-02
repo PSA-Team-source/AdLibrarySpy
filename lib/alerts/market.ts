@@ -7,6 +7,7 @@
 // the one store metric in the index that moves daily; SimilarWeb traffic is
 // monthly and is deliberately not used here. Its num_ads_increase column is 0 on
 // every row, so the jump is computed from two days of running counts.
+import { chQuery } from '../clickhouse';
 import { getShops } from '../market/shops';
 import { MARKET_MIN_JUMP, type MarketMover } from './digest';
 
@@ -30,6 +31,23 @@ HAVING countIf(d = {d0:Date}) = 1 AND countIf(d = {d1:Date}) = 1
  LIMIT {limit:UInt32}
 FORMAT JSONEachRow`;
 
+// A day where more than 99.9% of rows carry a 0 is a day the ad counter did not
+// run (2026-09-27..10-01: the v2 crawler inserted 1-3M rows/day with this column
+// seeded 0; 0-48 positive rows/day), not a day every store stopped advertising.
+// Real counted days run 94-99.5% zeros, so 95% would drop them. Mirrors
+// market.UncountedShare in backend-v3-go.
+const COVERAGE_SQL = `
+SELECT toString(toDate(summary_date)) AS d, toInt64(count()) AS n, toInt64(countIf(total_num_ads_running > 0)) AS p
+  FROM market_research.market__daily_summary_stores
+ WHERE summary_date >= {d0:Date} AND summary_date < {d1:Date} + 1 AND _cdc_deleted = 0
+ GROUP BY d
+FORMAT JSONEachRow`;
+
+/** True when the day has enough rows to judge and >99.9% of them are 0. */
+export function isUncountedDay(n: number, positive: number): boolean {
+  return n >= 1000 && n - positive > 0.999 * n;
+}
+
 /** A logo mail clients actually draw (https raster), else '' — then no image at all. */
 function emailableLogo(url: string): string {
   try {
@@ -51,22 +69,17 @@ export async function marketMovers(day: string, limit = 100): Promise<MarketMove
   if (!base) throw new Error('CLICKHOUSE_URL is not set');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error(`bad day ${day}`);
   const d0 = new Date(Date.parse(`${day}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
-  const url = new URL(base);
-  for (const [k, v] of Object.entries({ d0, d1: day, cap: META_CAP, min: MARKET_MIN_JUMP, limit })) {
-    url.searchParams.set(`param_${k}`, String(v));
-  }
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'X-ClickHouse-User': process.env.CLICKHOUSE_USER || 'default',
-      'X-ClickHouse-Key': process.env.CLICKHOUSE_PASSWORD || '',
-    },
-    body: SQL,
-    signal: AbortSignal.timeout(60_000),
-    cache: 'no-store',
+  // An uncounted day is missing data: no movers, never "everyone dropped to 0".
+  const cov = await chQuery(COVERAGE_SQL, { d0, d1: day });
+  const dead = [d0, day].filter(d => {
+    const c = cov.find(r => r.d === d);
+    return !c || isUncountedDay(Number(c.n), Number(c.p));
   });
-  if (!res.ok) throw new Error(`clickhouse ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const rows = (await res.text()).split('\n').filter(Boolean).map(l => JSON.parse(l) as Record<string, unknown>)
+  if (dead.length) {
+    console.warn(`[market] live-ad counts missing for ${dead.join(', ')} — no movers`);
+    return [];
+  }
+  const rows = (await chQuery(SQL, { d0, d1: day, cap: META_CAP, min: MARKET_MIN_JUMP, limit }))
     .map(r => ({ storeId: String(r.store_id), before: Number(r.before), after: Number(r.after), jump: Number(r.jump) }));
   if (!rows.length) return [];
 

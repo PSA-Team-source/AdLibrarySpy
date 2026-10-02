@@ -343,6 +343,11 @@ async function sendAll(client, data) {
   // lib/mail.ts is the one SMTP path; Node's type stripping loads it as-is.
   const { sendMail, mailConfigured } = await import('../lib/mail.ts');
   const { unsubscribeUrl } = await import('../lib/weekly/unsubscribe.ts');
+  // Every app link goes through the /r click hop; each send emits `email_sent`
+  // (CTR by campaign: research/launch-2026-09/FUNNEL.md).
+  const { trackLinks, clickUrl } = await import('../lib/email/click.ts');
+  const { emit } = await import('../lib/analytics/events.ts');
+  const campaign = `weekly:${data.week}`;
   if (!mailConfigured()) throw new Error('SMTP is not configured — report published, mail not sent');
 
   const body = emailBody(data);
@@ -369,12 +374,13 @@ async function sendAll(client, data) {
           to: r.email,
           subject: `${data.weekLabel}: the stores scaling right now`,
           heading: `The Monday report — ${data.weekLabel}`,
-          body,
-          cta: { label: 'Read the full report', href: `${APP}/weekly/${data.week}?ref=weekly:${data.week}` },
+          body: trackLinks(body, APP, campaign, r.id),
+          cta: { label: 'Read the full report', href: clickUrl(APP, `${APP}/weekly/${data.week}?ref=weekly:${data.week}`, campaign, r.id) },
           footer: `You get this because you turned on the weekly report in AdLibrarySpy settings. <a href="${unsub}" style="color:#6b7280">Unsubscribe</a>.`,
           headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
         });
         sent++; streak = 0;
+        await emit('email_sent', r.id, { ref: campaign });
       } catch (err) {
         failed++; streak++;
         await client.query('DELETE FROM newsletter_sends WHERE iso_week = $1 AND user_id = $2', [WEEK, r.id]);

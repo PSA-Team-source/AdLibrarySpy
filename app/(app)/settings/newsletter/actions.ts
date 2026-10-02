@@ -24,6 +24,7 @@ export async function setNewsletterAction(_prev: NewsletterState, form: FormData
   }
   await audit(ctx, on ? 'newsletter.subscribed' : 'newsletter.unsubscribed');
   revalidatePath('/settings/newsletter');
+  revalidatePath('/settings/notifications');
   return on
     ? { ok: ctx.user.emailVerifiedAt ? 'Subscribed. The next report arrives Monday.' : 'Subscribed. Confirm your email address and the report will start arriving on Mondays.' }
     : { ok: 'Unsubscribed. You will not get the weekly report.' };

@@ -7,6 +7,7 @@
 import { listShops, getShop, similarShops, categories } from '@/lib/market/shops';
 import { listAds, getAd, storeAds, labelFacets } from '@/lib/market/creatives';
 import { listWinningProducts } from '@/lib/market/products';
+import { LANDING_PAGE_TYPES, listLandingPages } from '@/lib/market/landing-pages';
 import { LABEL_TAXONOMY, cleanLabelValues } from '@/lib/market/labels';
 import { trackersWithState, changeFeed } from '@/lib/trackers';
 import { addTracker, removeTracker, categoryAdRanking } from '@/lib/data';
@@ -277,6 +278,63 @@ export const TOOLS: ToolDef[] = [
   },
 
   {
+    name: 'search_landing_pages',
+    title: 'Search ad landing pages',
+    description: 'Search the pages Meta ads send people to (advertorials, listicles, quizzes, collections, homepages), '
+      + 'ranked by the ads behind them. Each page carries its URL, title, page type, screenshot or share image, active ad count, '
+      + 'ads started in the last 14 days, advertiser pages, first/last seen dates, ad countries and the store with its traffic.',
+    scope: 'discovery.read',
+    inputSchema: obj({
+      query: str('Words that must all appear in the page title, URL or store domain.'),
+      category: str('Store category name, e.g. "Skincare & Body Care". Use list_categories for valid values.'),
+      country: str('Two-letter country code the ads run in, e.g. US.'),
+      pageType: { type: 'string', enum: [...LANDING_PAGE_TYPES], description: 'Kind of page.' },
+      store: str('Only this store\u2019s pages (domain, e.g. example.com).'),
+      firstAdWithinDays: int('Only pages whose first ad started within this many days.', 1, 365),
+      sortBy: {
+        type: 'string',
+        enum: ['ads', 'new_ads', 'pages', 'traffic', 'growth', 'first_ad', 'last_seen'],
+        description: 'Ranking field. Defaults to ads (active ads sending people to the page). new_ads = ads started in the '
+          + 'last 14 days; pages = distinct advertiser pages; traffic/growth = the store\u2019s monthly visits and their change.',
+      },
+      limit: int('Number of results, 1-50. Defaults to 10.', 1, 50),
+    }),
+    async handler(args) {
+      const cats = await categories();
+      const categoryId = args.category
+        ? Object.entries(cats).find(([, name]) => name.toLowerCase() === String(args.category).toLowerCase())?.[0]
+        : undefined;
+      const r = await listLandingPages({
+        q: args.query as string | undefined,
+        category: categoryId,
+        country: args.country as string | undefined,
+        type: args.pageType as string | undefined,
+        store: args.store as string | undefined,
+        launched: args.firstAdWithinDays != null ? String(args.firstAdWithinDays) : undefined,
+        sort: args.sortBy as string | undefined,
+        limit: Math.min(50, Number(args.limit) || 10),
+      });
+      if (r.building) return { total: 0, count: 0, message: 'Landing pages are still being gathered; try again in a minute.', landingPages: [] };
+      return {
+        total: r.total,
+        count: r.items.length,
+        landingPages: r.items.map(lp => ({
+          title: lp.title || null, url: lp.url, pageType: lp.type,
+          screenshotUrl: lp.screenshot || null, imageUrl: lp.image || null,
+          ads: lp.ads, activeAds: lp.activeAds, adsLast14Days: lp.newAds14d, advertiserPages: lp.pages,
+          firstAdAt: lp.firstAdAt, lastSeenAt: lp.lastSeenAt, adCountries: lp.adCountries,
+          sampleAdIds: lp.sampleAds.map(a => a.id),
+          store: {
+            shopId: lp.store.id ? `shp_${lp.store.id}` : null, domain: lp.store.domain, country: lp.store.country || null,
+            monthlyVisits: lp.store.visits || null, visitsGrowthPct: lp.store.visitsGrowthPct,
+            trafficSource: lp.store.trafficSource,
+          },
+        })),
+      };
+    },
+  },
+
+  {
     name: 'search_ads',
     title: 'Search ad creatives',
     description: 'Search indexed ad creatives by keyword, network, media type, country or AI creative label. ' +
@@ -285,20 +343,22 @@ export const TOOLS: ToolDef[] = [
     inputSchema: obj({
       query: str('Free-text match on ad copy, headline or advertiser.'),
       network: { type: 'string', enum: ['meta', 'tiktok'], description: 'Ad network.' },
-      mediaType: { type: 'string', enum: ['image', 'video'], description: 'Creative format.' },
+      mediaType: { type: 'string', enum: ['image', 'video', 'vsl'], description: 'Creative format. vsl = video sales letter (video of 2+ minutes).' },
       country: str('Two-letter country code.'),
       hook: labelArray('hook', 'hooks'),
       angle: labelArray('angle', 'angles'),
       funnelStage: labelArray('funnelStage', 'funnel stages'),
       offer: labelArray('offer', 'offer types'),
       urgency: { type: 'boolean', description: 'true = only creatives the model judged to use urgency.' },
+      includeNonStores: { type: 'boolean', description: 'true = also include advertisers that are not online stores (big brands, publishers). Default false: only known online stores.' },
       limit: int('Number of results, 1-50. Defaults to 12.', 1, 50),
     }),
     async handler(args, ctx) {
       const { items, total } = await listAds({
+        storesOnly: args.includeNonStores !== true,
         q: args.query as string | undefined,
         network: args.network as string | undefined,
-        media: args.mediaType as 'image' | 'video' | undefined,
+        media: args.mediaType as 'image' | 'video' | 'vsl' | undefined,
         country: args.country as string | undefined,
         hook: cleanLabelValues('hook', args.hook),
         angle: cleanLabelValues('angle', args.angle),

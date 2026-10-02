@@ -10,6 +10,13 @@ import { compact } from '@/lib/format';
 import { SearchBox } from '@/components/FilterBar';
 import { ShopLogo } from '@/components/ShopMedia';
 import { PageShell } from '@/components/layouts/page-shell';
+import { headers } from 'next/headers';
+import { needsStartHere } from '@/lib/start-here';
+import { inAppBrowser } from '@/lib/public/in-app-browser';
+import { StartHere } from '@/components/home/StartHere';
+import { InAppBrowserTip } from '@/components/home/InAppBrowserTip';
+import { WeeklyReportPrompt } from '@/components/home/WeeklyReportPrompt';
+import { one } from '@/lib/db';
 import { RecentRow, VIEW_TABS, parseViewType, shortAgo } from './recent-row';
 
 export const metadata = { title: 'Home' };
@@ -25,7 +32,7 @@ export default async function HomePage({
   const recentType = parseViewType(sp.recent);
   const panel = sp.panel === 'activity' ? 'activity' : 'folders';
 
-  const [counts, recents, recentShops, trackers, folders, activity] = await Promise.all([
+  const [counts, recents, recentShops, trackers, folders, activity, weeklyChoice] = await Promise.all([
     recentViewCounts(ctx.workspaceId, ctx.user.id).catch(() => ({ shop: 0, ad: 0, advertiser: 0 })),
     recentViews(ctx.workspaceId, ctx.user.id, recentType, 6).catch(() => []),
     recentType === 'shop'
@@ -34,6 +41,8 @@ export default async function HomePage({
     trackerBoard(ctx.workspaceId, '7d').catch(() => []),
     panel === 'folders' ? trackerFolders(ctx.workspaceId, 6).catch(() => []) : Promise.resolve([]),
     panel === 'activity' ? listAudit(ctx.workspaceId, { limit: 6 }).then(r => r.items).catch(() => []) : Promise.resolve([]),
+    // Any row = they already chose (subscribed or unsubscribed): never ask again.
+    one('SELECT 1 FROM newsletter_subscribers WHERE user_id = $1', [ctx.user.id]).catch(() => 'unknown'),
   ]);
   const chips = (recentShops ?? recents).slice(0, 5);
   const topTrackers = [...trackers]
@@ -42,6 +51,8 @@ export default async function HomePage({
   const trackerShops = new Map<string, Shop>(
     (await getShops(topTrackers.map(t => t.shopId)).catch(() => [] as Shop[])).map(s => [s.id, s]),
   );
+  const startHere = needsStartHere(counts, trackers.length);
+  const inApp = inAppBrowser((await headers()).get('user-agent'));
   const firstName = ctx.user.name.trim().split(/\s+/)[0] || ctx.user.email.split('@')[0];
 
   const card = 'flex min-h-[380px] flex-col rounded-xl border border-border bg-card';
@@ -54,11 +65,14 @@ export default async function HomePage({
     <PageShell title="Home">
       <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-5 py-6 sm:py-14">
         <h2 className="text-center text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Welcome back, {firstName}.
+          {startHere ? `Welcome, ${firstName}.` : `Welcome back, ${firstName}.`}
         </h2>
         <div className="flex w-full justify-center">
           <SearchBox destination="/shops" placeholder="Search any shop or brand..." />
         </div>
+        {inApp && <InAppBrowserTip app={inApp} />}
+        {startHere && <StartHere />}
+        {!startHere && !weeklyChoice && <WeeklyReportPrompt />}
         {chips.length > 0 && (
           <ul className="flex flex-wrap justify-center gap-2" aria-label="Recently viewed shops">
             {chips.map(v => (
@@ -73,7 +87,7 @@ export default async function HomePage({
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {/* Recents: what this user opened, newest first. */}
         <section className={card}>
           <div className="flex items-center justify-between px-5 pb-3 pt-5">

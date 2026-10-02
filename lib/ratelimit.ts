@@ -107,6 +107,12 @@ export const FAIR_USE = {
     { key: `products-day:user:${userId}`, limit: 3000, windowSeconds: DAY },
     { key: `products-day:ip:${ip}`, limit: 6000, windowSeconds: DAY },
   ],
+  /** The Landing pages explorer's JSON pages (same budget as Products). */
+  landingPages: (userId: string, ip: string): Quota[] => [
+    { key: `landing-pages:${userId}`, limit: 240, windowSeconds: 60 },
+    { key: `landing-pages-day:user:${userId}`, limit: 3000, windowSeconds: DAY },
+    { key: `landing-pages-day:ip:${ip}`, limit: 6000, windowSeconds: DAY },
+  ],
   /** CSV exports of Shops / Ads: each one reads up to 1,000 rows (10–17 index pages). */
   export: (userId: string, ip: string): Quota[] => [
     { key: `export:${userId}`, limit: 10, windowSeconds: 60 },

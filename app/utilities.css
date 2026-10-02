@@ -70,3 +70,9 @@
 .animate-fade-in-fast {
   animation: fadeInFast 0.2s ease-in;
 }
+
+/* Signed-in swap for edge-cached pages (script in app/layout.tsx sets data-signed-in). */
+html:not([data-signed-in]) .signed-in-only,
+html[data-signed-in] .signed-out-only {
+  display: none !important;
+}

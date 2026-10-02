@@ -213,7 +213,7 @@ export default async function BrandtrackerPage({ searchParams }: { searchParams:
           {filterCount > 0 && <span className="pill">{filterCount} active</span>}
           <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground transition-transform group-open:rotate-90" />
         </summary>
-        <form action="/brandtracker" className="grid gap-4 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4">
+        <form action="/brandtracker" className="grid grid-cols-1 gap-4 border-t border-border p-4 sm:grid-cols-2 lg:grid-cols-4">
           {q && <input type="hidden" name="q" value={q} />}
           {activeFolder && <input type="hidden" name="folder" value={activeFolder} />}
           <input type="hidden" name="window" value={window} />
@@ -277,12 +277,12 @@ export default async function BrandtrackerPage({ searchParams }: { searchParams:
       </div>
 
       <div className="card overflow-hidden">
-        <Table className="min-w-[760px]" containerClassName="scroll-thin">
+        <Table className="sm:min-w-[760px]" containerClassName="scroll-thin">
           <TableHeader><TableRow>
             <TableHead>Shop Info</TableHead>
-            <TableHead className="text-right">Traffic</TableHead>
-            <TableHead className="text-right">Live Ads</TableHead>
-            <TableHead className="text-right" title={`Creatives newly indexed in our ad library for the store over the last ${window}`}>New Ads</TableHead>
+            <TableHead className="hidden text-right sm:table-cell">Traffic</TableHead>
+            <TableHead className="hidden text-right sm:table-cell">Live Ads</TableHead>
+            <TableHead className="hidden text-right sm:table-cell" title={`Creatives newly indexed in our ad library for the store over the last ${window}`}>New Ads</TableHead>
             <TableHead><span className="sr-only">Manage</span></TableHead>
           </TableRow></TableHeader>
           <TableBody>
@@ -314,15 +314,25 @@ export default async function BrandtrackerPage({ searchParams }: { searchParams:
                       <ShopLogo src={shop?.logo ?? ''} name={t.name || t.domain} size={36} />
                       <div className="min-w-0">
                         <Link href={`/shops/${t.shopId}`} className="block truncate text-sm font-semibold text-foreground hover:underline">{t.name || t.domain}</Link>
-                        <a href={`https://${t.domain}`} target="_blank" rel="noopener noreferrer nofollow" className="block truncate text-xs text-muted-foreground hover:text-foreground">{t.domain} ↗</a>
+                        <a href={`https://${t.domain}`} target="_blank" rel="noopener nofollow" className="block truncate text-xs text-muted-foreground hover:text-foreground">{t.domain} ↗</a>
                         <div className="text-[11px] text-muted-foreground">
                           {t.latestAt ? `Recorded ${timeAgo(t.latestAt)}` : 'Awaiting first recording'}
                           {t.folderId && folders.find(f => f.id === t.folderId) && <> · <Folder className="inline h-3 w-3" /> {folders.find(f => f.id === t.folderId)!.name}</>}
                         </div>
+                        {t.latest && (
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs tabular-nums text-foreground sm:hidden">
+                            {t.latest.monthlyVisits > 0 && <span>{compact(t.latest.monthlyVisits)} visits/mo</span>}
+                            <span className="flex items-center gap-1">
+                              {t.latest.liveAds > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />}
+                              {compact(t.latest.liveAds)} live ads
+                            </span>
+                            {t.delta.newAds !== null && t.delta.newAds > 0 && <span className="font-semibold text-emerald-700 dark:text-emerald-300">+{compact(t.delta.newAds)} new</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="hidden text-right tabular-nums sm:table-cell">
                     {t.latest && t.latest.monthlyVisits > 0 && (
                       <>
                         <div className="font-medium text-foreground">{compact(t.latest.monthlyVisits)}</div>
@@ -331,7 +341,7 @@ export default async function BrandtrackerPage({ searchParams }: { searchParams:
                       </>
                     )}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="hidden text-right tabular-nums sm:table-cell">
                     {t.latest && (
                       <>
                         <div className="flex items-center justify-end gap-1.5 font-medium text-foreground">
@@ -342,7 +352,7 @@ export default async function BrandtrackerPage({ searchParams }: { searchParams:
                       </>
                     )}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="hidden text-right tabular-nums sm:table-cell">
                     {t.delta.newAds !== null && t.delta.newAds > 0 && (
                       <span className="rounded-md bg-emerald-500/10 px-2 py-1 font-semibold text-emerald-700 dark:text-emerald-300">+{compact(t.delta.newAds)}</span>
                     )}

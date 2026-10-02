@@ -45,8 +45,22 @@ ask the user to add it once, then use the tools directly.
 - Claude (web/desktop/mobile): Settings → Connectors → Add custom connector → \`${SITE_URL}/api/mcp\` → sign in.
 - Claude Code: \`claude mcp add --transport http adlibraryspy ${SITE_URL}/api/mcp\`
 
-**Otherwise, call it over HTTP** with a free API key. Ask the user to create one at
-${SITE_URL}/settings/api (free account, no card) and give it to you. Never invent a key.
+**Otherwise, sign the user in by email code (no website visit, no password, free):**
+
+1. Ask the user: "What email should I use for AdLibrarySpy? I'll send you a 6-digit code."
+2. \`POST ${SITE_URL}/api/agent/sign-in\` with JSON \`{"email":"<their email>"}\`.
+3. Ask the user: "Please tell me the 6-digit code we just emailed you."
+4. \`POST ${SITE_URL}/api/agent/verify\` with JSON \`{"email":"<same email>","code":"<6 digits>"}\`.
+   The reply has \`api_key\`. Use it as \`$ADLIBRARYSPY_API_KEY\` below for the rest of the conversation.
+   A new address gets its free account automatically. Never print the key back to the user, and never invent one.
+   If the reply says \`code_wrong\`, ask again; \`code_expired\`, go back to step 2.
+
+\`\`\`bash
+curl -s ${SITE_URL}/api/agent/sign-in -H "Content-Type: application/json" -d '{"email":"you@example.com"}'
+curl -s ${SITE_URL}/api/agent/verify  -H "Content-Type: application/json" -d '{"email":"you@example.com","code":"123456"}'
+\`\`\`
+
+Then call the tools:
 
 \`\`\`bash
 curl -s ${SITE_URL}/api/mcp \\
@@ -63,6 +77,7 @@ Send \`{"jsonrpc":"2.0","id":1,"method":"tools/list"}\` first to get every tool'
 | \`get_shop\` | Full dossier for \`shop\` (domain or \`shp_…\` id): traffic history, ranks, engagement, traffic sources, top countries and keywords, catalogue, recent creatives |
 | \`find_similar_shops\` | Lookalikes of a \`shop\` (same category, similar traffic) |
 | \`search_products\` | Winning products: storefront products Meta ads land on, with price, active and new ads, advertiser pages, first-ad date |
+| \`search_landing_pages\` | Landing pages ads send people to (advertorial, listicle, quiz, collection, homepage), with active and new ads, advertisers, first/last seen, countries |
 | \`search_ads\` | Creatives by \`query\`, \`mediaType\`, \`country\`, or AI label (\`hook\`, \`angle\`, \`funnelStage\`, \`offer\`, \`urgency\`) |
 | \`get_ad\` | One creative with its AI labels and confidence |
 | \`creative_breakdown\` | How one store's ads split by hook, angle, offer and funnel stage |
@@ -102,7 +117,7 @@ Everything is free, so usage is capped by fair-use limits (no paid tier to upgra
 
 | Response | Meaning | What to do |
 |---|---|---|
-| \`401 invalid_token\` | Missing, wrong or revoked key | Ask the user for a key from ${SITE_URL}/settings/api |
+| \`401 invalid_token\` | Missing, wrong or revoked key | Sign in again by email code (step 2 above) |
 | \`404 not_found\` (public store) | Store not indexed yet | Say so; do not guess its numbers |
 | \`429\` | Rate limit | See above |
 | \`502\`/\`503\` with \`Retry-After\` | Data source briefly unavailable | Retry once after the delay |

@@ -72,3 +72,10 @@ export async function changeEmailAction(_prev: AccountState, form: FormData): Pr
 }
 
 export { resendVerification };
+
+/** Hide the agent banner for this user on every device (dismiss or Copy). */
+export async function dismissSkillBannerAction(): Promise<void> {
+  const ctx = await requireCtx();
+  await query('UPDATE users SET skill_banner_dismissed_at = COALESCE(skill_banner_dismissed_at, now()) WHERE id = $1', [ctx.user.id])
+    .catch(() => { /* column not migrated yet: the cookie still hides it on this browser */ });
+}

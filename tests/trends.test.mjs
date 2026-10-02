@@ -34,3 +34,17 @@ test('growthLabel / parseBand', () => {
   assert.equal(parseBand('x'), '100k');
   assert.equal(parseBand(undefined), '100k');
 });
+
+test('ad weeks: share lift, not raw counts', async () => {
+  const { adWeeks, adLift, liftLabel, weekLabel } = await import('../lib/trends.ts');
+  assert.deepEqual(adWeeks('2026-10-01'), { from: '2026-09-24', to: '2026-10-01', prevFrom: '2026-09-17' });
+  // Market +50%, niche +50% → no lift; niche doubled while market +50% → +33%.
+  assert.equal(adLift(1500, 1000, 150_000, 100_000), 1);
+  assert.ok(Math.abs(adLift(2000, 1000, 150_000, 100_000) - 4 / 3) < 1e-9);
+  assert.equal(adLift(299, 1000, 150_000, 100_000), null);
+  assert.equal(adLift(1000, 1000, 0, 100_000), null);
+  assert.equal(liftLabel(4 / 3), '+33%');
+  assert.equal(liftLabel(0.8), '−20%');
+  assert.equal(liftLabel(1.004), 'same');
+  assert.equal(weekLabel('2026-09-24', '2026-10-01'), 'Sep 24 – Sep 30');
+});

@@ -5,7 +5,8 @@
 -- workspace_members, invitations and the users.signup_ref / first_*_at columns in
 -- Postgres (lib/migrations/011) are. A dropped row here is a missing metric only.
 --
--- Events: signup (ref), first_save, first_track, invite_sent, invite_accepted.
+-- Events: signup (ref), first_save, first_track, invite_sent, invite_accepted,
+-- email_sent / email_click (ref = campaign, 2026-10-01; `event` is a plain string, no DDL change).
 -- Report queries: research/launch-2026-09/FUNNEL.md.
 --
 -- Apply as a ClickHouse user with DDL rights (the app's read/insert account has none):

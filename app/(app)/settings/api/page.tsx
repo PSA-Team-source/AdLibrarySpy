@@ -31,7 +31,7 @@ export default async function ApiSettingsPage() {
         {keys.length === 0 ? (
           <p className="px-6 py-5 text-sm text-muted-foreground">No API keys yet.</p>
         ) : (
-          <Table className="min-w-[640px]" containerClassName="scroll-thin">
+          <Table className="sm:min-w-[640px] max-sm:[&_tr>*:nth-child(2):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(3):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(4):not([colspan])]:hidden" containerClassName="scroll-thin">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead><TableHead>Key</TableHead><TableHead>Scopes</TableHead>
@@ -42,7 +42,7 @@ export default async function ApiSettingsPage() {
             <TableBody>
               {keys.map(k => (
                 <TableRow key={k.id}>
-                  <TableCell className="font-medium text-foreground">{k.name}</TableCell>
+                  <TableCell className="font-medium text-foreground">{k.name}<code className="block font-mono text-xs font-normal text-muted-foreground sm:hidden">{k.keyPrefix}…</code></TableCell>
                   <TableCell><code className="font-mono text-xs text-muted-foreground">{k.keyPrefix}…</code></TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">{k.scopes.map(s => <Badge key={s} variant="secondary" size="sm" className="font-mono font-medium">{s}</Badge>)}</div>

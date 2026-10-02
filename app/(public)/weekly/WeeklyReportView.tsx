@@ -120,7 +120,7 @@ export function WeeklyReportView({ report, archive }: { report: WeeklyReport; ar
           </header>
           <ul className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 md:grid-cols-4">
             {d.products.map(p => (
-              <li key={`${p.domain}-${p.title}`}>
+              <li key={`${p.domain}-${p.title}`} className="hidden has-[img]:block">
                 <Link href={storePath(p.domain)} className="group block">
                   <ProductImage src={p.image} alt={p.title} className="aspect-square w-full rounded-lg border border-border bg-white object-contain" />
                   <div className="mt-2 line-clamp-2 text-xs font-medium text-foreground group-hover:underline">{p.title}</div>

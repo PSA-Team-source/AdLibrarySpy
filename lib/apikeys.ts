@@ -2,7 +2,7 @@
 // API keys. The plaintext key is shown exactly once, at creation; only its
 // SHA-256 hash is stored, so a database leak cannot be replayed as a key.
 import { revalidatePath } from 'next/cache';
-import crypto from 'node:crypto';
+import { mintApiKey, KEY_PREFIX as PREFIX } from '@/lib/apikey-mint';
 import { query, one } from '@/lib/db';
 import { requireRole, audit } from '@/lib/auth/guard';
 import { hashToken } from '@/lib/auth/tokens';
@@ -13,7 +13,6 @@ export interface ApiKeyRow {
 }
 export interface KeyState { error?: string; created?: string }
 
-const PREFIX = 'ml_live_';
 
 export async function listApiKeys(workspaceId: string): Promise<ApiKeyRow[]> {
   const rows = await query<{
@@ -35,14 +34,7 @@ export async function createApiKeyAction(_prev: KeyState, form: FormData): Promi
   const ctx = await requireRole('admin');
   const name = String(form.get('name') ?? '').trim().slice(0, 60) || 'Default key';
 
-  const secret = crypto.randomBytes(24).toString('base64url');
-  const key = `${PREFIX}${secret}`;
-  await query(
-    `INSERT INTO api_keys (workspace_id, name, key_prefix, key_hash, scopes, created_by)
-     VALUES ($1,$2,$3,$4,$5,$6)`,
-    [ctx.workspaceId, name, `${PREFIX}${secret.slice(0, 6)}`, hashToken(key),
-     ['discovery.read', 'brandtrackers.read', 'favorites.read'], ctx.user.id],
-  );
+  const key = await mintApiKey(ctx.workspaceId, ctx.user.id, name);
   await audit(ctx, 'apikey.created', name);
   revalidatePath('/settings/api');
   return { created: key };

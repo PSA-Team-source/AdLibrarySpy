@@ -3,9 +3,10 @@
 // by the server render of /shops (first paint) and GET /api/shops (every
 // filter, sort and page change after it), so both always return the same rows.
 import type { Ctx } from '@/lib/auth/guard';
-import type { Shop, ShopRow } from '@/lib/types';
+import type { AdPreview, Shop, ShopRow } from '@/lib/types';
 import { queryShops, favoriteIds } from '@/lib/data';
-import { applyCrux, countShops } from '@/lib/market/shops';
+import { applyCrux, cleanDomain, countShops, PROFILE_KEYS } from '@/lib/market/shops';
+import { storeAdPreviews } from '@/lib/market/creatives';
 import { shopRowSignals, applyRowSignals } from '@/lib/market/shop-signals';
 import { hiddenShopIds, storeIdOf, trackedShopIdList, viewedShopIds } from './data';
 
@@ -14,6 +15,9 @@ export const PAGE_SIZE = 25;
 export interface ShopsRow extends ShopRow {
   saved: boolean;
   viewed: boolean;
+  /** Up to three of the store's live ad creatives (pictured only); [] = none shown.
+   *  Filled in by GET /api/shops/ads after the rows land (loadShopAds). */
+  ads: AdPreview[];
 }
 
 export interface ShopsPayload {
@@ -60,11 +64,18 @@ function toRow(s: Shop, saved: boolean, viewed: boolean): ShopsRow {
     targetedCountries: s.targetedCountries, liveAdsSeries: s.liveAdsSeries,
     visitsGrowth: s.visitsGrowth, avgPrice: s.avgPrice, maxAds7d: s.maxAds7d,
     saved, viewed,
+    ads: [],
   };
 }
 
-/** `limit` is the page size: the explorer uses PAGE_SIZE, the CSV export up to 100 (the index's cap). */
-export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>, limit = PAGE_SIZE): Promise<ShopsPayload> {
+/** `limit` is the page size: the explorer uses PAGE_SIZE, the CSV export up to 100 (the index's cap).
+ *  Rows come back without ad thumbnails: the creative index takes 0.5-1.4s cold for a
+ *  page of stores (one sorted search per store on 11M docs), five times everything else
+ *  here, so the table asks for them separately (loadShopAds) once the rows are on screen. */
+/** `timing` (optional) collects `name;dur=ms` entries for a Server-Timing header. */
+export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>, limit = PAGE_SIZE, timing?: string[]): Promise<ShopsPayload> {
+  let t = performance.now();
+  const mark = (name: string) => { const now = performance.now(); timing?.push(`${name};dur=${Math.round(now - t)}`); t = now; };
   const page = Math.max(1, num(sp.page) ?? 1);
   const showHidden = sp.hidden === 'show';
 
@@ -74,6 +85,7 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
     viewedShopIds(ctx.workspaceId, ctx.user.id),
     sp.tracked ? trackedShopIdList(ctx.workspaceId) : Promise.resolve([] as string[]),
   ]);
+  mark('lists');
   const hiddenSet = new Set(hidden);
   const viewedSet = new Set(viewed);
   const trackedSet = new Set(tracked);
@@ -98,6 +110,7 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
     ...trafficRange(sp.traffic), ...growthRange(sp.growth),
     visitorCountry: sp.visitorCountry, createdAfter: createdAfter(sp.created),
     pixels: sp.pixel ? [sp.pixel] : undefined, tech: sp.tech ? [sp.tech] : undefined,
+    profile: Object.fromEntries(PROFILE_KEYS.filter(k => sp[k]).map(k => [k, [sp[k]!]])),
     storeIds: keepIds?.map(storeIdOf), excludeStoreIds: keepIds ? undefined : [...drop].map(storeIdOf),
     sort: sp.sort, dir: sp.dir, view: sp.view, page, limit,
   };
@@ -110,12 +123,14 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
     none ? 0 : sp.platform ? null
       : countShops({ ...qp, platform: 'all' }, 300).catch(() => null),
   ]);
+  mark('index');
   // The same lists re-applied to the rows, so a backend that has not learned
   // the store_id filters yet can never show a hidden shop or a wrong list.
   const rows = res.items.filter(s => !drop.has(s.id) && (!keepIds || keepIds.includes(s.id)));
 
   // Both are per-row lookups keyed off the page; neither needs the other.
   const [signals] = await Promise.all([shopRowSignals(rows.map(s => s.storeId)), applyCrux(rows)]);
+  mark('signals');
 
   return {
     rows: rows.map(s => toRow(applyRowSignals(s, signals.get(s.storeId)), savedSet.has(s.id), viewedSet.has(s.id))),
@@ -126,4 +141,12 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
     hasMore: res.items.length === limit,
     hiddenCount: hidden.length,
   };
+}
+
+/** Up to three pictured live ads per store domain, for the rows `loadShops` returned.
+ *  Keyed by the domain as given; a store with none maps to []. Never throws. */
+export async function loadShopAds(domains: string[]): Promise<Record<string, AdPreview[]>> {
+  const previews = await storeAdPreviews(domains, 3);
+  return Object.fromEntries(domains.map(d => [d, (previews.get(cleanDomain(d)) ?? [])
+    .map(({ id, image, mediaType, headline, advertiser }) => ({ id, image, mediaType, headline, advertiser }))]));
 }

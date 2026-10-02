@@ -1,0 +1,157 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#03100b;--mint:#5ef2b0;--lime:#a7f45a;--txt:#effaf4;--mut:#86a597;--line:#16352a;--card:#0a1f17}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Inter,-apple-system,"SF Pro Display",Helvetica,Arial,sans-serif}
+#bg{position:absolute;inset:-200px}
+.glow{position:absolute;border-radius:50%;filter:blur(120px)}
+#g1{width:900px;height:900px;background:#0f7a55;opacity:.45}
+#g2{width:800px;height:800px;background:#1a5f7a;opacity:.35}
+#grid{position:absolute;inset:0;background-image:radial-gradient(#5ef2b022 1.5px,transparent 1.5px);background-size:40px 40px}
+.sc{position:absolute;inset:0;opacity:0}
+.mono{font-family:"SF Mono",Menlo,monospace;letter-spacing:.1em;text-transform:uppercase}
+.brand{position:absolute;left:72px;top:52px;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:700;letter-spacing:-.02em;z-index:5}
+.mark{width:42px;height:42px;border-radius:12px;background:var(--lime);color:#071004;display:grid;place-items:center}
+.mark svg{width:26px;height:26px}
+.pill{position:absolute;right:72px;top:54px;z-index:5;border:1px solid var(--line);background:#0a1f17cc;border-radius:999px;padding:10px 20px;font-size:18px;color:var(--mint);display:flex;gap:10px;align-items:center}
+.pill i{width:10px;height:10px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
+/* hook */
+#hook{display:grid;place-items:center;text-align:center}
+#hook .k{font-size:28px;color:var(--mint)}
+#hook .big{font-size:250px;font-weight:700;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;background:linear-gradient(180deg,#fff,#9ff5cf);-webkit-background-clip:text;color:transparent;margin:18px 0 6px}
+#hook .l1{font-size:64px;font-weight:600;letter-spacing:-.03em}
+#hook .l2{font-size:44px;color:var(--mut);margin-top:22px;letter-spacing:-.02em}
+#hook .l2 b{color:var(--mint);font-weight:600}
+/* board */
+#board .ttl{position:absolute;left:72px;top:124px;font-size:58px;font-weight:700;letter-spacing:-.035em}
+#board .ttl b{color:var(--mint)}
+#board .ttl small{display:block;font-size:22px;color:var(--mut);font-weight:400;letter-spacing:0;margin-top:8px}
+.hd{position:absolute;left:72px;right:72px;top:284px;display:grid;grid-template-columns:70px 1fr 200px 170px 460px;font-size:15px;color:var(--mut);padding:0 26px}
+.rows{position:absolute;left:72px;right:72px;top:318px}
+.row{height:58px;margin-bottom:7px;border-radius:16px;background:linear-gradient(90deg,#0c241bdd,#0a1a14aa);border:1px solid var(--line);display:grid;grid-template-columns:70px 1fr 200px 170px 460px;align-items:center;padding:0 26px;opacity:0}
+.row .rk{font-size:26px;font-weight:700;color:var(--mut);font-variant-numeric:tabular-nums}
+.row .nm{display:flex;align-items:center;gap:16px;font-size:26px;font-weight:600;min-width:0}
+.row .nm img{width:40px;height:40px;border-radius:10px;background:#fff;object-fit:contain;padding:3px}
+.row .nm span{color:var(--mut);font-weight:400;font-size:19px}
+.row .vs{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums}
+.gr{display:inline-block;font-size:19px;font-weight:700;color:#04140d;background:var(--mint);border-radius:999px;padding:5px 12px;justify-self:start}
+.ad{display:flex;align-items:center;gap:14px;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.ad .tr{flex:1;height:10px;border-radius:5px;background:#12372a;overflow:hidden}
+.ad .tr i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#2bd48e,var(--lime))}
+.ad em{font-style:normal;width:80px;text-align:right}
+.row.top{background:linear-gradient(90deg,#15503a,#0c2a1f);border-color:var(--mint);box-shadow:0 0 40px #5ef2b044}
+.row.top .rk{color:var(--mint)}
+/* spot */
+#spot .left{position:absolute;left:72px;top:170px;width:820px}
+#spot .who{display:flex;gap:22px;align-items:center;font-size:64px;font-weight:700;letter-spacing:-.03em}
+#spot .who img{width:88px;height:88px;border-radius:20px;background:#fff;padding:6px}
+#spot .who small{display:block;font-size:24px;color:var(--mut);font-weight:400;letter-spacing:0}
+#spot .crown{display:inline-block;margin-bottom:22px;font-size:20px;color:#04140d;background:var(--mint);border-radius:999px;padding:8px 18px;font-weight:700}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+.kp div{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px 24px}
+.kp b{display:block;font-size:62px;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.kp span{font-size:19px;color:var(--mut)}
+.kp .g b{color:var(--mint)}
+.bars{margin-top:30px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px 28px}
+.bars .t{font-size:19px;color:var(--mut);margin-bottom:16px}
+.br{display:grid;grid-template-columns:130px 1fr 90px;align-items:center;gap:16px;margin:10px 0;font-size:20px}
+.br .tr{height:26px;border-radius:8px;background:#12372a;overflow:hidden}
+.br .tr i{display:block;height:100%;width:0;border-radius:8px;background:linear-gradient(90deg,#2bd48e,var(--lime))}
+.br b{text-align:right;font-variant-numeric:tabular-nums}
+#spot .ads{position:absolute;right:90px;top:150px;width:860px;height:840px}
+#spot .ads img{position:absolute;width:270px;border-radius:18px;box-shadow:0 30px 80px #000a;top:40px}
+#spot .note{position:absolute;left:72px;top:800px;z-index:9;background:var(--lime);color:#071004;font-size:28px;font-weight:700;padding:16px 26px;border-radius:14px;box-shadow:0 20px 50px #0008}
+/* end */
+#end{display:grid;place-items:center;text-align:center}
+#end .lk{display:flex;align-items:center;gap:22px;justify-content:center;font-size:60px;font-weight:700;letter-spacing:-.03em}
+#end .lk .mark{width:74px;height:74px;border-radius:20px}#end .lk .mark svg{width:46px;height:46px}
+#end h2{font-size:92px;font-weight:700;letter-spacing:-.045em;margin:38px 0 30px;line-height:1.02}
+#end h2 b{background:linear-gradient(90deg,var(--mint),var(--lime));-webkit-background-clip:text;color:transparent}
+#end .ticks{display:flex;gap:34px;justify-content:center;font-size:26px;color:var(--mut)}
+#end .ticks span::before{content:"✓ ";color:var(--mint)}
+#end .cta{display:inline-block;margin-top:46px;background:var(--lime);color:#071004;font-size:34px;font-weight:700;padding:22px 48px;border-radius:18px;box-shadow:0 0 60px #a7f45a55}
+#end .url{margin-top:22px;font-size:24px;color:var(--mut)}
+.src{position:absolute;left:72px;right:72px;bottom:32px;font-size:15px;color:#5d7a6d;display:flex;justify-content:space-between;z-index:5}
+</style></head><body>
+<div id="bg"><div class="glow" id="g1"></div><div class="glow" id="g2"></div></div>
+<div id="grid"></div>
+<div class="brand" id="brand"><span class="mark"></span>AdLibrarySpy</div>
+<div class="pill mono" id="pill"><i></i>Niche · Health</div>
+
+<div class="sc" id="hook"><div>
+  <div class="k mono">Shopify · Health niche</div>
+  <div class="big" id="hn">0</div>
+  <div class="l1">Shopify stores sell in Health.</div>
+  <div class="l2">These <b>10</b> are winning it right now.</div>
+</div></div>
+
+<div class="sc" id="board">
+  <div class="ttl">Top <b>Health</b> stores right now<small>Monthly visits · growth · live Meta ads — from AdLibrarySpy</small></div>
+  <div class="hd mono"><span>#</span><span>Store</span><span>Visits / mo</span><span>Growth</span><span>Live Meta ads</span></div>
+  <div class="rows" id="rows"></div>
+</div>
+
+<div class="sc" id="spot">
+  <div class="left">
+    <div class="crown">👑 #1 in Health</div>
+    <div class="who"><img id="rlogo"><div>Resilia®<small>resilia.shop · Oil of Oregano supplements</small></div></div>
+    <div class="kp">
+      <div><b id="k1">0</b><span>visits / month</span></div>
+      <div class="g"><b id="k2">0%</b><span>growth in 1 month</span></div>
+      <div><b id="k3">0</b><span>live Meta ads</span></div>
+    </div>
+    <div class="bars"><div class="t">Monthly visits · SimilarWeb</div>
+      <div class="br"><span>June</span><div class="tr"><i id="m1"></i></div><b>4.4M</b></div>
+      <div class="br"><span>July</span><div class="tr"><i id="m2"></i></div><b>6.5M</b></div>
+      <div class="br"><span>August</span><div class="tr"><i id="m3"></i></div><b>9.9M</b></div>
+    </div>
+  </div>
+  <div class="ads" id="ads"><img src="img/ad_9.png"><img src="img/ad_4.png"><img src="img/ad_0.png"></div>
+  <div class="note" id="note">Their winning ad: running 45+ days</div>
+</div>
+
+<div class="sc" id="end"><div>
+  <div class="lk"><span class="mark"></span>AdLibrarySpy</div>
+  <h2>Find the next winning<br><b>health brand.</b> Free.</h2>
+  <div class="ticks"><span>157,475 Health stores</span><span>Their live Meta ads</span><span>No credit card</span></div>
+  <div class="cta">Browse Health stores →</div>
+  <div class="url">adlibraryspy.com/stores/niche/health</div>
+</div></div>
+
+<div class="src" id="src"><span>Real data · adlibraryspy.com · SimilarWeb Aug 2026 · Meta Ad Library</span><span>Captured Sep 2026</span></div>
+<script>
+const TARGET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
+document.querySelectorAll('.mark').forEach(m=>m.innerHTML=TARGET);
+const R=[["Resilia®","resilia.shop","9.9M","52.9",8787],["Clean Nutraceuticals","cleannutra.com","253K","68.1",4241],["Alevia","alevia.com","798K","52.8",3979],["Lymphoria","lymphoria.co","3.5M","154.8",3654],["Aurivita","aurivita.co","355K","32.1",3293],["Rovina™","tryrovina.com","2.2M","102.1",2911],["Physician's Choice","physicianschoice.com","313K","56.8",2257],["IM8 Health","im8health.com","1M","20.3",2832],["Neurobella","neuro-bella.com","290K","116.9",2629],["First Day Vitamins","firstday.com","691K","42",2543]];
+const LOGO_OK=[0,1,4,5,6,9];
+const rows=document.getElementById('rows');
+R.forEach((r,i)=>{const d=document.createElement('div');d.className='row'+(i===0?' top':'');
+ d.innerHTML=`<span class="rk">${i+1}</span><span class="nm">${LOGO_OK.includes(i)?`<img src="img/logo_${i}.png">`:''}${r[0]}<span>${r[1]}</span></span><span class="vs">${r[2]}</span><span class="gr">+${r[3]}%</span><span class="ad"><span class="tr"><i></i></span><em>0</em></span>`;rows.appendChild(d)});
+if(LOGO_OK.includes(0))rlogo.src='img/logo_0.png';else rlogo.remove();
+const $=id=>document.getElementById(id), cl=x=>Math.max(0,Math.min(1,x)), ease=x=>1-Math.pow(1-cl(x),3), io=x=>{x=cl(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const seg=(t,a,b)=>ease((t-a)/(b-a)), win=(t,a,b,f=.45)=>seg(t,a,a+f)*(1-seg(t,b-f,b));
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+window.renderAt=function(t){
+  $('g1').style.transform=`translate(${200+Math.sin(t*.35)*260}px,${120+Math.cos(t*.3)*160}px)`;
+  $('g2').style.transform=`translate(${1100+Math.cos(t*.28)*240}px,${420+Math.sin(t*.33)*180}px)`;
+  // hook 0 → 3.6
+  const H=win(t,-1,3.6,.5); $('hook').style.opacity=H; $('hook').firstElementChild.style.transform=`scale(${1+.04*seg(t,0,3.6)})`;
+  $('hn').textContent=fmt(157475*io(t/1.8));
+  // board 3.3 → 10.4 ; reveal #10 → #1
+  const B=win(t,3.3,10.4,.45); $('board').style.opacity=B;
+  [...rows.children].forEach((d,i)=>{const at=3.7+(9-i)*.42+(i===0?.3:0), p=seg(t,at,at+.5);
+    d.style.opacity=p; d.style.transform=`translateX(${(1-p)*-60}px) scale(${i===0?1+.02*seg(t,at+.3,at+.8):1})`;
+    const q=seg(t,at+.15,at+1.1); d.querySelector('.tr i').style.width=(R[i][4]/8787*100*q)+'%'; d.querySelector('em').textContent=fmt(R[i][4]*q);});
+  // spotlight 10.1 → 15.4
+  const S=win(t,10.1,15.4,.45); $('spot').style.opacity=S;
+  const a=seg(t,10.4,12); $('k1').textContent=(9.9*a).toFixed(1)+'M'; $('k2').textContent='+'+(52.9*a).toFixed(1)+'%'; $('k3').textContent=fmt(8787*a);
+  [44.4,64.6,98.8].forEach((v,i)=>$('m'+(i+1)).style.width=v*seg(t,10.8+i*.25,11.8+i*.25)+'%');
+  [...$('ads').children].forEach((im,i)=>{const p=seg(t,10.6+i*.25,11.3+i*.25), rot=[-9,0,9][i], x=[40,280,520][i], y=[60,0,60][i];
+    im.style.opacity=p; im.style.transform=`translate(${x}px,${y+(1-p)*120}px) rotate(${rot*p}deg)`; im.style.zIndex=i===1?3:1;});
+  $('note').style.opacity=seg(t,12.4,12.8); $('note').style.transform=`scale(${.9+.1*seg(t,12.4,12.8)})`;
+  // end 15.1 →
+  const E=seg(t,15.1,15.7); $('end').style.opacity=E; $('end').firstElementChild.style.transform=`scale(${.95+.05*E})`;
+  $('brand').style.opacity=$('pill').style.opacity=1-E; $('src').style.opacity=1-E;
+};
+renderAt(0);
+</script></body></html>

@@ -1,11 +1,15 @@
 'use client';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { useCallback, useTransition, useState, useEffect } from 'react';
-import { Search, X, ArrowDown, CalendarRange } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Search, X, ArrowDownUp, CalendarRange, ChevronDown, SlidersHorizontal, Film, Shapes, LayoutTemplate, Globe, Landmark,
+  Store, Anchor, Compass, Filter, Tag, Timer,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LabelFacets, LabelField, FacetEntry } from '@/lib/market/labels';
 import { AD_SORTS, EU_UK_COUNTRIES } from '@/lib/market/ad-options';
 import { ExportCsv } from './ExportCsv';
+import { CHIP, CHIP_OFF, CHIP_ON, FOCUS, TB_PILL, FilterChip, useSetParam, useDebounce } from './MarketToolbar';
+import { flag } from '@/lib/format';
 
 /** Label filter selects, in reading order. The option text comes from the API. */
 const LABEL_SELECTS: { field: LabelField; any: string }[] = [
@@ -51,243 +55,203 @@ const PLACEMENTS = [
 ];
 
 const COUNTRIES = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE', 'BR', 'MX', 'IN', 'JP'];
-
 const regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
 const nameOf = (c: string) => { try { return regionNames.of(c) ?? c; } catch { return c; } };
+const countryOptions = COUNTRIES.map(c => ({ value: c, label: `${flag(c)} ${nameOf(c)}` }));
+const euUkOptions = [
+  { value: 'all', label: 'All EU/UK countries' },
+  ...[...EU_UK_COUNTRIES].sort((a, b) => nameOf(a).localeCompare(nameOf(b))).map(c => ({ value: c, label: `${flag(c)} ${nameOf(c)}` })),
+];
+const sortOptions = Object.entries(AD_SORTS).filter(([k]) => k !== 'relevance').map(([value, v]) => ({ value, label: v.label }));
+const LABEL_ICONS = { hook: Anchor, angle: Compass, funnelStage: Filter, offer: Tag } as const;
 
 /** Every URL key a filter writes — drives the active count and Clear. */
-const FILTER_KEYS = ['q', 'from', 'to', 'media', 'format', 'placement', 'country', 'euUk', 'niche', 'store',
+const FILTER_KEYS = ['from', 'to', 'media', 'format', 'placement', 'country', 'euUk', 'store', 'allAdvertisers',
   'hook', 'angle', 'funnelStage', 'offer', 'urgency'] as const;
 
-type FilterTab = 'ads' | 'eu' | 'shop';
-
-// Same chip recipe as the Shops filter panel (MarketToolbar).
-const CHIP =
-  'h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground shadow-sm ' +
-  'outline-none transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring';
-const CHIP_ON = 'border-foreground/40 bg-foreground/[0.06] font-medium';
-
+// With no search and no sort the index returns its own order, top spending
+// first; with a search it ranks by relevance (creatives.ts).
+// Same layout and recipes as the Shops toolbar (MarketToolbar): niche capsule
+// row, search + Filters toggle + export, then the dropdown chips.
 export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   storeFilter?: { id: string; label: string };
   /** null = no label data for this search, so no label filters are rendered. */
   labelFacets?: LabelFacets | null;
   niches: { id: string; name: string }[];
 }) {
-  const router = useRouter();
-  const params = useSearchParams();
-  const pathname = usePathname();
-  const [pending, start] = useTransition();
-
-  const set = useCallback((entries: Record<string, string>) => {
-    const p = new URLSearchParams(Array.from(params.entries()));
-    for (const [k, v] of Object.entries(entries)) { if (v) p.set(k, v); else p.delete(k); }
-    p.delete('page');
-    start(() => router.push(`${pathname}?${p.toString()}`));
-  }, [params, pathname, router]);
-
+  const { set, params, pending } = useSetParam();
   const get = (k: string) => params.get(k) ?? '';
+
   const [term, setTerm] = useState(get('q'));
   useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
-
-  const [tab, setTab] = useState<FilterTab>(() =>
-    get('euUk') === '1' ? 'eu' : get('store') ? 'shop' : 'ads');
-  const [collapsed, setCollapsed] = useState(false);
-
+  // Search as you type, like Shops: push once the term settles.
+  const debouncedTerm = useDebounce(term, 400);
+  useEffect(() => {
+    if (debouncedTerm.trim() !== (params.get('q') ?? '')) set({ q: debouncedTerm.trim() });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTerm]);
   const [from, setFrom] = useState(get('from'));
   const [to, setTo] = useState(get('to'));
   useEffect(() => { setFrom(params.get('from') ?? ''); setTo(params.get('to') ?? ''); }, [params]);
 
-  const activeCount = FILTER_KEYS.filter(k => k !== 'q' && get(k)).length;
-  const on = (k: string) => (get(k) ? CHIP_ON : '');
+  // One chip each: a date range, and EU/UK with its country, count once.
+  const activeCount = FILTER_KEYS.filter(k => get(k)).length
+    - (get('from') && get('to') ? 1 : 0) - (get('euUk') === '1' && get('country') ? 1 : 0);
+  // Folded by default like Shops so the grid gets the height; remembered per
+  // browser (a per-viewer convenience — blocked storage just means closed).
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    try { setFiltersOpen(localStorage.getItem('ads.filtersOpen') === '1'); } catch { /* storage blocked */ }
+  }, []);
+  const toggleFilters = () => setFiltersOpen(open => {
+    try { localStorage.setItem('ads.filtersOpen', open ? '0' : '1'); } catch { /* storage blocked */ }
+    return !open;
+  });
   const today = new Date().toISOString().slice(0, 10);
-
-  const tabBtn = (key: FilterTab, label: string) => (
-    <button type="button" onClick={() => { setTab(key); setCollapsed(false); }} aria-pressed={tab === key}
-      className={cn('-mb-px border-b-2 pb-2.5 text-sm transition-colors',
-        tab === key ? 'border-foreground font-semibold text-foreground' : 'border-transparent font-medium text-muted-foreground hover:text-foreground')}>
-      {label}
-    </button>
-  );
+  const niche = get('niche');
+  const euUk = get('euUk') === '1';
+  const allAdvertisers = get('allAdvertisers') === '1';
+  const dated = get('from') || get('to');
+  // One-tap ranges: most people want "recent", not two calendar pickers.
+  const daysAgo = (n: number) => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  const presets = [
+    { label: 'Last 7 days', from: daysAgo(7) }, { label: 'Last 30 days', from: daysAgo(30) },
+    { label: 'Last 90 days', from: daysAgo(90) }, { label: 'This year', from: `${today.slice(0, 4)}-01-01` },
+  ];
+  const activePreset = !get('to') ? presets.find(p => p.from === get('from')) : undefined;
 
   return (
-    <div className={cn('flex flex-col gap-3 transition-opacity', pending && 'opacity-60')}>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-foreground px-3 py-2 text-sm font-medium text-background">
-          📺 All Ads
-        </span>
-        <form className="relative min-w-[240px] flex-1" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
+      {niches.length > 0 && (
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <div className="flex min-w-max gap-1.5">
+            {[{ id: '', name: 'All Niches' }, ...niches].map(n => (
+              <button key={n.id || 'all'} type="button" onClick={() => set({ niche: n.id })}
+                aria-pressed={niche === n.id} className={cn(TB_PILL, niche === n.id ? CHIP_ON : CHIP_OFF)}>
+                {n.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+        <form className="relative min-w-0 flex-1 basis-full sm:basis-0" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
           <input
             type="search" value={term} onChange={e => setTerm(e.target.value)}
-            placeholder="Search ads…" aria-label="Search ads by copy, headline or advertiser"
-            className="w-full rounded-md border border-[hsl(var(--input-border))] bg-input py-2.5 pl-10 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+            placeholder="Search ads, advertisers…" aria-label="Search ads by copy, headline or advertiser"
+            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
           />
           {term && (
             <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }} aria-label="Clear search"
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground">
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100">
               <X className="h-4 w-4" />
             </button>
           )}
         </form>
-        <ExportCsv kind="ads" className="btn-ghost shrink-0 disabled:opacity-60" />
+        <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="ad-filters"
+          className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
+          <SlidersHorizontal className="h-4 w-4" aria-hidden />
+          Filters{activeCount > 0 && <span className="tabular-nums">({activeCount})</span>}
+          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} aria-hidden />
+        </button>
+        <FilterChip icon={ArrowDownUp} label="Sort" value={get('sort')} anyLabel={get('q') ? 'Relevance' : 'Top spending'}
+          onChange={v => set({ sort: v })} options={sortOptions} />
+        <ExportCsv kind="ads" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
       </div>
 
       {storeFilter && (
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1.5 text-sm text-foreground">
-            Ads from <b>{storeFilter.label}</b>
-            <button onClick={() => set({ store: '' })} aria-label="Clear shop filter"
-              className="text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
-          </span>
+        <div className="flex items-center">
+          <button type="button" onClick={() => set({ store: '' })} aria-label="Clear shop filter" className={cn(CHIP, CHIP_ON)}>
+            <Store className="h-3.5 w-3.5" /> Ads from {storeFilter.label} <X className="h-3.5 w-3.5 opacity-70" />
+          </button>
         </div>
       )}
 
-      <div className="rounded-xl border border-border bg-foreground/[0.025] p-3 sm:p-4">
-        <div className={cn('flex items-center gap-5 border-b border-border', !collapsed && 'mb-3')}>
-          <span className="pb-2.5 text-sm font-semibold text-foreground">Filter By :</span>
-          {tabBtn('ads', 'Ads')}
-          {tabBtn('eu', 'EU/UK')}
-          {tabBtn('shop', 'Shop')}
-          <button type="button" onClick={() => setCollapsed(c => !c)} aria-expanded={!collapsed}
-            className="ml-auto pb-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-            {collapsed ? 'Show filters' : 'Hide filters'}
+      {filtersOpen && <div id="ad-filters" className="flex flex-wrap items-center gap-2">
+        {!get('store') && (
+          <button type="button" role="switch" aria-checked={!allAdvertisers}
+            onClick={() => set({ allAdvertisers: allAdvertisers ? '' : '1' })}
+            title="Hide ads from big brands and publishers that don't sell through an online store"
+            className={cn(CHIP, !allAdvertisers ? CHIP_ON : CHIP_OFF)}>
+            <Store className="h-3.5 w-3.5 shrink-0" /> Only online stores
           </button>
-        </div>
-
-        {!collapsed && (
-          <div className="flex flex-wrap items-center gap-2">
-            {tab === 'ads' && (
-              <>
-                <details className="relative">
-                  <summary className={cn(CHIP, 'flex cursor-pointer list-none items-center gap-1.5', (get('from') || get('to')) && CHIP_ON)}>
-                    <CalendarRange className="h-3.5 w-3.5 text-muted-foreground" />
-                    {get('from') || get('to') ? `${get('from') || '…'} → ${get('to') || 'today'}` : 'Ad Creation Date'}
-                  </summary>
-                  <form className="absolute left-0 top-11 z-20 flex w-72 flex-col gap-2 rounded-xl border border-border bg-popover p-3 shadow-lg"
-                    onSubmit={e => { e.preventDefault(); set({ from, to }); (e.currentTarget.parentElement as HTMLDetailsElement).open = false; }}>
-                    <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      Started from
-                      <input type="date" value={from} max={to || today} onChange={e => setFrom(e.target.value)} className={CHIP} />
-                    </label>
-                    <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      Started until
-                      <input type="date" value={to} min={from || undefined} max={today} onChange={e => setTo(e.target.value)} className={CHIP} />
-                    </label>
-                    <div className="flex justify-end gap-2 pt-1">
-                      {(get('from') || get('to')) && (
-                        <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => set({ from: '', to: '' })}>Reset</button>
-                      )}
-                      <button type="submit" className="btn-primary h-8 px-3 text-xs">Apply</button>
-                    </div>
-                  </form>
-                </details>
-
-                <select aria-label="Media type" className={cn(CHIP, on('media'))}
-                  value={get('media')} onChange={e => set({ media: e.target.value })}>
-                  <option value="">Media Type</option>
-                  <option value="video">Video</option>
-                  <option value="image">Image</option>
-                </select>
-                <select aria-label="Creative format" className={cn(CHIP, on('format'))}
-                  value={get('format')} onChange={e => set({ format: e.target.value })}>
-                  <option value="">Format</option>
-                  {FORMATS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <select aria-label="Placement" className={cn(CHIP, on('placement'))}
-                  value={get('placement')} onChange={e => set({ placement: e.target.value })}>
-                  <option value="">Placement</option>
-                  {PLACEMENTS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-                <select aria-label="Country" className={cn(CHIP, on('country'))}
-                  value={get('euUk') === '1' ? '' : get('country')} onChange={e => set({ country: e.target.value, euUk: '' })}>
-                  <option value="">Country</option>
-                  {COUNTRIES.map(c => <option key={c} value={c}>{nameOf(c)}</option>)}
-                </select>
-                {niches.length > 0 && (
-                  <select aria-label="Niche" className={cn(CHIP, on('niche'))}
-                    value={get('niche')} onChange={e => set({ niche: e.target.value })}>
-                    <option value="">Niche</option>
-                    {niches.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
-                  </select>
-                )}
-
-                {labelFacets && LABEL_SELECTS.map(({ field, any }) => {
-                  const current = get(field);
-                  const opts = labelOptions(labelFacets.facets[field], current);
-                  if (!opts.length) return null;
-                  return (
-                    <select key={field} aria-label={`${any} (AI label)`} className={cn(CHIP, on(field))}
-                      title="AI label: a model judgment of the ad text, not a measurement"
-                      value={current} onChange={e => set({ [field]: e.target.value })}>
-                      <option value="">{any}</option>
-                      {opts.map(o => <option key={o.value} value={o.value} title={o.hint}>{o.text}</option>)}
-                    </select>
-                  );
-                })}
-                {labelFacets && (labelFacets.facets.urgency[0] || get('urgency') === '1') && (
-                  <label title={labelFacets.facets.urgency[0]?.description}
-                    className={cn(CHIP, 'inline-flex cursor-pointer items-center gap-2', on('urgency'))}>
-                    <input type="checkbox" checked={get('urgency') === '1'}
-                      onChange={e => set({ urgency: e.target.checked ? '1' : '' })} className="h-3.5 w-3.5 accent-current" />
-                    {labelFacets.facets.urgency[0]
-                      ? `${labelFacets.facets.urgency[0].label} · ${labelFacets.facets.urgency[0].count.toLocaleString()}`
-                      : 'Urgency'}
-                  </label>
-                )}
-              </>
-            )}
-
-            {tab === 'eu' && (
-              <>
-                <label className={cn(CHIP, 'inline-flex cursor-pointer items-center gap-2', on('euUk'))}>
-                  <input type="checkbox" checked={get('euUk') === '1'}
-                    onChange={e => set({ euUk: e.target.checked ? '1' : '', country: '' })} className="h-3.5 w-3.5 accent-current" />
-                  EU/UK ads only
-                </label>
-                <select aria-label="EU or UK country" className={cn(CHIP, get('euUk') === '1' && get('country') ? CHIP_ON : '')}
-                  value={get('euUk') === '1' ? get('country') : ''}
-                  onChange={e => set({ euUk: '1', country: e.target.value })}>
-                  <option value="">All EU/UK countries</option>
-                  {[...EU_UK_COUNTRIES].sort((a, b) => nameOf(a).localeCompare(nameOf(b))).map(c =>
-                    <option key={c} value={c}>{nameOf(c)}</option>)}
-                </select>
-              </>
-            )}
-
-            {tab === 'shop' && (
-              <>
-                <form className="flex items-center gap-2"
-                  onSubmit={e => { e.preventDefault(); set({ store: String(new FormData(e.currentTarget).get('store') ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') }); }}>
-                  <input name="store" key={get('store')} defaultValue={get('store')} placeholder="Shop domain, e.g. cheezit.com"
-                    aria-label="Shop domain" className={cn(CHIP, 'w-60', on('store'))} />
-                  <button type="submit" className="btn-ghost h-9 px-3 text-xs">Apply</button>
-                </form>
-              </>
-            )}
-
-            {activeCount > 0 && (
-              <>
-                <span className="text-xs text-muted-foreground">{activeCount} filter{activeCount > 1 ? 's' : ''} active</span>
-                <button type="button"
-                  onClick={() => set(Object.fromEntries(FILTER_KEYS.filter(k => k !== 'q').map(k => [k, ''])))}
-                  className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground">
-                  <X className="h-3 w-3" /> Clear
-                </button>
-              </>
-            )}
-          </div>
         )}
-      </div>
+        <details className="relative">
+          <summary className={cn(CHIP, 'cursor-pointer list-none', dated ? CHIP_ON : CHIP_OFF)}>
+            <CalendarRange className="h-3.5 w-3.5 shrink-0" />
+            {activePreset ? activePreset.label : dated ? `${get('from') || '…'} → ${get('to') || 'today'}` : 'Ad Creation Date'}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
+          </summary>
+          <form className="absolute left-0 top-10 z-20 flex w-72 flex-col gap-2 rounded-xl border border-border bg-popover p-3 shadow-lg"
+            onSubmit={e => { e.preventDefault(); set({ from, to }); (e.currentTarget.parentElement as HTMLDetailsElement).open = false; }}>
+            <div className="grid grid-cols-2 gap-1.5">
+              {presets.map(p => (
+                <button key={p.label} type="button" aria-pressed={activePreset === p}
+                  className={cn(CHIP, 'justify-center', activePreset === p ? CHIP_ON : CHIP_OFF)}
+                  onClick={e => { set({ from: p.from, to: '' }); (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; }}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <p className="pt-1 text-[11px] uppercase tracking-wide text-muted-foreground">Custom range</p>
+            <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              Started from
+              <input type="date" value={from} max={to || today} onChange={e => setFrom(e.target.value)} className={cn(CHIP, CHIP_OFF)} />
+            </label>
+            <label className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              Started until
+              <input type="date" value={to} min={from || undefined} max={today} onChange={e => setTo(e.target.value)} className={cn(CHIP, CHIP_OFF)} />
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              {dated && <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => set({ from: '', to: '' })}>Reset</button>}
+              <button type="submit" className="btn-primary h-8 px-3 text-xs">Apply</button>
+            </div>
+          </form>
+        </details>
 
-      <div className="flex items-center">
-        <label className="relative inline-flex items-center">
-          <ArrowDown className="pointer-events-none absolute left-3 h-3.5 w-3.5 text-muted-foreground" />
-          <select aria-label="Sort ads" className={cn(CHIP, 'pl-8')}
-            value={get('sort') || 'relevance'} onChange={e => set({ sort: e.target.value === 'relevance' ? '' : e.target.value })}>
-            {Object.entries(AD_SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-        </label>
-      </div>
+        <FilterChip icon={Film} label="Media Type" value={get('media')} onChange={v => set({ media: v })}
+          options={[{ value: 'video', label: 'Video' }, { value: 'vsl', label: 'VSL (2+ min video)' }, { value: 'image', label: 'Image' }]} />
+        <FilterChip icon={Shapes} label="Format" value={get('format')} onChange={v => set({ format: v })} options={FORMATS} />
+        <FilterChip icon={LayoutTemplate} label="Placement" value={get('placement')} onChange={v => set({ placement: v })} options={PLACEMENTS} />
+        <FilterChip icon={Globe} label="Country" value={euUk ? '' : get('country')}
+          onChange={v => set({ country: v, euUk: '' })} options={countryOptions} />
+        <FilterChip icon={Landmark} label="EU/UK" value={euUk ? get('country') || 'all' : ''} searchable
+          onChange={v => set({ euUk: v ? '1' : '', country: v === 'all' ? '' : v })} options={euUkOptions} />
+
+        {labelFacets && LABEL_SELECTS.map(({ field, any }) => {
+          const opts = labelOptions(labelFacets.facets[field], get(field));
+          if (!opts.length) return null;
+          return (
+            <FilterChip key={field} icon={LABEL_ICONS[field]} label={any} value={get(field)}
+              title="AI label: a model judgment of the ad text, not a measurement"
+              onChange={v => set({ [field]: v })} options={opts.map(o => ({ value: o.value, label: o.text }))} />
+          );
+        })}
+        {labelFacets && (labelFacets.facets.urgency[0] || get('urgency') === '1') && (
+          <FilterChip icon={Timer} label="Urgency" value={get('urgency')} title={labelFacets.facets.urgency[0]?.description}
+            onChange={v => set({ urgency: v })} options={[{ value: '1', label: labelFacets.facets.urgency[0]
+              ? `${labelFacets.facets.urgency[0].label} · ${labelFacets.facets.urgency[0].count.toLocaleString()}`
+              : 'Urgency' }]} />
+        )}
+
+        <form className="flex items-center"
+          onSubmit={e => { e.preventDefault(); set({ store: String(new FormData(e.currentTarget).get('store') ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '') }); }}>
+          <label className={cn(CHIP, get('store') ? CHIP_ON : CHIP_OFF, 'pr-1.5')}>
+            <Store className="h-3.5 w-3.5 shrink-0" />
+            <input name="store" key={get('store')} defaultValue={get('store')} placeholder="Shop domain"
+              aria-label="Shop domain, e.g. cheezit.com" className={cn('w-32 bg-transparent outline-none', get('store') ? 'text-background placeholder:text-background/60' : 'text-foreground placeholder:text-muted-foreground')} />
+          </label>
+        </form>
+
+        {activeCount > 0 && (
+          <button type="button" onClick={() => set(Object.fromEntries(FILTER_KEYS.map(k => [k, ''])))}
+            className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] font-medium text-[var(--a-blue)] transition-opacity hover:opacity-80', FOCUS)}>
+            <X className="h-3 w-3" /> Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
+          </button>
+        )}
+      </div>}
     </div>
   );
 }

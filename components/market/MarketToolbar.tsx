@@ -3,7 +3,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, X, Users, TrendingUp, Package, Store, Globe, SlidersHorizontal,
-  LayoutGrid, CalendarDays, Eye, EyeOff, Crosshair, Radar, Blocks, type LucideIcon,
+  LayoutGrid, CalendarDays, Eye, EyeOff, Crosshair, Radar, Blocks, Languages, Coins, Palette, AtSign, Puzzle, type LucideIcon,
 } from 'lucide-react';
 import { flag } from '@/lib/format';
 import {
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { CategoryNode, TechFacets } from '@/lib/market/shops';
+import type { CategoryNode, ProfileKey, TechFacets } from '@/lib/market/shops';
 import { MARKET_PLATFORM_FILTERS } from '@/lib/market-platforms';
 import { PlatformIcon } from './PlatformIcon';
 import { ExportCsv } from './ExportCsv';
@@ -64,19 +64,19 @@ function useSetParam() {
 // Market filter recipes, in Apple's language: borderless capsules on the
 // system grey fill (--a-fill, base.css), the picked one filled with the label
 // colour, and a soft blue focus halo instead of a hard ring.
-const FOCUS = 'outline-none focus-visible:shadow-[0_0_0_4px_var(--a-focus)]';
+export const FOCUS = 'outline-none focus-visible:shadow-[0_0_0_4px_var(--a-focus)]';
 const PILL = `inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${FOCUS}`;
 const PILL_ON = 'bg-foreground text-background';
 const PILL_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
 // Top Brands' platform and category rows: capsules, grey until picked.
-const TB_PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
+export const TB_PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
 const TB_ON = 'bg-foreground text-background';
 const TB_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
-const CHIP = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
-const CHIP_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
-const CHIP_ON = 'bg-foreground text-background';
+export const CHIP = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
+export const CHIP_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
+export const CHIP_ON = 'bg-foreground text-background';
 
 const compact = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n);
@@ -93,9 +93,23 @@ const regionName = (() => {
 const countryOptions = COUNTRIES.map(c => ({ value: c, label: `${flag(c)} ${regionName(c)}` }));
 
 /** Filters that count toward the "N active" badge and the Clear button. */
-const FILTER_KEYS = ['traffic', 'growth', 'productsMin', 'country', 'visitorCountry', 'category', 'subcategory', 'created', 'viewed', 'tracked', 'pixel', 'tech', 'q'] as const;
+const FILTER_KEYS = ['traffic', 'growth', 'productsMin', 'country', 'visitorCountry', 'category', 'subcategory', 'created', 'viewed', 'tracked', 'pixel', 'tech', 'language', 'currency', 'theme', 'social', 'app', 'q'] as const;
 
 interface Option { value: string; label: string }
+
+/** The StoreLeads profile chips, in Trendtrack's order. */
+const PROFILE_CHIPS: { key: ProfileKey; label: string; icon: LucideIcon; searchable?: boolean }[] = [
+  { key: 'language', label: 'Language', icon: Languages, searchable: true },
+  { key: 'currency', label: 'Currency', icon: Coins, searchable: true },
+  { key: 'theme', label: 'Theme', icon: Palette, searchable: true },
+  { key: 'app', label: 'App', icon: Puzzle, searchable: true },
+  { key: 'social', label: 'Socials', icon: AtSign },
+];
+
+const SOCIAL_LABELS: Record<string, string> = {
+  facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube', pinterest: 'Pinterest',
+  twitter: 'X (Twitter)', linkedin: 'LinkedIn', snapchat: 'Snapchat', whatsapp: 'WhatsApp',
+};
 
 /**
  * The chip's text once an option is picked. The option's shop count belongs in
@@ -111,9 +125,11 @@ function chosen(label: string, option: string): string {
  * A filter chip: icon + label + chevron; picking an option sets one URL param.
  * `searchable` adds a type-to-filter box for long option lists (technologies).
  */
-export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable }: {
+export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable, anyLabel = 'Any', title }: {
   icon: LucideIcon; label: string; value: string; options: Option[];
   onChange: (v: string) => void; badge?: string; searchable?: boolean;
+  /** Text of the "no choice" item (e.g. a sort's default order). */
+  anyLabel?: string; title?: string;
 }) {
   const active = options.find(o => o.value === value);
   const [needle, setNeedle] = useState('');
@@ -122,19 +138,17 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
     ? options.filter(o => o.label.toLowerCase().includes(needle.trim().toLowerCase()))
     : options;
   return (
-    // Radix focuses the menu on open, so typed letters jumped between items
-    // instead of reaching the search box; focus it once the menu has mounted.
-    <DropdownMenu onOpenChange={o => {
-      if (!o) setNeedle('');
-      else if (searchable) requestAnimationFrame(() => needleRef.current?.focus());
-    }}>
-      <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label}>
+    <DropdownMenu onOpenChange={o => { if (!o) setNeedle(''); }}>
+      <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label} title={title}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
-        <span>{active ? chosen(label, active.label) : label}</span>
+        <span>{active ? chosen(label, active.label) : anyLabel !== 'Any' ? `${label}: ${anyLabel}` : label}</span>
         {badge && !active && <span className="rounded-full bg-[var(--a-green)] px-1.5 py-px text-[10px] font-semibold text-white">{badge}</span>}
         <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto rounded-xl p-1.5">
+      <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto rounded-xl p-1.5"
+        // Radix focuses the menu itself on open (after any focus call we make),
+        // so typing jumped between items; pass that focus on to the search box.
+        onFocus={searchable ? e => { if (e.target === e.currentTarget) needleRef.current?.focus(); } : undefined}>
         {searchable && (
           <div className="sticky -top-1 z-10 -mx-1 -mt-1 mb-1 bg-popover p-1">
           <input
@@ -151,7 +165,7 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
           </div>
         )}
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-          <DropdownMenuRadioItem value="">Any</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="">{anyLabel}</DropdownMenuRadioItem>
           {shown.map(o => <DropdownMenuRadioItem key={o.value} value={o.value}>{o.label}</DropdownMenuRadioItem>)}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
@@ -218,6 +232,29 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
     [tech],
   );
 
+  // StoreLeads profile chips: plain names, never codes ("German", not "de").
+  const profileOptions = useMemo(() => {
+    const prof = tech?.profile;
+    const out = {} as Record<ProfileKey, Option[]>;
+    if (!prof) return null;
+    const names = (type: 'language' | 'currency') => {
+      try { return new Intl.DisplayNames(['en'], { type }); } catch { return null; }
+    };
+    const lang = names('language'), ccy = names('currency');
+    const title = (v: string) => v.replace(/(^|[\s-])\p{L}/gu, m => m.toUpperCase());
+    const label: Record<ProfileKey, (v: string) => string> = {
+      language: v => lang?.of(v) || v.toUpperCase(),
+      currency: v => (ccy?.of(v) && ccy.of(v) !== v ? `${ccy.of(v)} (${v})` : v),
+      theme: title,
+      social: v => SOCIAL_LABELS[v] ?? title(v),
+      app: v => v,
+    };
+    for (const k of Object.keys(label) as ProfileKey[]) {
+      out[k] = prof[k].map(t => ({ value: t.name, label: `${label[k](t.name)} (${compact(t.count)})` }));
+    }
+    return out;
+  }, [tech]);
+
   const activeCount = FILTER_KEYS.filter(k => params.get(k)).length;
   // The filter chips fold away behind one button so the table gets the height
   // (feedback: only 3 stores fit). Remembered per browser; a per-viewer
@@ -237,7 +274,9 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
   // then the filter chips. Sorting lives on the table's column headers.
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      <div className="flex flex-wrap gap-1.5">
+      {/* One swipeable row on a phone (six platforms wrapped to three rows). */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+       <div className="flex min-w-max gap-1.5 sm:min-w-0 sm:flex-wrap">
         {MARKET_PLATFORM_FILTERS.map(pl => (
           <button key={pl.id} type="button" onClick={() => set({ platform: pl.id === 'shopify' ? '' : pl.id })}
             aria-pressed={platform === pl.id} className={cn(TB_PILL, platform === pl.id ? TB_ON : TB_OFF)}>
@@ -246,6 +285,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             {pl.name}
           </button>
         ))}
+       </div>
       </div>
 
       {categoryTabs.length > 0 && (
@@ -263,7 +303,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
 
       <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
         <form
-          className="relative min-w-0 flex-1"
+          className="relative min-w-0 flex-1 basis-full sm:basis-0"
           onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}
         >
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
@@ -274,7 +314,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
             onChange={e => setTerm(e.target.value)}
             placeholder="Search shops, keywords…"
             aria-label="Search shops, keywords"
-            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
+            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
           />
           {term && (
             <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }}
@@ -334,6 +374,10 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
         {pixelOptions.length > 0 && (
           <FilterChip icon={Radar} label="Pixels" value={p('pixel')} onChange={v => set({ pixel: v })} options={pixelOptions} />
         )}
+        {profileOptions && PROFILE_CHIPS.map(c => profileOptions[c.key].length > 0 && (
+          <FilterChip key={c.key} icon={c.icon} label={c.label} value={p(c.key)} onChange={v => set({ [c.key]: v })}
+            options={profileOptions[c.key]} searchable={c.searchable} />
+        ))}
         <FilterChip icon={Eye} label="Viewed" value={p('viewed')} onChange={v => set({ viewed: v })} options={[
           { value: 'only', label: 'Viewed' }, { value: 'exclude', label: 'Not viewed' },
         ]} />
@@ -417,8 +461,9 @@ export function MarketPagination({ page, total, limit, hasMore }: {
 
   return (
     <nav className="flex shrink-0 flex-wrap items-center justify-center gap-2" aria-label="Pagination">
-      <button onClick={() => go(page - 1)} disabled={page <= 1} className={btn}>
-        <ChevronLeft className="h-4 w-4" /> Previous
+      {/* Arrow-only on a phone so the row fits one line. */}
+      <button onClick={() => go(page - 1)} disabled={page <= 1} className={btn} aria-label="Previous page">
+        <ChevronLeft className="h-4 w-4" /><span className="hidden sm:inline">Previous</span>
       </button>
       {nums.length > 0 ? nums.map(n => (
         <button key={n} onClick={() => go(n)} aria-current={n === page ? 'page' : undefined}
@@ -429,8 +474,8 @@ export function MarketPagination({ page, total, limit, hasMore }: {
       )) : (
         <span className="px-3 text-sm text-muted-foreground">Page {page}</span>
       )}
-      <button onClick={() => go(page + 1)} disabled={!canNext} className={btn}>
-        Next <ChevronRight className="h-4 w-4" />
+      <button onClick={() => go(page + 1)} disabled={!canNext} className={btn} aria-label="Next page">
+        <span className="hidden sm:inline">Next</span><ChevronRight className="h-4 w-4" />
       </button>
     </nav>
   );

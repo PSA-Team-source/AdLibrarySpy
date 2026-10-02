@@ -1,0 +1,121 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--lime:#a7f45a;--ink:#050807;--line:#1c2420;--mut:#7d8a83;--txt:#eef3ef}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ink);color:var(--txt);font-family:Inter,-apple-system,"SF Pro Display",Helvetica,Arial,sans-serif}
+#grid{position:absolute;inset:0;background-image:linear-gradient(#a7f45a0c 2px,transparent 2px),linear-gradient(90deg,#a7f45a0c 2px,transparent 2px);background-size:96px 96px}
+.mono{font-family:"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}
+header{position:absolute;left:72px;right:72px;top:44px;height:72px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:16px;font-size:34px;font-weight:700;letter-spacing:-.02em}
+.mark{width:44px;height:44px;border-radius:12px;background:var(--lime);color:#071004;display:grid;place-items:center}
+.mark svg{width:28px;height:28px}
+.brand .mono{font-size:15px;font-weight:500;color:var(--mut);margin-left:10px}
+.run{display:flex;gap:18px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:12px 20px;font-size:19px;background:#0b110e}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--lime);box-shadow:0 0 14px var(--lime)}
+.run .tm{color:var(--mut);font-variant-numeric:tabular-nums;min-width:70px;text-align:right}
+.cols{position:absolute;left:72px;right:72px;top:150px;bottom:110px;display:grid;grid-template-columns:repeat(3,1fr);gap:48px}
+.col{display:flex;flex-direction:column;min-height:0}
+.num{display:flex;align-items:baseline;gap:18px}
+.num b{font-size:112px;font-weight:600;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1}
+.num span{font-size:26px;color:var(--mut)}
+.sub{font-size:19px;color:var(--mut);margin:10px 0 18px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--lime);box-shadow:0 0 16px var(--lime)}
+.step{display:flex;justify-content:space-between;font-size:15px;color:var(--mut);margin:16px 0 14px}
+.step.on{color:var(--lime)}
+.pnl{position:relative;flex:1;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:#0b110e}
+.ads{position:absolute;left:14px;right:14px;top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ads img{width:100%;border-radius:10px;opacity:0;transform:translateY(24px) scale(.94)}
+.ads img.win{outline:4px solid var(--lime);outline-offset:-2px}
+.shot{position:absolute;left:14px;right:14px;top:14px;width:calc(100% - 28px);border-radius:12px}
+.ring{position:absolute;border:4px solid var(--lime);border-radius:12px;box-shadow:0 0 24px #a7f45a88;opacity:0}
+.tag{position:absolute;left:24px;bottom:22px;background:var(--lime);color:#071004;font-weight:700;font-size:20px;padding:10px 16px;border-radius:10px;opacity:0}
+footer{position:absolute;left:72px;right:72px;bottom:40px;display:flex;justify-content:space-between;font-size:14px;color:var(--mut);border-top:1px solid var(--line);padding-top:20px}
+footer .flow b{color:var(--txt);font-weight:500}
+footer .flow b.on{color:var(--lime)}
+#end{position:absolute;inset:0;background:var(--ink);display:grid;place-items:center;text-align:center;opacity:0}
+#end .lk{display:flex;align-items:center;gap:22px;justify-content:center;font-size:64px;font-weight:700;letter-spacing:-.03em}
+#end .lk .mark{width:76px;height:76px;border-radius:20px}#end .lk .mark svg{width:48px;height:48px}
+#end h2{font-size:84px;font-weight:600;letter-spacing:-.04em;margin:40px 0 30px;line-height:1.05}
+#end h2 b{color:var(--lime)}
+#end .ticks{display:flex;gap:34px;justify-content:center;font-size:26px;color:var(--mut)}
+#end .cta{display:inline-block;margin-top:46px;background:var(--lime);color:#071004;font-size:32px;font-weight:700;padding:22px 44px;border-radius:16px}
+#end .url{margin-top:22px;font-size:24px;color:var(--mut)}
+</style></head><body>
+<div id="grid"></div>
+<header>
+  <div class="brand"><span class="mark" id="m1"></span>AdLibrarySpy<span class="mono">Competitor ads agent</span></div>
+  <div class="run"><span class="dot"></span>Competitor: <b>comfrt.com</b><span class="tm mono" id="tm">00.0s</span></div>
+</header>
+<div class="cols">
+  <div class="col">
+    <div class="num"><b id="n1">0</b><span>live ads</span></div>
+    <div class="sub">running on Meta right now</div>
+    <div class="bar"><i id="b1"></i></div>
+    <div class="step mono" id="st1"><span>01 · Scan their ads</span><span id="c1">0 / 3,639</span></div>
+    <div class="pnl"><div class="ads" id="ads"></div></div>
+  </div>
+  <div class="col">
+    <div class="num"><b id="n2">0</b><span>visits / mo</span></div>
+    <div class="sub">+12% · best sellers ranked</div>
+    <div class="bar"><i id="b2"></i></div>
+    <div class="step mono" id="st2"><span>02 · Find what sells</span><span id="c2">0 / 6</span></div>
+    <div class="pnl" id="p2"><img class="shot" id="prod" src="img/products.png"><div class="ring" id="r2"></div><div class="tag" id="t2">#1 Dreamer Blanket · $99</div></div>
+  </div>
+  <div class="col">
+    <div class="num"><b id="n3">0</b><span>brands tracked</span></div>
+    <div class="sub">daily ad-count snapshots</div>
+    <div class="bar"><i id="b3"></i></div>
+    <div class="step mono" id="st3"><span>03 · Track every move</span><span id="c3">0 / 4</span></div>
+    <div class="pnl" id="p3"><img class="shot" id="bt" src="img/brandtracker.png"><img class="shot" id="la" src="img/liveads.png" style="opacity:0"><div class="tag" id="t3">2,403 → 3,639 ads in 9 days</div></div>
+  </div>
+</div>
+<footer><div class="flow mono"><b id="f1">Scan</b> &nbsp;→&nbsp; <b id="f2">Rank winners</b> &nbsp;→&nbsp; <b id="f3">Track</b></div><div>Real data from adlibraryspy.com · captured Sep 27, 2026</div></footer>
+<div id="end"><div>
+  <div class="lk"><span class="mark" id="m2"></span>AdLibrarySpy</div>
+  <h2>See every ad your<br>competitors <b>run</b>. Free.</h2>
+  <div class="ticks"><span>✓ Free forever</span><span>✓ No credit card</span><span>✓ 14.7M stores indexed</span></div>
+  <div class="cta">Sign up free →</div>
+  <div class="url">adlibraryspy.com</div>
+</div></div>
+<script>
+const TARGET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>';
+m1.innerHTML=m2.innerHTML=TARGET;
+for(let i=0;i<16;i++){const im=document.createElement('img');im.src='img/lib_'+i+'.png';if(i===2||i===9)im.className='win';ads.appendChild(im)}
+const $=id=>document.getElementById(id);
+const cl=x=>Math.max(0,Math.min(1,x)), ease=x=>1-Math.pow(1-cl(x),3), io=x=>{x=cl(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const seg=(t,a,b)=>ease((t-a)/(b-a));
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const M=n=>(n/1e6).toFixed(1)+'M';
+const END=15.2;
+window.renderAt=function(t){
+  $('tm').textContent=Math.min(t,END).toFixed(1).padStart(4,'0')+'s';
+  // 01 scan: 0.4 → 5.2
+  const a=seg(t,.4,5.2);
+  $('n1').textContent=fmt(3639*a); $('c1').textContent=fmt(3639*a)+' / 3,639'; $('b1').style.width=a*100+'%';
+  const imgs=$('ads').children;
+  for(let i=0;i<16;i++){const p=ease((t-.5-i*.2)/.45);imgs[i].style.opacity=p;imgs[i].style.transform=`translateY(${(1-p)*24}px) scale(${.94+.06*p})`}
+  const pnlH=$('ads').parentElement.clientHeight, adsH=$('ads').scrollHeight;
+  $('ads').style.transform=`translateY(${-Math.max(0,adsH-pnlH+28)*io((t-2.4)/2.8)}px)`;
+  // 02 rank: 4.6 → 9.0
+  const b=seg(t,4.6,8.6);
+  $('n2').textContent=t<4.6?'0':M(10845689+(16112437-10845689)*b); $('b2').style.width=b*100+'%';
+  $('c2').textContent=Math.round(6*seg(t,5.6,8.6))+' / 6';
+  const p2=$('p2'),pr=$('prod'),s=io((t-6.4)/2.2);
+  pr.style.opacity=seg(t,4.6,5.2); pr.style.transform=`translateY(${-Math.max(0,pr.clientHeight*.62-p2.clientHeight)*s}px)`;
+  const r=$('r2'),w=pr.clientWidth, rr=seg(t,5.4,5.9)*(1-seg(t,6.3,6.6));
+  Object.assign(r.style,{left:(14+w*.02)+'px',top:(14+pr.clientHeight*.058)+'px',width:(w*.47)+'px',height:(pr.clientHeight*.125)+'px',opacity:rr});
+  $('t2').style.opacity=seg(t,5.5,5.9)*(1-seg(t,6.3,6.6));
+  // 03 track: 8.6 → 13
+  const c=seg(t,8.6,12.4);
+  $('n3').textContent=Math.round(4*c); $('c3').textContent=Math.round(4*c)+' / 4'; $('b3').style.width=c*100+'%';
+  $('bt').style.opacity=seg(t,8.6,9.2); $('bt').style.transform=`translateY(${(1-seg(t,8.6,9.2))*30}px)`;$('bt').style.opacity=seg(t,8.6,9.2)*(1-seg(t,10.2,10.6));
+  $('la').style.opacity=seg(t,10.4,11); $('la').style.transform=`translateY(${(1-seg(t,10.4,11))*30}px)`;
+  $('t3').style.opacity=seg(t,11.4,11.8)*(1-seg(t,13.4,13.6));
+  $('st1').classList.toggle('on',t<5.2);$('st2').classList.toggle('on',t>=4.6&&t<8.6);$('st3').classList.toggle('on',t>=8.6);
+  $('f1').classList.toggle('on',a>0&&t<5.2);$('f2').classList.toggle('on',t>=4.6&&t<8.6);$('f3').classList.toggle('on',t>=8.6);
+  // end card 13.8 →
+  const e=seg(t,13.8,14.5); $('end').style.opacity=e; $('end').firstElementChild.style.transform=`scale(${.96+.04*e})`;
+};
+renderAt(0);
+</script></body></html>

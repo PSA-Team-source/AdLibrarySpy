@@ -31,10 +31,10 @@ import { cn } from '@/lib/utils';
  *  - No breadcrumb. The platform expresses "where am I" with the sidebar's
  *    active item plus a back button, not a crumb line.
  *
- * `fullHeight` mirrors DashboardShell's FULL_HEIGHT_LIST_ROUTES. Those routes are
- * rendered `fixed`/`overflow-hidden` with NO padding wrapper, so the page must
- * supply its own padding and fill the viewport, letting its table scroll
- * internally (see `/my-product`). Keep this flag in sync with that Set.
+ * `fullHeight` mirrors AppShell's FULL_HEIGHT_ROUTES. Those routes render with
+ * NO padding wrapper, so the page supplies its own padding. From lg up it fills
+ * the viewport and its table scrolls internally (see `/my-product`); on a phone
+ * it is an ordinary scrolling page (`page-fill` + `lg:h-full`, globals.css).
  */
 export function PageShell({
   title,
@@ -74,7 +74,7 @@ export function PageShell({
   return (
     <div
       className={cn(
-        fullHeight ? 'flex h-full flex-col gap-6 px-4 py-6 lg:px-8' : 'flex flex-col gap-6',
+        fullHeight ? 'page-fill flex flex-col gap-6 px-4 py-6 lg:h-full lg:px-8' : 'flex flex-col gap-6',
         className,
       )}
     >

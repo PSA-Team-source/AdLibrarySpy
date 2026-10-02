@@ -51,7 +51,7 @@ async function dispatch(rpc: RpcRequest, ctx: ToolContext & { tokenId: string })
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: 'adlibraryspy', title: 'AdLibrarySpy', version: '1.0.0' },
         instructions:
-          'AdLibrarySpy indexes Shopify stores and their ad creatives. Search with search_shops / search_ads, find the products ads point at with search_products, '
+          'AdLibrarySpy indexes Shopify stores and their ad creatives. Search with search_shops / search_ads, find the products ads point at with search_products, the pages ads send people to with search_landing_pages, '
           + 'open one with get_shop / get_ad, see how a store\'s creatives split by hook, angle and offer with creative_breakdown, '
           + 'and manage the workspace brandtracker with track_brand and brand_changes. '
           + 'AI creative labels are model classifications of ad text with a confidence; an absent label means the model was unsure, not that the trait is missing. '

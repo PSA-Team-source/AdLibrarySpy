@@ -125,10 +125,22 @@ test('real brand names are left untouched', () => {
 // cached copy and the original Facebook CDN URL; measured against live rows the
 // fbcdn links are expired signed URLs that 403, so only the cache is servable.
 const MEDIA_HOST = 'cdn.shopquantum.ai';
+const OWN_HOST = 'media.adlibraryspy.com';
+const OWN_PATH = '/creatives/';
+const OLD_STORAGE_HOST = 'storage.platformdtc.com';
+const OLD_STORAGE_PATH = '/platformdtc/creatives/';
 const playableUrl = (raw) => {
   const url = String(raw ?? '');
   if (!url) return '';
-  try { return new URL(url).host === MEDIA_HOST ? url : ''; } catch { return ''; }
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'https:') return '';
+    if (u.host === MEDIA_HOST || (u.host === OWN_HOST && u.pathname.startsWith(OWN_PATH))) return url;
+    if (u.host === OLD_STORAGE_HOST && u.pathname.startsWith(OLD_STORAGE_PATH)) {
+      return `https://${OWN_HOST}${OWN_PATH}${u.pathname.slice(OLD_STORAGE_PATH.length)}`;
+    }
+    return '';
+  } catch { return ''; }
 };
 
 test('only CDN-hosted creative media is servable', () => {
@@ -144,6 +156,15 @@ test('only CDN-hosted creative media is servable', () => {
 test('a lookalike host does not pass the allowlist', () => {
   assert.equal(playableUrl('https://cdn.shopquantum.ai.evil.com/x.jpg'), '');
   assert.equal(playableUrl('https://evil.com/cdn.shopquantum.ai/x.jpg'), '');
+});
+
+test('own media host passes; old PlatformDTC storage URLs move to it; /platformdtc/crawl/ never does', () => {
+  const ok = 'https://media.adlibraryspy.com/creatives/0123abcd.mp4';
+  assert.equal(playableUrl(ok), ok);
+  assert.equal(playableUrl('https://storage.platformdtc.com/platformdtc/creatives/0123abcd.mp4'), ok);
+  assert.equal(playableUrl('https://media.adlibraryspy.com/other/x.jpg'), '');
+  assert.equal(playableUrl('https://storage.platformdtc.com/platformdtc/crawl/0123abcd.jpg'), '');
+  assert.equal(playableUrl('https://storage.platformdtc.com/other/x.jpg'), '');
 });
 
 // ---------- UTM decode ----------
@@ -967,4 +988,11 @@ test('loginUrl carries only safe same-origin return paths', () => {
   assert.equal(loginUrl('/settings/account'), '/login?next=%2Fsettings%2Faccount');
   assert.equal(loginUrl('/shops?sort=revenue'), '/login?next=%2Fshops%3Fsort%3Drevenue');
   for (const bad of [null, undefined, '', '/', '//evil.com', '/\\evil.com', 'https://evil.com']) assert.equal(loginUrl(bad), '/login');
+});
+
+test('a new workspace defaults to "<first name>\'s team"', async () => {
+  const { defaultWorkspaceName } = await import('../lib/utils.ts');
+  assert.equal(defaultWorkspaceName('Jane Doe', 'j@x.com'), "Jane's team");
+  assert.equal(defaultWorkspaceName('  ', 'sam.lee@x.com'), "sam.lee's team");
+  assert.equal(defaultWorkspaceName(null, 'kim@x.com'), "kim's team");
 });

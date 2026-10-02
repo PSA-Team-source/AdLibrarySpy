@@ -12,9 +12,11 @@ const nextConfig = {
   // revalidatePath; Track/Untrack/Fav/Connections call router.refresh()).
   //   dynamic — screens reached by a plain click (dossiers, filtered lists).
   //   static  — screens warmed by AppShell's NavIdlePrefetch / hover (FULL prefetch).
-  // ponytail: market data moves daily, so 5 min is invisible there; the one
-  // ceiling is Home > Recents, which can lag a just-opened dossier by up to 5 min.
-  experimental: { staleTimes: { dynamic: 180, static: 300 } },
+  // ponytail: market data moves daily, so 30 min is invisible there; the one
+  // ceiling is Home > Recents, which can lag a just-opened dossier by up to 30 min.
+  // Static is long on purpose: from Asia every origin round trip is 300-800ms, so a
+  // cold sidebar click is always felt; NavIdlePrefetch re-warms before entries expire.
+  experimental: { staleTimes: { dynamic: 300, static: 1800 } },
   // Public pages (/store, /ad, /stores, /weekly) are edge-cached; this is the
   // stale-while-revalidate window Next writes into their Cache-Control, so a
   // cold POP serves the last copy while it refreshes instead of waiting on us.

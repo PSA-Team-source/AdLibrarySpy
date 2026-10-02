@@ -223,6 +223,11 @@ export interface Ad {
   // --- fields the index actually carries that the first mapper discarded ---
   /** Playable MP4, only when hosted on our CDN (fbcdn originals 403 on hotlink). */
   videoUrl: string;
+  /**
+   * Video ads without a hosted MP4 (only winning ads keep one): the ad's permanent
+   * Meta Ad Library page, which plays it. '' when videoUrl is set or not a video.
+   */
+  adLibraryVideoUrl: string;
   /** The ad's real destination. 100% filled — no need to guess a product URL. */
   linkUrl: string;
   /** utm_* pairs decoded from linkUrl; empty when the advertiser sets none. */

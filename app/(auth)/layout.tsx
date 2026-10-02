@@ -21,9 +21,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     { icon: Store, label: 'Shops', value: shopsTotal },
   ].filter((t): t is { icon: typeof Store; label: string; value: number } => typeof t.value === 'number' && t.value > 0);
   return (
-    <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-2">
+    <div className="grid min-h-screen grid-cols-1 bg-background text-foreground lg:grid-cols-2">
       <MetaPixel />
-      <div className="flex flex-col justify-center px-4 py-12 sm:px-12">
+      <div className="flex min-w-0 flex-col justify-center px-4 py-12 sm:px-12">
         <div className="mx-auto w-full max-w-md">
           <Link href="/" className="mb-6 flex items-center gap-2 transition-opacity hover:opacity-80">
             <BrandMark size={32} />

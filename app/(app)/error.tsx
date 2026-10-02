@@ -5,13 +5,13 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 // Full-height routes (/shops, /ads) render without the shell's padding wrapper.
-const FULL_HEIGHT = new Set(['/shops', '/ads', '/products']);
+const FULL_HEIGHT = new Set(['/shops', '/ads', '/products', '/landing-pages']);
 
 export default function AppError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => { console.error('[app] page error', error); }, [error]);
   const fullHeight = FULL_HEIGHT.has(usePathname());
   return (
-    <div className={cn('flex flex-col gap-6', fullHeight && 'h-full overflow-auto px-4 py-6 lg:px-8')}>
+    <div className={cn('flex flex-col gap-6', fullHeight && 'px-4 py-6 lg:h-full lg:overflow-auto lg:px-8')}>
       <div className="card max-w-lg p-6">
         <h1 className="text-2xl font-light tracking-tight text-foreground">This page could not load</h1>
         <p className="mt-2 text-sm text-muted-foreground">

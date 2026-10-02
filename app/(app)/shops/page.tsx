@@ -2,6 +2,7 @@ import { categoryTree, techFacets } from '@/lib/market/shops';
 import { requireCtx } from '@/lib/auth/guard';
 import { ShopsExplorer } from '@/components/market/ShopsExplorer';
 import { loadShops } from './load';
+import { StartHere } from '@/components/home/StartHere';
 
 export const metadata = { title: 'Shops' };
 export const dynamic = 'force-dynamic';
@@ -11,7 +12,13 @@ export const dynamic = 'force-dynamic';
 export default async function ShopsPage({ searchParams }: { searchParams: Promise<Record<string, string>> }) {
   const sp = await searchParams;
   const ctx = await requireCtx();
-  const [cats, tech, initial] = await Promise.all([categoryTree(), techFacets(), loadShops(ctx, sp)]);
+  // "Start here" / "Picked for you" lives behind a bell in the header (no page height),
+  // so it is offered on every view, not only the unfiltered first page.
+  const [cats, tech, initial, intro] = await Promise.all([
+    categoryTree(), techFacets(), loadShops(ctx, sp),
+    // Called directly so an empty result (no live stores) leaves no wrapper behind.
+    StartHere({ bell: true }).catch(e => { console.error('[start-here]', e); return null; }),
+  ]);
 
   return (
     <ShopsExplorer
@@ -20,6 +27,7 @@ export default async function ShopsPage({ searchParams }: { searchParams: Promis
       initial={initial}
       initialParams={sp}
       renderedAt={Date.now()}
+      intro={intro}
     />
   );
 }

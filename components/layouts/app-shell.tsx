@@ -33,13 +33,16 @@ import {
  *    faint section labels, a sticky bottom slot;
  *  - a scroll pane inset `lg:ml-[220px]` (a media query, not JS state, so the
  *    first paint on a phone is already right) with `mx-4 lg:mx-8 py-6 pb-24`;
- *  - FULL_HEIGHT_ROUTES render fixed with no padding wrapper, and the page
- *    supplies `flex h-full flex-col gap-6 px-4 py-6 lg:px-8` itself;
+ *  - FULL_HEIGHT_ROUTES render with no padding wrapper, and the page supplies
+ *    its own padding. At lg the pane is overflow-hidden and the page fills it
+ *    (`lg:h-full`, table scrolls inside); on a phone the pane scrolls like any
+ *    other route — a viewport-locked list left the results a 0-2 row sliver
+ *    under the toolbar (/ads showed no ads at all);
  *  - ⌘K command palette over the same nav map as the sidebar.
  */
 
 // Keep in sync with the pages that render `PageShell fullHeight`.
-const FULL_HEIGHT_ROUTES = new Set(['/shops', '/ads', '/products']);
+const FULL_HEIGHT_ROUTES = new Set(['/shops', '/ads', '/products', '/landing-pages']);
 
 // Hover/touch upgrades the nav link to a FULL prefetch, so the screen's data is
 // already on its way from us-east-1 when the click lands (PlatformDTC does the
@@ -163,18 +166,13 @@ export function AppShell({ user, workspace, workspaces = [], trackers, skillAnno
 
       {/* One stable position for {children}; only the wrapper's classes change. */}
       <div
-        className={
-          isFullHeight
-            ? 'fixed left-0 overflow-hidden transition-all duration-300 lg:left-[220px]'
-            : 'app-content-pane ml-0 overflow-y-auto transition-all duration-300 lg:ml-[220px]'
-        }
-        style={
-          isFullHeight
-            ? { top: 'var(--app-chrome-top)', bottom: 0, right: 0 }
-            : { marginTop: 'var(--app-chrome-top)', height: 'calc(100dvh - var(--app-chrome-top))' }
-        }
+        className={cn(
+          'app-content-pane ml-0 overflow-y-auto transition-all duration-300 lg:ml-[220px]',
+          isFullHeight && 'lg:overflow-hidden',
+        )}
+        style={{ marginTop: 'var(--app-chrome-top)', height: 'calc(100dvh - var(--app-chrome-top))' }}
       >
-        {isFullHeight ? children : <div className="app-content-inner mx-4 py-6 pb-24 lg:mx-8">{skillAnnouncement && <AgentSkillAnnouncement />}{children}</div>}
+        {isFullHeight ? children : <div className="app-content-inner mx-4 py-6 pb-24 lg:mx-8">{skillAnnouncement && pathname === '/home' && <AgentSkillAnnouncement />}{children}</div>}
       </div>
 
       <CommandSearch open={commandOpen} onOpenChange={setCommandOpen} />
@@ -222,7 +220,15 @@ function NavIdlePrefetch() {
     const idle = typeof window.requestIdleCallback === 'function'
       ? window.requestIdleCallback(start, { timeout: 2000 })
       : window.setTimeout(start, 500);
+    // Keep them warm: a screen left open longer than staleTimes.static used to make
+    // every next click cold again. Next skips fresh entries, so this only refetches
+    // what expired. ponytail: up to one 5-min window per expiry can still be cold.
+    const rewarm = window.setInterval(() => { if (document.visibilityState === 'visible') start(); }, 5 * 60_000);
+    const onVisible = () => { if (document.visibilityState === 'visible') start(); };
+    document.addEventListener('visibilitychange', onVisible);
     return () => {
+      window.clearInterval(rewarm);
+      document.removeEventListener('visibilitychange', onVisible);
       timers.forEach((t) => window.clearTimeout(t));
       if (typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idle);
       else window.clearTimeout(idle);
@@ -454,8 +460,8 @@ function AppHeader({
                 ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/settings/account" className="flex cursor-pointer items-center gap-2">
-                    <Settings className="h-3.5 w-3.5" /> Workspace settings
+                  <Link href="/settings/workspace" className="flex cursor-pointer items-center gap-2">
+                    <Settings className="h-3.5 w-3.5" /> Rename workspace
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -470,7 +476,7 @@ function AppHeader({
 
         {/* Center search, absolutely centred so left/right widths don't move it. */}
         <div className="absolute left-1/2 hidden w-full max-w-xl -translate-x-1/2 items-center gap-2 px-4 sm:flex">
-          <Link href="/home" className="tap-target rounded-lg transition-colors hover:bg-[var(--surface-hover)]" title="Go to home">
+          <Link href="/" className="tap-target rounded-lg transition-colors hover:bg-[var(--surface-hover)]" title="Go to home">
             <Home className="h-4 w-4 text-[var(--text-muted)]" />
           </Link>
           <button

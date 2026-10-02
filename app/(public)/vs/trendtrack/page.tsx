@@ -152,7 +152,7 @@ export default async function VsTrendTrackPage() {
       <section aria-labelledby="table-h" className="space-y-3">
         <h2 id="table-h" className="text-xl font-semibold text-foreground">Feature by feature</h2>
         <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <Table className="min-w-[640px]">
+          <Table className="sm:min-w-[640px] max-sm:[&_tr]:grid max-sm:[&_tr]:grid-cols-2 max-sm:[&_tbody_tr>*:first-child]:col-span-2 max-sm:[&_tbody_tr>*:first-child]:pb-0 max-sm:[&_thead_tr>*:first-child]:hidden max-sm:[&_th]:w-auto">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[26%]">Feature</TableHead>

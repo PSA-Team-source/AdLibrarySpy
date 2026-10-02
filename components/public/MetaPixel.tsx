@@ -15,6 +15,10 @@ import { usePathname } from 'next/navigation';
  * fires once, with eventID `reg-<id>` so Meta de-duplicates it across browsers
  * (the magic link is often opened on another device) and reloads.
  *
+ * The fresh account's email + id also go into `init` as manual advanced matching
+ * (fbevents.js hashes them), so the browser event carries the same em/external_id
+ * the Conversions API copy does instead of matching on cookies alone.
+ *
  * Id is NEXT_PUBLIC_META_PIXEL_ID, inlined at build. Unset = nothing loads.
  */
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
@@ -23,6 +27,7 @@ type Fbq = ((...args: unknown[]) => void) & { callMethod?: (...a: unknown[]) => 
 declare global { interface Window { fbq?: Fbq; _fbq?: Fbq } }
 
 let lastPath: string | null = null;
+let match: Record<string, string> | undefined;
 
 function fbq(...args: unknown[]) {
   if (!window.fbq) {
@@ -35,13 +40,15 @@ function fbq(...args: unknown[]) {
     s.async = true; s.src = 'https://connect.facebook.net/en_US/fbevents.js';
     document.head.appendChild(s);
     n('set', 'autoConfig', false, PIXEL_ID);
-    n('init', PIXEL_ID);
+    n('init', PIXEL_ID, match);
   }
   window.fbq(...args);
 }
 
-export function MetaPixel({ registeredUserId }: { registeredUserId?: string | null }) {
+export function MetaPixel({ registeredUserId, email }: { registeredUserId?: string | null; email?: string | null }) {
   const pathname = usePathname();
+  // Set before the first fbq() call below creates the pixel; init reads it once.
+  if (registeredUserId && email) match ??= { em: email.trim().toLowerCase(), external_id: registeredUserId };
 
   useEffect(() => {
     if (!PIXEL_ID || !/^\d{10,20}$/.test(PIXEL_ID) || pathname === lastPath) return;

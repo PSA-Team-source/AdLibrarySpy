@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { SectionCard } from '@/components/ui/section-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BrandLogo } from '@/components/market/BrandLogo';
+import { ProductImage } from '@/components/ShopMedia';
 import { compact, flag } from '@/lib/format';
 import { monthLabel, previousMonth } from '@/lib/traffic/similarweb';
 import {
@@ -18,9 +19,11 @@ export interface TrendLinks {
   shop: (s: { id: string; domain: string }) => string;
   /** null = the niche card is not a link on this surface. */
   niche: (n: TrendNiche) => string | null;
-  /** null = no size switch (public page: one band). */
-  band: ((b: RiserBand) => string) | null;
+  /** null = no size/ads switch (public page: one band, every store). */
+  band: ((b: RiserBand, noAds?: boolean) => string) | null;
   seeAll: (b: RiserBand) => string;
+  /** A store's ads in the library. */
+  ads: (domain: string) => string;
 }
 
 /** "2026-08" → "Jul → Aug 2026" (both years when they differ). '' when unknown. */
@@ -30,6 +33,9 @@ function span(period: string): string {
   const [a, b] = [monthLabel(prev), monthLabel(period)];
   return prev.slice(0, 4) === period.slice(0, 4) ? `${a.split(' ')[0]} → ${b}` : `${a} → ${b}`;
 }
+
+/** Rows the fastest-growing list shows. */
+const RISERS_SHOWN = 25;
 
 const growthTone = 'font-semibold tabular-nums text-emerald-600 dark:text-emerald-400';
 const seeAll = 'inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground';
@@ -49,7 +55,7 @@ export async function NichesSection({ links }: { links: TrendLinks }) {
       title="Trending niches"
       description={`Share of each niche's stores with ${compact(NICHE_MIN_VISITS)}+ monthly visits that grew ${NICHE_MIN_GROWTH}%+${when ? `, ${when}` : ''}.`}
     >
-      <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {data.niches.map((n, i) => {
           const pct = Math.round(n.share * 100);
           return (
@@ -80,6 +86,10 @@ export async function NichesSection({ links }: { links: TrendLinks }) {
                       <Link href={links.shop(l)} className="-mx-1 flex items-center gap-2 rounded-md px-1 py-1 hover:bg-accent">
                         <BrandLogo logo={l.logo} domain={l.domain} name={l.name} size={22} />
                         <span className="min-w-0 flex-1 truncate text-xs text-foreground" title={l.domain}>{l.name}</span>
+                        {l.product && (
+                          <ProductImage src={l.product.image} alt={l.product.title}
+                            className="h-7 w-7 shrink-0 rounded-md border border-border object-cover" />
+                        )}
                         <span className={`shrink-0 text-xs ${growthTone}`}>{growthLabel(l.growthPct)}</span>
                       </Link>
                     </li>
@@ -96,9 +106,13 @@ export async function NichesSection({ links }: { links: TrendLinks }) {
 
 // ---------- fastest-growing stores ----------
 
-export async function RisersSection({ band, links }: { band: RiserBand; links: TrendLinks }) {
-  const rows = await loadRisers(band).catch(() => [] as TrendShop[]);
+export async function RisersSection({ band, noAds = false, links }: { band: RiserBand; noAds?: boolean; links: TrendLinks }) {
+  const pool = await loadRisers(band).catch(() => [] as TrendShop[]);
+  // "Growing with no ads" = breakouts with no Meta ads in the library, from the same ranked pool.
+  const organic = pool.filter(s => s.metaAds === 0);
+  const rows = (noAds && organic.length ? organic : pool).slice(0, RISERS_SHOWN);
   if (!rows.length) return null;
+  const onlyOrganic = noAds && organic.length > 0;
   const when = span(rows[0].period);
   const prevLabel = monthLabel(previousMonth(rows[0].period)).split(' ')[0];
   return (
@@ -110,20 +124,29 @@ export async function RisersSection({ band, links }: { band: RiserBand; links: T
     >
       {links.band && <nav className="flex gap-2 px-6 pt-4" aria-label="Store size">
         {(Object.keys(RISER_BANDS) as RiserBand[]).map(b => (
-          <Link key={b} href={links.band!(b)} scroll={false}
+          <Link key={b} href={links.band!(b, onlyOrganic)} scroll={false}
             aria-current={b === band ? 'page' : undefined}
             className={`chip ${b === band ? 'chip-active' : ''}`}>
             {RISER_BANDS[b].label}
           </Link>
         ))}
+        {organic.length > 0 && (
+          <Link href={links.band(band, !onlyOrganic)} scroll={false}
+            aria-pressed={onlyOrganic}
+            title="Stores growing fast without any Meta ads"
+            className={`chip ${onlyOrganic ? 'chip-active' : ''}`}>
+            Growing with no ads
+          </Link>
+        )}
       </nav>}
-      <Table className="min-w-[720px]" containerClassName="pt-2">
+      <Table className="max-sm:table-fixed sm:min-w-[820px] max-sm:[&_tr>*:nth-child(1):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(3):not([colspan])]:hidden max-sm:[&_tr>*:nth-child(5):not([colspan])]:hidden" containerClassName="pt-2">
         <TableHeader>
           <TableRow>
             <TableHead className="w-12 pl-6">#</TableHead>
-            <TableHead>Shop</TableHead>
+            <TableHead className="max-sm:w-1/2">Shop</TableHead>
             <TableHead>Category</TableHead>
-            <TableHead className="text-right">Monthly visits</TableHead>
+            <TableHead className="text-right"><span className="sm:hidden">Visits</span><span className="max-sm:hidden">Monthly visits</span></TableHead>
+            <TableHead className="text-right">Meta ads</TableHead>
             <TableHead className="pr-6 text-right">Growth</TableHead>
           </TableRow>
         </TableHeader>
@@ -152,6 +175,13 @@ export async function RisersSection({ band, links }: { band: RiserBand; links: T
                 <span className="block font-semibold tabular-nums text-foreground">{compact(s.visits)}</span>
                 {prevLabel && <span className="block text-xs tabular-nums text-muted-foreground">from {compact(s.prevVisits)} in {prevLabel}</span>}
               </TableCell>
+              <TableCell className="text-right">
+                {s.metaAds > 0
+                  ? <Link href={links.ads(s.domain)} className="font-medium tabular-nums text-foreground hover:underline" title="See the ads this store runs">
+                      {compact(s.metaAds)} <span className="text-xs font-normal text-muted-foreground">see ads</span>
+                    </Link>
+                  : <span className="text-xs text-muted-foreground" title="No Meta ads found: this growth is not from Meta ads">No ads</span>}
+              </TableCell>
               <TableCell className={`pr-6 text-right ${growthTone}`}>{growthLabel(s.growthPct)}</TableCell>
             </TableRow>
           ))}
@@ -166,8 +196,8 @@ export async function RisersSection({ band, links }: { band: RiserBand; links: T
 export async function ProductsSection({ links }: { links: TrendLinks }) {
   // The 1M+ risers first (the bigger brands), then the 100K+ list; each store once.
   const [big, all] = await Promise.all([
-    loadRisers('1m').catch(() => [] as TrendShop[]),
-    loadRisers('100k').catch(() => [] as TrendShop[]),
+    loadRisers('1m').then(r => r.slice(0, RISERS_SHOWN)).catch(() => [] as TrendShop[]),
+    loadRisers('100k').then(r => r.slice(0, RISERS_SHOWN)).catch(() => [] as TrendShop[]),
   ]);
   const seen = new Set<string>();
   const products = [...big, ...all]
@@ -184,7 +214,8 @@ export async function ProductsSection({ links }: { links: TrendLinks }) {
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {products.map(p => (
           <TrendProductCard key={`${p.shop.id}:${p.image}`} href={links.shop(p.shop)} title={p.title}
-            image={p.image} shopName={p.shop.name} domain={p.shop.domain} growthPct={p.shop.growthPct} />
+            image={p.image} shopName={p.shop.name} domain={p.shop.domain}
+            badge={growthLabel(p.shop.growthPct)} badgeTitle="The store's SimilarWeb visits, month over month" />
         ))}
       </ul>
     </SectionCard>

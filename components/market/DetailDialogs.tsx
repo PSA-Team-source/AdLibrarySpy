@@ -29,7 +29,7 @@ function ShopHeader({ shop }: { shop?: { id: string; domain: string } }) {
   if (!shop) return null;
   return (
     <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
-      <a href={`https://${shop.domain}`} target="_blank" rel="noopener noreferrer nofollow"
+      <a href={`https://${shop.domain}`} target="_blank" rel="noopener nofollow"
         className="btn-ghost h-9 px-3 text-sm"><Globe className="h-4 w-4" /> Visit store</a>
       <Link href={`/shops/${shop.id}`} className="btn-primary h-9 px-3 text-sm"><BarChart3 className="h-4 w-4" /> Shop analytics</Link>
     </div>
@@ -194,9 +194,9 @@ export function ProductThumbsDetail({ products, max = 3, size = 40, title, shop 
   return (
     <ProductGallery products={products} title={title} ranked shop={shop}>
       {open => (
-        <span className="inline-flex items-center gap-1">
+        <span className="inline-flex items-center gap-1 empty:hidden">
           {products.filter(p => p.image).slice(0, max).map((p, i) => (
-            <ImageTrigger key={`${p.rank}-${p.title}`} onOpen={() => open(i)} label={p.title}>
+            <ImageTrigger key={`${p.rank}-${p.title}`} onOpen={() => open(i)} label={p.title} className="empty:hidden">
               <ProductImage src={p.image!} alt={p.title} className="rounded-[10px] border border-[var(--a-sep)] object-cover" style={{ width: size, height: size }} />
             </ImageTrigger>
           ))}

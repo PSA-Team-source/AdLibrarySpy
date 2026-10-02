@@ -55,7 +55,10 @@ export function CreativeMedia({ image, videoUrl, watchUrl = '', alt, className, 
           muted={muted}
           loop
           playsInline
-          preload="metadata"
+          // With a still to show, touch nothing until hover: 24 cards each
+          // fetching video metadata on every filter change delayed the swap and
+          // starved the stills. No still = metadata, or the card would be blank.
+          preload={!imgFailed && image ? 'none' : 'metadata'}
           aria-label={alt}
           onError={() => setFailed(true)}
           className="block h-auto max-h-[80vh] w-full object-contain"

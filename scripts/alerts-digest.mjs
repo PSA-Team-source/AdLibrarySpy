@@ -64,6 +64,7 @@ const { marketMovers } = await import('../lib/alerts/market.ts');
 const { winningProductsToday } = await import('../lib/alerts/products.ts');
 const { trackLinks, clickUrl } = await import('../lib/email/click.ts');
 const { emit } = await import('../lib/analytics/events.ts');
+const { chQuery } = await import('../lib/clickhouse.ts');
 const { adFilterFromParams } = await import('../lib/market/ads-params.ts');
 const D = await import('../lib/alerts/digest.ts');
 const { isoWeekOf } = await import('../lib/weekly/week.ts');
@@ -157,7 +158,7 @@ try {
 }
 let products;
 try {
-  products = await withRetry('winning products', () => winningProductsToday(MARKET_DAY));
+  products = await withRetry('winning products', () => winningProductsToday(MARKET_DAY, D.PRODUCTS_POOL));
 } catch (err) {
   console.error(`[alerts] winning products for ${MARKET_DAY} unavailable: ${err.message} — nothing sent, the next run resumes`);
   await pool().end();
@@ -166,14 +167,29 @@ try {
 log(`winning products ${MARKET_DAY}: ${products.length} product(s)${products[0] ? ` (top: ${products[0].domain} "${products[0].title}" +${products[0].newAds} new ads)` : ''}`);
 log(`market ${MARKET_DAY}: ${movers.length} store(s) added ${D.MARKET_MIN_JUMP}+ live Meta ads${movers[0] ? ` (top: ${movers[0].domain} +${movers[0].jump})` : ''}`);
 
-/** The user's niches, from the stores their workspaces track and they saved. */
+// Last email click per user, so people who never click get weekly, not daily.
+// Unreachable ClickHouse = nobody is quietened this run (never guess).
+const lastClick = new Map();
+try {
+  for (const r of await chQuery("SELECT user_id, toString(max(occurred_at)) AS at FROM dashboard.adlibraryspy_events WHERE event = 'email_click' GROUP BY user_id FORMAT JSONEachRow")) lastClick.set(String(r.user_id), `${r.at}Z`);
+} catch (err) { console.error(`[alerts] click history unavailable: ${err.message} — no one moved to weekly this run`); lastClick.set('*', 'unavailable'); }
+async function sendsSinceClick(userId) {
+  if (lastClick.has('*')) return 0;
+  const at = lastClick.get(userId);
+  return Number((await one(`SELECT count(*)::int AS n FROM alert_sends WHERE user_id=$1 ${at ? 'AND sent_at > $2' : ''}`, at ? [userId, at] : [userId])).n);
+}
+
+/** The user's niches, from their history: stores their workspaces track, they saved, and they viewed most recently. */
 async function nichesOf(userId) {
   const tracked = await query(
     `SELECT DISTINCT t.shop_id FROM trackers t JOIN workspace_members m ON m.workspace_id = t.workspace_id
       WHERE m.user_id = $1 LIMIT 60`, [userId]);
   const wss = await query('SELECT workspace_id FROM workspace_members WHERE user_id=$1', [userId]);
   const saved = (await Promise.all(wss.map(w => favoriteIds(w.workspace_id, userId, 'shop')))).flat();
-  const ids = [...new Set([...tracked.map(r => r.shop_id), ...saved])].slice(0, 100);
+  const viewed = await query(
+    `SELECT entity_id FROM recent_views WHERE user_id = $1 AND entity_type = 'shop'
+      GROUP BY entity_id ORDER BY max(viewed_at) DESC LIMIT 40`, [userId]);
+  const ids = [...new Set([...tracked.map(r => r.shop_id), ...saved, ...viewed.map(r => r.entity_id)])].slice(0, 100);
   if (!ids.length) return [];
   const shops = await withRetry(`niches ${userId}`, () => getShops(ids));
   return D.topNiches(shops.map(s => s.niches));
@@ -194,6 +210,7 @@ async function nudgeFor(userId) {
 const users = await query(
   `SELECT u.id, u.email,
           COALESCE(p.frequency, '${D.DEFAULT_FREQUENCY}') AS frequency,
+          p.frequency IS NOT NULL AS chosen,
           COALESCE(p.trackers, true) AS trackers,
           COALESCE(p.searches, true) AS searches,
           COALESCE(p.market, true) AS market
@@ -222,11 +239,12 @@ let sentToday = WRITE && DAILY_CAP < Infinity
 let sent = 0, empty = 0, deferred = 0, failed = 0, skipped = 0, streak = 0, marketStreak = 0;
 
 for (const u of users) {
+  u.frequency = D.effectiveFrequency(u.frequency, u.chosen, await sendsSinceClick(u.id));
   const period = D.periodFor(u.frequency, DAY, WEEK, MONDAY);
   if (!period) { skipped++; continue; }
   if (WRITE && await one('SELECT 1 FROM alert_sends WHERE user_id=$1 AND period=$2', [u.id, period])) { skipped++; continue; }
 
-  let brands = [], searches = [], seenUpdates = [], market = null, nudge = null;
+  let brands = [], searches = [], seenUpdates = [], market = null, nudge = null, picks = null;
   try {
     if (u.trackers) {
       const window = u.frequency === 'daily' ? '1d' : '7d';
@@ -254,7 +272,9 @@ for (const u of users) {
         }
       }
     }
-    if (u.market && movers.length) market = D.marketPicks(movers, await nichesOf(u.id));
+    const niches = u.market && (movers.length || products.length) ? await nichesOf(u.id) : [];
+    if (u.market && movers.length) market = D.marketPicks(movers, niches);
+    if (u.market) picks = D.productPicks(products, niches);
     nudge = await nudgeFor(u.id);
     marketStreak = 0;
   } catch (err) {
@@ -266,7 +286,7 @@ for (const u of users) {
   }
 
   if (sentToday >= DAILY_CAP) { log(`daily cap ${DAILY_CAP} reached — the rest wait for tomorrow`); break; }
-  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market, products: u.market ? products : null, nudge });
+  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market, products: picks?.items ?? null, productsNiche: picks?.niche ?? null, nudge });
   if (!digest) { empty++; continue; }
 
   const campaign = `alerts:${u.frequency}`;
@@ -286,7 +306,7 @@ for (const u of users) {
     for (const b of brands) log(`   brand ${b.domain}: ${b.lines.join(' · ')}`);
     for (const s of searches) log(`   search "${s.name}" (${s.kind}): ${s.total} new — ${s.items.slice(0, 3).map(i => i.title).join(', ')}`);
     if (nudge) log(`   nudge: ${nudge.suggestions.length ? nudge.suggestions.map(s => s.name).join(', ') : 'no viewed stores — link to Shops'}`);
-    if (digest.body.includes('Winning products today')) log(`   products: ${products.slice(0, D.PRODUCTS_ROWS).map(p => `${p.domain} +${p.newAds}`).join(', ')}`);
+    if (digest.body.includes('Winning products today')) log(`   products${picks.niche ? ` [${picks.niche}]` : ''}: ${picks.items.map(p => `${p.domain} +${p.newAds}`).join(', ')}`);
     if (market) log(`   market${market.niche ? ` [${market.niche}]` : ''}: ${market.items.map(m => `${m.domain} +${m.jump}`).join(', ')}`);
     if (RENDER) {
       fs.mkdirSync(RENDER, { recursive: true });
@@ -309,7 +329,7 @@ for (const u of users) {
     if (WRITE) {
       for (const x of seenUpdates) await query('UPDATE saved_searches SET seen_ids=$2, last_run_at=now() WHERE id=$1', [x.id, x.seen]);
       await query('UPDATE alert_sends SET summary=$3 WHERE user_id=$1 AND period=$2', [u.id, period,
-        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, products: digest.body.includes('Winning products today') ? Math.min(products.length, D.PRODUCTS_ROWS) : 0, nudge: nudge ? nudge.suggestions.length : null, niche: market?.niche ?? null, envelope })]);
+        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, products: digest.body.includes('Winning products today') ? picks.items.length : 0, productsNiche: picks?.niche ?? null, nudge: nudge ? nudge.suggestions.length : null, niche: market?.niche ?? null, envelope })]);
     }
     log(`sent ${period} to ${message.to} (envelope ${envelope}): "${digest.subject}"`);
   } catch (err) {

@@ -57,6 +57,31 @@ export interface WinningToday {
   shopId: string; storeName: string; domain: string;
   /** Distinct new Meta ads started from `from` through `to` (UTC dates). */
   newAds: number; from: string; to: string;
+  niches?: string[];
+}
+
+/** Candidate products pulled once per run; each user gets PRODUCTS_ROWS of them. */
+export const PRODUCTS_POOL = 40;
+
+/** The user's products: their first niche with enough winners, else the overall top. */
+export function productPicks(pool: WinningToday[], userNiches: string[]): { niche: string | null; items: WinningToday[] } {
+  for (const niche of userNiches) {
+    const inNiche = pool.filter(p => p.niches?.includes(niche));
+    if (inNiche.length >= PRODUCTS_MIN_ROWS) return { niche, items: inNiche.slice(0, PRODUCTS_ROWS) };
+  }
+  return { niche: null, items: pool.slice(0, PRODUCTS_ROWS) };
+}
+
+/** Daily emails in a row with no click before a default-daily user drops to weekly. */
+export const QUIET_AFTER = 14;
+
+/**
+ * Frequency for this run: a user who never chose and has ignored QUIET_AFTER
+ * daily emails gets the weekly one instead (one click puts them back on daily).
+ * An explicit choice is always kept.
+ */
+export function effectiveFrequency(freq: AlertFrequency, chosen: boolean, sendsSinceClick: number): AlertFrequency {
+  return !chosen && freq === 'daily' && sendsSinceClick >= QUIET_AFTER ? 'weekly' : freq;
 }
 
 /** A shop the user opened, offered as a first tracker. */
@@ -206,6 +231,8 @@ export function buildDigest(o: {
   market?: { niche: string | null; items: MarketMover[] } | null;
   /** Shown only when the user has no personal news; under PRODUCTS_MIN_ROWS it is left out. */
   products?: WinningToday[] | null;
+  /** The niche the products were picked for (names the section); null = overall top. */
+  productsNiche?: string | null;
   /** Set for a user who tracks nothing: the activation nudge. Never a reason to send on its own. */
   nudge?: { suggestions: Suggestion[] } | null;
 }): Digest | null {
@@ -255,7 +282,7 @@ export function buildDigest(o: {
         ? `<td width="36" style="${row};padding-right:10px;vertical-align:top"><img src="${esc(m.logo)}" width="28" height="28" alt="" style="display:block;border-radius:6px;border:1px solid #e5e7eb"></td>`
         : '';
       parts.push(`<tr>${img}<td style="${row}"${m.logo ? '' : ' colspan="2"'}><a href="${app}/shops/${encodeURIComponent(m.shopId)}?${ref}" style="${link}">${esc(m.name)}</a>`
-        + `<br><span style="${sub}">${esc(m.domain)} · ${fmt(m.before)} → ${fmt(m.after)} live ads</span></td>`
+        + `<br><span style="${sub}">${esc(m.domain)} · ${fmt(m.before)} → ${fmt(m.after)} live ads · </span><a href="${app}/shops/${encodeURIComponent(m.shopId)}?track=1&${ref}" style="${link};font-size:12px">Track store</a></td>`
         + `<td style="${row};padding-left:12px;text-align:right;white-space:nowrap;font-weight:600;color:#047857;vertical-align:top">+${fmt(m.jump)}</td></tr>`);
     }
     parts.push('</table>');
@@ -263,7 +290,7 @@ export function buildDigest(o: {
 
   if (products) {
     const lead = parts.length ? 'margin:24px 0 6px' : 'margin:0 0 6px';
-    parts.push(`<p style="${lead};font-weight:600;color:#111827">Winning products today</p>`);
+    parts.push(`<p style="${lead};font-weight:600;color:#111827">Winning products today${o.productsNiche ? ` · ${esc(o.productsNiche)}` : ''}</p>`);
     parts.push(`<p style="margin:0 0 6px;${sub}">Shopify products with the most new Meta ads started ${esc(dayRange(products[0].from, products[0].to))} (UTC).</p>`);
     parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0">');
     for (const p of products) {
@@ -271,7 +298,7 @@ export function buildDigest(o: {
         ? `<td width="52" style="${row};padding-right:10px;vertical-align:top"><img src="${esc(p.image)}" width="44" height="44" alt="" style="display:block;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover"></td>`
         : '';
       parts.push(`<tr>${img}<td style="${row}"${p.image ? '' : ' colspan="2"'}><a href="${app}/shops/${encodeURIComponent(p.shopId)}?${ref}" style="${link}">${esc(p.title)}</a>`
-        + `<br><span style="${sub}">${esc(p.storeName)} · ${esc(p.domain)}</span></td>`
+        + `<br><span style="${sub}">${esc(p.storeName)} · ${esc(p.domain)} · </span><a href="${app}/shops/${encodeURIComponent(p.shopId)}?track=1&${ref}" style="${link};font-size:12px">Track store</a></td>`
         + `<td style="${row};padding-left:12px;text-align:right;white-space:nowrap;vertical-align:top"><span style="font-weight:600;color:#047857">+${fmt(p.newAds)}</span><br><span style="${sub}">new ads</span></td></tr>`);
     }
     parts.push('</table>');
@@ -298,7 +325,7 @@ export function buildDigest(o: {
     ? bits.join(', ')
     : market
       ? `${market.items[0].name} added ${fmt(market.items[0].jump)} live Meta ads yesterday`
-      : `${products![0].title.slice(0, 70)} got ${fmt(products![0].newAds)} new Meta ads in 2 days`;
+      : `${o.productsNiche ? `${o.productsNiche}: ` : ''}${products![0].title.slice(0, 70)} got ${fmt(products![0].newAds)} new Meta ads in 2 days`;
   return {
     subject: subject[0].toUpperCase() + subject.slice(1),
     heading: personal

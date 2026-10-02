@@ -1,7 +1,7 @@
 // Alerts digest logic (lib/alerts/digest.ts). Run with `npm test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeQuery, newResultIds, mergeSeen, periodFor, trackerLines, buildDigest, marketPicks, topNiches } from '../lib/alerts/digest.ts';
+import { normalizeQuery, newResultIds, mergeSeen, periodFor, trackerLines, buildDigest, marketPicks, topNiches, productPicks, effectiveFrequency, QUIET_AFTER } from '../lib/alerts/digest.ts';
 import { marketingEnvelopes } from '../lib/mail.ts';
 import { unsubscribeToken, verifyUnsubscribe } from '../lib/weekly/unsubscribe.ts';
 
@@ -88,4 +88,20 @@ test('marketing envelope: news subdomain, root alias, then the mailbox; refusals
   assert.deepEqual(marketingEnvelopes('no-reply@adlibraryspy.com', 1_000 + 60_000, refused),
     ['mkt-bounce.no-reply@adlibraryspy.com', 'no-reply@adlibraryspy.com']);
   assert.equal(marketingEnvelopes('no-reply@adlibraryspy.com', 1_000 + 600_000, refused)[0], 'mkt-bounce.no-reply@news.adlibraryspy.com');
+});
+
+test('products follow the user\'s niche history; quiet default-daily users go weekly', () => {
+  const p = (t, niches) => ({ title: t, image: '', shopId: t, storeName: t, domain: `${t}.com`, newAds: 20, from: '2026-10-01', to: '2026-10-02', niches });
+  const pool = [p('a', ['Beauty']), p('b', ['Pets']), p('c', ['Pets']), p('d', ['Pets']), p('e', ['Beauty'])];
+  assert.deepEqual(productPicks(pool, ['Pets']).items.map(x => x.title), ['b', 'c', 'd']);
+  assert.equal(productPicks(pool, ['Pets']).niche, 'Pets');
+  const fallback = productPicks(pool, ['Beauty', 'Toys']);   // 2 Beauty < min rows → overall top
+  assert.equal(fallback.niche, null);
+  assert.equal(fallback.items[0].title, 'a');
+  assert.equal(effectiveFrequency('daily', false, QUIET_AFTER), 'weekly');
+  assert.equal(effectiveFrequency('daily', false, QUIET_AFTER - 1), 'daily');
+  assert.equal(effectiveFrequency('daily', true, 99), 'daily');   // an explicit choice is kept
+  const d = buildDigest({ app: 'https://x', frequency: 'daily', brands: [], searches: [], products: pool.slice(1, 4), productsNiche: 'Pets' });
+  assert.match(d.subject, /^Pets: b got/);
+  assert.match(d.body, /track=1/);
 });

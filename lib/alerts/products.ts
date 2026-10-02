@@ -51,7 +51,7 @@ export async function winningProductsToday(day: string, rows = PRODUCTS_ROWS): P
   const end = Date.parse(`${day}T00:00:00Z`) + 86_400_000;
   const start = end - 2 * 86_400_000;
   const url = new URL(base);
-  for (const [k, v] of Object.entries({ from: start / 1000, to: end / 1000, min: PRODUCTS_MIN_NEW_ADS, limit: 40 })) {
+  for (const [k, v] of Object.entries({ from: start / 1000, to: end / 1000, min: PRODUCTS_MIN_NEW_ADS, limit: Math.max(40, rows * 3) })) {
     url.searchParams.set(`param_${k}`, String(v));
   }
   const res = await fetch(url, {
@@ -84,7 +84,7 @@ export async function winningProductsToday(day: string, rows = PRODUCTS_ROWS): P
     out.push({
       title: p.title, image: emailableImage(p.image),
       shopId: shop.id, storeName: shop.name || shop.domain, domain: shop.domain,
-      newAds: Number(t.n), from, to: day,
+      newAds: Number(t.n), from, to: day, niches: shop.niches ?? [],
     });
   }
   return out;

@@ -107,6 +107,24 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
     return () => clearTimeout(id);
   }, [styleValues, params, prefetch]);
 
+  // Niche chips likewise: a pick from Asia waited the full US round trip.
+  // Render the biggest niches' first page in the background once idle.
+  const nicheIds = niches.slice(0, 12).map(n => n.id).join(',');
+  useEffect(() => {
+    if (!nicheIds) return;
+    const current = params.get('niche') ?? '';
+    const run = () => {
+      for (const id of nicheIds.split(',')) if (id !== current) prefetch({ niche: id });
+      if (current) prefetch({ niche: '' });
+    };
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 2000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(run, 500);
+    return () => clearTimeout(id);
+  }, [nicheIds, params, prefetch]);
+
   const [term, setTerm] = useState(get('q'));
   useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
   // Search as you type, like Shops: push once the term settles.

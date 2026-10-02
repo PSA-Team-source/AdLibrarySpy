@@ -92,9 +92,13 @@ export async function categories(): Promise<Record<string, string>> {
  */
 export async function creativeNiches(): Promise<{ id: string; name: string; creativeCount: number }[]> {
   try {
+    // Legacy ids 1-9 repeat names of the 4xxx taxonomy ("Health" twice), and
+    // "None" is not a niche: one chip per name, the richest row.
+    const seen = new Set<string>();
     return (await loadCategories())
-      .filter(c => c.level === 0 && c.creative_count > 0)
+      .filter(c => c.level === 0 && c.creative_count > 0 && c.name !== 'None')
       .sort((a, b) => b.creative_count - a.creative_count)
+      .filter(c => !seen.has(c.name) && !!seen.add(c.name))
       .map(c => ({ id: String(c.id), name: c.name, creativeCount: c.creative_count }));
   } catch {
     return [];

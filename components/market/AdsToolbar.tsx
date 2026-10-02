@@ -80,7 +80,7 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   labelFacets?: LabelFacets | null;
   niches: { id: string; name: string }[];
 }) {
-  const { set, params, pending } = useSetParam();
+  const { set, prefetch, params, pending } = useSetParam();
   const get = (k: string) => params.get(k) ?? '';
 
   const [term, setTerm] = useState(get('q'));
@@ -128,6 +128,7 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
           <div className="flex min-w-max gap-1.5">
             {[{ id: '', name: 'All Niches' }, ...niches].map(n => (
               <button key={n.id || 'all'} type="button" onClick={() => set({ niche: n.id })}
+                onPointerEnter={() => prefetch({ niche: n.id })} onFocus={() => prefetch({ niche: n.id })}
                 aria-pressed={niche === n.id} className={cn(TB_PILL, niche === n.id ? CHIP_ON : CHIP_OFF)}>
                 {n.name}
               </button>
@@ -158,7 +159,7 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
           <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} aria-hidden />
         </button>
         <FilterChip icon={ArrowDownUp} label="Sort" value={get('sort')} anyLabel={get('q') ? 'Relevance' : 'Top spending'}
-          onChange={v => set({ sort: v })} options={sortOptions} />
+          onChange={v => set({ sort: v })} onPrefetch={v => prefetch({ sort: v })} options={sortOptions} />
         <ExportCsv kind="ads" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
       </div>
 
@@ -212,10 +213,10 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
           </form>
         </details>
 
-        <FilterChip icon={Film} label="Media Type" value={get('media')} onChange={v => set({ media: v })}
+        <FilterChip icon={Film} label="Media Type" value={get('media')} onChange={v => set({ media: v })} onPrefetch={v => prefetch({ media: v })}
           options={[{ value: 'video', label: 'Video' }, { value: 'vsl', label: 'VSL (2+ min video)' }, { value: 'image', label: 'Image' }]} />
-        <FilterChip icon={Shapes} label="Format" value={get('format')} onChange={v => set({ format: v })} options={FORMATS} />
-        <FilterChip icon={LayoutTemplate} label="Placement" value={get('placement')} onChange={v => set({ placement: v })} options={PLACEMENTS} />
+        <FilterChip icon={Shapes} label="Format" value={get('format')} onChange={v => set({ format: v })} onPrefetch={v => prefetch({ format: v })} options={FORMATS} />
+        <FilterChip icon={LayoutTemplate} label="Placement" value={get('placement')} onChange={v => set({ placement: v })} onPrefetch={v => prefetch({ placement: v })} options={PLACEMENTS} />
         <FilterChip icon={Globe} label="Country" value={euUk ? '' : get('country')}
           onChange={v => set({ country: v, euUk: '' })} options={countryOptions} />
         <FilterChip icon={Landmark} label="EU/UK" value={euUk ? get('country') || 'all' : ''} searchable
@@ -227,12 +228,12 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
           return (
             <FilterChip key={field} icon={LABEL_ICONS[field]} label={any} value={get(field)}
               title="AI label: a model judgment of the ad text, not a measurement"
-              onChange={v => set({ [field]: v })} options={opts.map(o => ({ value: o.value, label: o.text }))} />
+              onChange={v => set({ [field]: v })} onPrefetch={v => prefetch({ [field]: v })} options={opts.map(o => ({ value: o.value, label: o.text }))} />
           );
         })}
         {labelFacets && (labelFacets.facets.urgency[0] || get('urgency') === '1') && (
           <FilterChip icon={Timer} label="Urgency" value={get('urgency')} title={labelFacets.facets.urgency[0]?.description}
-            onChange={v => set({ urgency: v })} options={[{ value: '1', label: labelFacets.facets.urgency[0]
+            onChange={v => set({ urgency: v })} onPrefetch={v => prefetch({ urgency: v })} options={[{ value: '1', label: labelFacets.facets.urgency[0]
               ? `${labelFacets.facets.urgency[0].label} · ${labelFacets.facets.urgency[0].count.toLocaleString()}`
               : 'Urgency' }]} />
         )}

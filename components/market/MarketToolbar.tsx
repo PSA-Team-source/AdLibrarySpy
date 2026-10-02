@@ -1,5 +1,6 @@
 'use client';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import type { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types';
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal,
@@ -47,18 +48,29 @@ export function useGo() {
 
 function useSetParam() {
   const go = useGo();
+  const router = useRouter();
+  const shallow = useContext(ShallowUrl);
   const params = useSearchParams();
   const pathname = usePathname();
   const [pending, start] = useTransition();
-  const set = useCallback((entries: Record<string, string>) => {
+  const hrefFor = useCallback((entries: Record<string, string>) => {
     const p = new URLSearchParams(Array.from(params.entries()));
     for (const [k, v] of Object.entries(entries)) {
       if (v) p.set(k, v); else p.delete(k);
     }
     p.delete('page');
-    start(() => go(`${pathname}?${p.toString()}`));
-  }, [params, pathname, go]);
-  return { set, params, pending };
+    return `${pathname}?${p.toString()}`;
+  }, [params, pathname]);
+  const set = useCallback((entries: Record<string, string>) => {
+    start(() => go(hrefFor(entries)));
+  }, [go, hrefFor]);
+  // Renders a filter's result in the background (full RSC, kept per
+  // next.config staleTimes) so picking it swaps instantly instead of waiting a
+  // round trip to the US origin (~360ms from Asia before any work).
+  const prefetch = useCallback((entries: Record<string, string>) => {
+    if (!shallow) router.prefetch(hrefFor(entries), { kind: 'full' as PrefetchKind });
+  }, [router, shallow, hrefFor]);
+  return { set, prefetch, params, pending };
 }
 
 // Market filter recipes, in Apple's language: borderless capsules on the
@@ -105,13 +117,15 @@ function chosen(label: string, option: string): string {
  * A filter chip: icon + label + chevron; picking an option sets one URL param.
  * `searchable` adds a type-to-filter box for long option lists (technologies).
  */
-export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable, anyLabel = 'Any', showAny = anyLabel !== 'Any', title }: {
+export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable, anyLabel = 'Any', showAny = anyLabel !== 'Any', title, onPrefetch }: {
   icon: LucideIcon; label: string; value: string; options: Option[];
   onChange: (v: string) => void; badge?: string; searchable?: boolean;
   /** Text of the "no choice" item (e.g. a sort's default order). */
   anyLabel?: string; title?: string;
   /** Print "Label: <anyLabel>" on the chip when nothing is picked (default: when anyLabel is custom). */
   showAny?: boolean;
+  /** Called with every option's value when the menu opens (prefetch their results). */
+  onPrefetch?: (value: string) => void;
 }) {
   const active = options.find(o => o.value === value);
   const [needle, setNeedle] = useState('');
@@ -120,7 +134,10 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
     ? options.filter(o => o.label.toLowerCase().includes(needle.trim().toLowerCase()))
     : options;
   return (
-    <DropdownMenu onOpenChange={o => { if (!o) setNeedle(''); }}>
+    <DropdownMenu onOpenChange={o => {
+      if (!o) setNeedle('');
+      else if (onPrefetch) for (const opt of options.slice(0, 16)) if (opt.value !== value) onPrefetch(opt.value);
+    }}>
       <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label} title={title}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
         <span>{active ? chosen(label, active.label) : showAny ? `${label}: ${anyLabel}` : label}</span>

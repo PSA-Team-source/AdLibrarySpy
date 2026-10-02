@@ -11,6 +11,8 @@ import { PATH_HEADER } from '@/lib/auth/safe-next';
 import { REPO_URL, SKILL_DISMISS_COOKIE } from '@/lib/public/site';
 import { sponsorUrl } from '@/lib/public/sponsor';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { FilterMemory } from '@/components/market/FilterMemory';
 
 // Behind a login: never indexed (the public directory lives in the (public) group).
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -43,6 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       donateUrl={donateUrl}
     >
       <MetaPixel registeredUserId={fresh ? ctx.user.id : null} email={fresh ? ctx.user.email : null} />
+      <Suspense><FilterMemory /></Suspense>
       {children}
     </AppShell>
   );

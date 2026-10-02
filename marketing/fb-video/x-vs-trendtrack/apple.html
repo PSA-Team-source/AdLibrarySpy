@@ -1,0 +1,96 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#05060f;color:#f5f5f7;font-family:-apple-system,"SF Pro Display",Inter,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 120%,#3b1f8f 0%,#14155a 38%,#06071a 70%,#04040c 100%)}
+#bg2{position:absolute;inset:0;background:radial-gradient(60% 50% at 15% 85%,#6a2bd055,transparent 70%),radial-gradient(50% 45% at 90% 10%,#1f4fd033,transparent 70%)}
+.stage{position:absolute;inset:0;perspective:2400px;perspective-origin:50% 45%}
+.scr{position:absolute;border-radius:22px;overflow:hidden;box-shadow:0 60px 140px #000c,0 0 0 1px #ffffff22;background:#fff;transform-origin:50% 50%;opacity:0;will-change:transform}
+.scr img{display:block;width:100%}
+.h{position:absolute;font-weight:600;letter-spacing:-.035em;line-height:1.04;opacity:0;white-space:nowrap}
+.h small{display:block;font-size:30px;font-weight:400;letter-spacing:-.01em;color:#a1a1b5;margin-top:18px}
+.c{left:0;right:0;text-align:center}
+.grad{background:linear-gradient(180deg,#fff 20%,#b8a8ff);-webkit-background-clip:text;color:transparent}
+.dim{color:#6e6e80}
+.num{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-.05em}
+.strike{position:relative;display:inline-block}
+.strike i{position:absolute;left:-2%;right:-2%;top:54%;height:.07em;background:#ff453a;border-radius:9px;transform-origin:left;transform:scaleX(0)}
+.pill{position:absolute;opacity:0;background:#ffffff14;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid #ffffff2a;color:#f5f5f7;font-size:30px;font-weight:500;padding:16px 30px;border-radius:999px;letter-spacing:-.01em}
+.mark{display:inline-grid;place-items:center;background:#a7f45a;color:#071004;border-radius:28%}
+.mark svg{width:62%;height:62%}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#src{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:15px;color:#ffffff55;letter-spacing:.01em}
+</style></head><body>
+<div id="bg"></div><div id="bg2"></div>
+<div class="stage" id="stage"></div>
+
+<div class="h c" id="h1" style="top:120px;font-size:84px">Every Shopify store.<br><span class="dim">Every ad they run.</span></div>
+
+<div class="h c" id="h2" style="top:330px;font-size:64px"><span class="dim">TrendTrack sees</span><br><span class="strike num dim" style="font-size:150px" id="tt">2,141,762<i id="ttx"></i></span><br><span class="dim" style="font-size:44px">stores.</span></div>
+<div class="h c" id="h3" style="top:250px;font-size:62px">We see<br><span class="num grad" style="font-size:320px;line-height:1" id="big">14.7M</span><br><span style="font-size:44px;color:#a1a1b5">6.9× more stores. Free.</span></div>
+
+<div class="h" id="h4" style="left:110px;top:400px;font-size:88px">Same store.<br><span class="grad">Resilia.</span><small>9.9M visits a month. Supplements.</small></div>
+
+<div class="h c" id="h5" style="top:110px;font-size:60px">How many of its ads can you see?</div>
+<div class="h" id="l5" style="left:200px;top:330px;font-size:40px;text-align:center;width:640px"><span class="dim">TrendTrack</span><br><span class="num dim" style="font-size:200px" id="nl">2,477</span></div>
+<div class="h" id="r5" style="right:200px;top:330px;font-size:40px;text-align:center;width:720px">AdLibrarySpy<br><span class="num grad" style="font-size:240px" id="nr">8,787</span></div>
+<div class="pill" id="p5" style="left:1360px;top:620px">3.5× more ads. Live.</div>
+
+<div class="h c" id="h6" style="top:300px;font-size:72px"><span class="strike dim num" style="font-size:180px">$159<i id="px"></i></span><span class="dim" style="font-size:56px"> a month.</span><br><span class="grad">Or $0. Forever.</span></div>
+
+<div class="h c" id="h7" style="z-index:3;top:330px;font-size:120px"><div style="margin-bottom:34px"><span class="mark" id="mk" style="width:120px;height:120px"></span></div>AdLibrarySpy.<small style="font-size:40px;color:#c9c9d6">The whole market. Free.</small><small style="font-size:28px">adlibraryspy.com</small></div>
+
+<div id="vig" style="position:absolute;inset:0;background:radial-gradient(45% 40% at 50% 52%,#05060fdd,transparent);opacity:0"></div>
+<div id="flash"></div>
+<div id="src">TrendTrack figures from their app, 23 Sep 2026 · AdLibrarySpy figures live on adlibraryspy.com, 2 Oct 2026</div>
+<script>
+document.querySelectorAll('.mark').forEach(m=>m.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>');
+const stage=document.getElementById('stage');
+const mk=(src,w)=>{const d=document.createElement('div');d.className='scr';d.style.width=w+'px';d.innerHTML=`<img src="${src}">`;stage.appendChild(d);return d};
+// hero screens
+const S={home:mk('scr/home-dark.jpg',1240),stores:mk('scr/stores-light.jpg',1240),store:mk('scr/store-light.jpg',1300),health:mk('scr/health-light.jpg',1100),trend:mk('scr/trending-light.jpg',1100)};
+// end wall
+const WALL=['stores-light','store-light','health-light','trending-light','vs-light','home-dark','store-light','stores-light','health-light','home-dark','trending-light','vs-light','stores-light','store-light','health-light','trending-light','home-dark','vs-light'].map(k=>mk('scr/'+k+'.jpg',560));
+// ad cards on the Resilia face-off
+const ADS=['img/ad_0.png','img/ad_4.png','img/ad_9.png','img/lib_2.png','img/lib_5.png'].map(s=>{const d=mk(s,190);d.style.borderRadius='16px';d.style.background='transparent';return d});
+const $=id=>document.getElementById(id),cl=x=>Math.max(0,Math.min(1,x));
+const eo=x=>1-Math.pow(1-cl(x),4), io=x=>{x=cl(x);return x<.5?8*x*x*x*x:1-Math.pow(-2*x+2,4)/2};
+const seg=(t,a,b)=>eo((t-a)/(b-a)), win=(t,a,b,f=.5)=>seg(t,a,a+f)*(1-io((t-(b-f))/f));
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+const place=(el,o,x,y,z,ry,rx,s=1)=>{el.style.opacity=o;el.style.transform=`translate(-50%,-50%) translate3d(${x}px,${y}px,${z}px) rotateY(${ry}deg) rotateX(${rx}deg) scale(${s})`;el.style.left='50%';el.style.top='50%'};
+const head=(el,o,dy=0,s=1)=>{el.style.opacity=o;el.style.transform=`translateY(${(1-o)*30+dy}px) scale(${s})`;el.style.filter=`blur(${(1-o)*12}px)`};
+window.renderAt=function(t){
+  $('bg2').style.transform=`translate(${Math.sin(t*.25)*60}px,${Math.cos(t*.2)*40}px)`;
+  Object.values(S).concat(WALL,ADS).forEach(e=>e.style.opacity=0);
+  // 1 · 0–3.4 hero: dark home tilting in under the headline
+  const A=win(t,0,3.4,.6); head($('h1'),seg(t,.15,1)*(1-io((t-2.9)/.5)));
+  place(S.home,A,0,260-60*seg(t,0,3.4),-200+180*seg(t,0,3.4),-14+10*seg(t,0,3.4),18-8*seg(t,0,3.4),.95);
+  // 2 · 3.2–6.0 TrendTrack number, struck
+  const B=win(t,3.2,6.0,.4); head($('h2'),B);
+  $('tt').firstChild.nodeValue=fmt(2141762*io((t-3.3)/1.1));
+  $('ttx').style.transform=`scaleX(${seg(t,4.8,5.3)})`;
+  // 3 · 6.0–9.4 14.7M (flash + store directory behind)
+  const C=win(t,6.0,9.4,.35); head($('h3'),C,0,1.06-.06*seg(t,6,7));
+  $('big').textContent=(14.7*io((t-6.05)/1.5)).toFixed(1)+'M';
+  $('flash').style.opacity=.35*Math.max(0,1-Math.abs(t-6.05)/.14);
+  S.stores.style.filter='brightness(.5)';place(S.stores,C*.14,0,90,-900+200*seg(t,6,9.4),0,0,1.2);
+  // 4 · 9.2–12.4 Resilia store page swings in
+  const D=win(t,9.2,12.4,.55); head($('h4'),seg(t,9.5,10.2)*(1-io((t-11.9)/.5)));
+  place(S.store,D,330-40*seg(t,9.2,12.4),40,-140+90*seg(t,9.2,12.4),-24+8*seg(t,9.2,12.4),4,.92);
+  // 5 · 12.2–16.0 face-off
+  const E=win(t,12.2,16.0,.45); head($('h5'),E); head($('l5'),seg(t,12.5,13)*(1-io((t-15.5)/.5))); head($('r5'),seg(t,12.8,13.3)*(1-io((t-15.5)/.5)));
+  $('nl').textContent=fmt(2477*io((t-12.5)/.9)); $('nr').textContent=fmt(8787*io((t-12.9)/1.4));
+  const pp=seg(t,14.3,14.8)*(1-io((t-15.5)/.5)); $('p5').style.opacity=pp; $('p5').style.transform=`translateX(-50%) scale(${.9+.1*pp})`;
+  ADS.forEach((a,i)=>{const p=seg(t,13.4+i*.1,14.2+i*.1)*(1-io((t-15.5)/.5));place(a,p*.9,400+(i-2)*170,470+(1-p)*200+Math.abs(i-2)*24,-200,-(i-2)*5,0,1)});
+  // 6 · 15.8–18.4 price
+  const F=win(t,15.8,18.4,.4); head($('h6'),F); $('px').style.transform=`scaleX(${seg(t,16.4,16.85)})`;
+  // 7 · 18.2–22 tilted wall + lockup
+  const G=seg(t,18.2,19.2);
+  WALL.forEach((w,i)=>{const c=i%6,r=Math.floor(i/6);place(w,G*.55,(c-2.5)*600+(t-18)*-40,(r-1)*380+(t-18)*-30,-600,0,0,1);w.style.transform+=' ';});
+  stage.style.transform=`rotateX(${G?38:0}deg) rotateZ(${G?-14:0}deg) scale(${G?1.25:1})`;
+  if(G){WALL.forEach(w=>w.style.filter='brightness(.35)')}
+  head($('h7'),seg(t,18.6,19.5),0,1.04-.04*seg(t,18.6,20));
+  $('src').style.opacity=1-G; $('vig').style.opacity=G;
+};
+renderAt(0);
+</script></body></html>

@@ -1,11 +1,11 @@
 // X ad: AdLibrarySpy vs TrendTrack (16:9, 20s). Frames from vs.html renderAt(t), music synthesized by ffmpeg.
 import { chromium } from '/Users/sangnguyen/fangbot/_FANGBOT/_OPENCLAW-MAIN/node_modules/playwright/index.mjs';
 import { spawn } from 'node:child_process';
-const D = new URL('.', import.meta.url).pathname, FPS = 30, DUR = 20, FF = process.env.FFMPEG || 'ffmpeg';
+const D = new URL('.', import.meta.url).pathname, APPLE = process.env.CUT !== 'v1', PAGE = APPLE ? 'apple.html' : 'vs.html', OUT = APPLE ? 'adlibraryspy-vs-trendtrack-apple.mp4' : 'adlibraryspy-vs-trendtrack.mp4', FPS = APPLE ? 60 : 30, DUR = APPLE ? 22 : 20, FF = process.env.FFMPEG || 'ffmpeg';
 const stills = process.argv.slice(2).map(Number);
 const b = await chromium.launch({ channel: 'chromium' });
 const p = await b.newPage({ viewport: { width: 1920, height: 1080 } });
-await p.goto('file://' + D + 'vs.html'); await p.waitForLoadState('load');
+await p.goto('file://' + D + PAGE); await p.waitForLoadState('load');
 const run = (args) => new Promise((ok, no) => { const c = spawn(FF, args, { stdio: ['pipe', 'inherit', 'inherit'] }); c.on('close', x => x ? no(new Error('ffmpeg ' + x)) : ok()); return c; });
 if (stills.length) {
   for (const t of stills) { await p.evaluate(t => renderAt(t), t); await p.screenshot({ path: `${D}still_${t}.png` }); }
@@ -20,8 +20,19 @@ if (stills.length) {
     `0.05*sin(2*PI*440*t)*sin(2*PI*0.25*t)^2*lt(t,2.6)`,
     rise(0.4, 2.6), rise(8.0, 9.6), hit(2.6), hit(9.6), hit(12.2), hit(14.9), hit(16.4),
   ].join('+');
-  await run(['-y', '-f', 'lavfi', '-i', `aevalsrc='${expr}':s=48000:d=${DUR}`, '-af', `afade=t=out:st=${DUR - 1.5}:d=1.5,alimiter=limit=0.9,loudnorm=I=-14:TP=-1`, '-ac', '2', '-ar', '48000', D + 'music.wav']);
-  const ff = spawn(FF, ['-y', '-f', 'image2pipe', '-framerate', FPS, '-i', '-', '-i', D + 'music.wav', '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '18', '-preset', 'slow', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', D + 'adlibraryspy-vs-trendtrack.mp4'], { stdio: ['pipe', 'inherit', 'inherit'] });
+  // Apple cut: warm Am-F-C-G pad, soft 92 BPM pulse, airy shimmer, sub swells on each reveal.
+  const pad = (f) => `sin(2*PI*${f}*t)+0.5*sin(2*PI*${f}*2.003*t)`;
+  const chord = (i, a, b, c) => `between(mod(t,10.4),${i*2.6},${i*2.6+2.6})*(${pad(a)}+${pad(b)}+${pad(c)})`;
+  const swell = (a) => `0.7*exp(-3*(t-${a}))*sin(2*PI*41*(t-${a}))*gte(t,${a})`;
+  const appleExpr = [
+    `0.045*(${chord(0,220,261.6,329.6)}+${chord(1,174.6,220,261.6)}+${chord(2,196,261.6,329.6)}+${chord(3,196,246.9,293.7)})*(0.6+0.4*sin(2*PI*0.2*t))`,
+    `0.35*exp(-10*mod(t,0.652))*sin(2*PI*52*mod(t,0.652))*gte(t,6.05)*lt(t,20.5)`,
+    `0.012*(random(0)*2-1)*exp(-30*mod(t+0.326,0.652))*gte(t,6.05)*lt(t,20.5)`,
+    `0.03*sin(2*PI*1318.5*t)*sin(2*PI*0.5*t)^8`,
+    ...[6.05, 12.9, 14.3, 16.85, 18.6].map(swell),
+  ].join('+');
+  await run(['-y', '-f', 'lavfi', '-i', `aevalsrc='${APPLE ? appleExpr : expr}':s=48000:d=${DUR}`, '-af', `afade=t=out:st=${DUR - 1.5}:d=1.5,alimiter=limit=0.9,loudnorm=I=-14:TP=-1`, '-ac', '2', '-ar', '48000', D + 'music.wav']);
+  const ff = spawn(FF, ['-y', '-f', 'image2pipe', '-framerate', FPS, '-i', '-', '-i', D + 'music.wav', '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', APPLE ? '17' : '18', '-preset', 'slow', '-c:a', 'aac', '-b:a', '160k', '-shortest', '-movflags', '+faststart', D + OUT], { stdio: ['pipe', 'inherit', 'inherit'] });
   for (let f = 0; f < DUR * FPS; f++) {
     await p.evaluate(t => renderAt(t), f / FPS);
     const buf = await p.screenshot({ type: 'jpeg', quality: 95 });

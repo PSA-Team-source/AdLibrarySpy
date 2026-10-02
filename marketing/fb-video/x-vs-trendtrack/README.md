@@ -8,3 +8,10 @@ Sources: TrendTrack Shops count + Resilia "Meta Ads (2477)" tab from their app, 
 /store/resilia.shop, checked 2026-10-02. Ad crops = real Resilia ads + /ads wall from `v2/.work/cap`.
 
 Re-render: `FFMPEG=<ffmpeg-static> node render.mjs` (or `node render.mjs 3 11.5` for stills). Music is synthesized.
+
+## Apple cut (default) — `adlibraryspy-vs-trendtrack-apple.mp4`, 22s, 1080p60
+Matches the PlatformDTC "new look" X video: navy→violet field, live adlibraryspy.com screens (captured by
+`cap.mjs` into `scr/`) floating in 3D, one short SF line per beat, tilted screen wall + lockup.
+Beats: "Every Shopify store." → TrendTrack 2,141,762 struck → "We see 14.7M" → Resilia store page →
+2,477 vs 8,787 → "$159 a month. Or $0. Forever." → "AdLibrarySpy. The whole market. Free."
+Render: `FFMPEG=<ffmpeg-static> node render.mjs` (Apple cut) · `CUT=v1 node render.mjs` (first cut).

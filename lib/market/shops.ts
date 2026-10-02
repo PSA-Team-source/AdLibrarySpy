@@ -10,6 +10,7 @@ import { cruxRanks, cruxRank } from '@/lib/traffic/crux';
 import { safeGet } from '@/lib/safe-fetch';
 import { mapFacts, mapDetail, previousMonth } from '@/lib/traffic/similarweb';
 import { measured, rankSimilar } from './similar-rank';
+import { range, type GrowthRule } from './shop-query';
 
 const CCY: Record<string, string> = {
   US: 'USD', GB: 'GBP', CA: 'CAD', AU: 'AUD', DE: 'EUR', FR: 'EUR', ES: 'EUR',
@@ -369,6 +370,19 @@ export interface ShopFilter {
   trafficMin?: number; trafficMax?: number;
   growthMin?: number; growthMax?: number;
   visitorCountry?: string; createdAfter?: string;
+  /** Shop Origin include/exclude (several), Visitor Country (several), creation date upper bound. */
+  creationCountries?: string[]; excludeCreationCountries?: string[]; visitorCountries?: string[];
+  createdBefore?: string;
+  /** Traffic Growth rule builder, percent (10 = 10%), each rule joined by its operator. */
+  growthRules?: GrowthRule[];
+  /** Ad Library ad count. */
+  adsMin?: number; adsMax?: number;
+  /** Niche names from the facets (top level / sub-niche). */
+  niches?: string[]; nicheSubs?: string[];
+  excludePixels?: string[]; excludeApps?: string[];
+  shopifyPlus?: 'plus' | 'non-plus';
+  trustpilotScoreMin?: number; trustpilotScoreMax?: number;
+  trustpilotReviewsMin?: number; trustpilotReviewsMax?: number;
   /** Workspace lists: drop these store_ids (hidden / not viewed) or keep only these (tracked / viewed). */
   excludeStoreIds?: string[]; storeIds?: string[];
   /** Detected storefront technology names (TechFacets): a shop matches a list
@@ -418,6 +432,11 @@ function needsRangeQuery(f: ShopFilter): boolean {
       || !!f.visitorCountry || !!f.createdAfter
       || !!f.excludeStoreIds?.length || !!f.storeIds?.length
       || !!f.pixels?.length || !!f.tech?.length
+      || !!f.creationCountries?.length || !!f.excludeCreationCountries?.length || !!f.visitorCountries?.length
+      || !!f.createdBefore || !!f.growthRules?.length || f.adsMin != null || f.adsMax != null
+      || !!f.niches?.length || !!f.nicheSubs?.length || !!f.excludePixels?.length || !!f.excludeApps?.length
+      || !!f.shopifyPlus || f.trustpilotScoreMin != null || f.trustpilotScoreMax != null
+      || f.trustpilotReviewsMin != null || f.trustpilotReviewsMax != null
       || PROFILE_KEYS.some(k => !!f.profile?.[k]?.length);
 }
 
@@ -444,30 +463,26 @@ function rangeBody(f: ShopFilter): Record<string, unknown> {
   if (f.tech?.length) body.tech = f.tech;
   for (const k of PROFILE_KEYS) if (f.profile?.[k]?.length) body[k] = f.profile[k];
 
-  if (f.productsMin != null || f.productsMax != null) {
-    body.totalProducts = {
-      ...(f.productsMin != null ? { min: f.productsMin } : {}),
-      ...(f.productsMax != null ? { max: f.productsMax } : {}),
-    };
-  }
-  if (f.avgPriceMin != null || f.avgPriceMax != null) {
-    body.avgPrice = {
-      ...(f.avgPriceMin != null ? { min: Math.round(f.avgPriceMin * 100) } : {}),
-      ...(f.avgPriceMax != null ? { max: Math.round(f.avgPriceMax * 100) } : {}),
-    };
-  }
-  if (f.trafficMin != null || f.trafficMax != null) {
-    body.similarwebVisits = {
-      ...(f.trafficMin != null ? { min: f.trafficMin } : {}),
-      ...(f.trafficMax != null ? { max: f.trafficMax } : {}),
-    };
-  }
-  if (f.growthMin != null || f.growthMax != null) {
-    body.similarwebGrowth = {
-      ...(f.growthMin != null ? { min: f.growthMin } : {}),
-      ...(f.growthMax != null ? { max: f.growthMax } : {}),
-    };
-  }
+  if (f.createdBefore) body.createdBefore = f.createdBefore;
+  if (f.creationCountries?.length) body.creationCountries = f.creationCountries;
+  if (f.excludeCreationCountries?.length) body.excludeCreationCountries = f.excludeCreationCountries;
+  if (f.visitorCountries?.length) body.visitorCountries = f.visitorCountries;
+  if (f.growthRules?.length) body.growthRules = f.growthRules;
+  if (f.niches?.length) body.niches = f.niches;
+  if (f.nicheSubs?.length) body.nicheSubs = f.nicheSubs;
+  if (f.excludePixels?.length) body.excludePixels = f.excludePixels;
+  if (f.excludeApps?.length) body.excludeApp = f.excludeApps;
+  if (f.shopifyPlus) body.shopifyPlus = f.shopifyPlus;
+  const ranges: [string, ReturnType<typeof range>][] = [
+    ['totalProducts', range(f.productsMin, f.productsMax)],
+    ['avgPrice', range(f.avgPriceMin, f.avgPriceMax, 100)],       // dollars → cents
+    ['similarwebVisits', range(f.trafficMin, f.trafficMax)],
+    ['similarwebGrowth', range(f.growthMin, f.growthMax)],
+    ['libraryNumAds', range(f.adsMin, f.adsMax)],
+    ['trustpilotScore', range(f.trustpilotScoreMin, f.trustpilotScoreMax)],
+    ['trustpilotReviews', range(f.trustpilotReviewsMin, f.trustpilotReviewsMax)],
+  ];
+  for (const [k, v] of ranges) if (v) body[k] = v;
   return body;
 }
 
@@ -480,7 +495,10 @@ export interface TechFacets {
   monthYear: string; pixels: TechFacet[]; technologies: TechFacet[];
   /** Options per profile filter; null until the profile enricher covers the month (same gate as technology). */
   profile: Record<ProfileKey, TechFacet[]> | null;
+  /** Niche → sub-niche shop counts; [] until the backend serves them (the chip is then absent). */
+  niches: NicheFacet[];
 }
+export interface NicheFacet extends TechFacet { subs: TechFacet[] }
 
 /**
  * Share of the served month's shops the technology enricher must have processed
@@ -509,7 +527,10 @@ export async function techFacets(): Promise<TechFacets | null> {
     const profile = total > 0 && Number(d.profileSynced) / total >= TECH_MIN_COVERAGE
       ? Object.fromEntries(PROFILE_KEYS.map(k => [k, list(raw[k])])) as Record<ProfileKey, TechFacet[]>
       : null;
-    return { monthYear: String(d.monthYear ?? ''), pixels: list(d.pixels), technologies: list(d.technologies), profile };
+    const niches = (Array.isArray(d.niches) ? d.niches : [])
+      .map(n => ({ ...list([n])[0], subs: list((n as { subs?: unknown })?.subs) }))
+      .filter((n): n is NicheFacet => !!n.name);
+    return { monthYear: String(d.monthYear ?? ''), pixels: list(d.pixels), technologies: list(d.technologies), profile, niches };
   } catch {
     return null;
   }

@@ -1,6 +1,6 @@
 // Re-captures the homepage media in public/landing from the LIVE app, so the
 // homepage always shows the product as it is (never a mock-up):
-//   stills  — shops, dossier, ads, brandtracker, weekly (2000px WebP)
+//   stills  — shops, dossier, ads, brandtracker, trends, landing-pages, weekly (2000px WebP)
 //   (the hero video is rendered by scripts/fb-video-v2.mjs --set=home)
 //
 // Signs in as the dedicated screenshots account (SHOTS_EMAIL, default
@@ -93,6 +93,8 @@ try {
       ['dossier', dossier, p => p.locator('h1').first().waitFor({ timeout: 30_000 })],
       ['ads', '/ads', p => p.locator('a[href^="/ads/"] img').first().waitFor({ timeout: 30_000 })],
       ['brandtracker', '/brandtracker', p => p.locator('tbody tr').first().waitFor({ timeout: 30_000 })],
+      ['trends', '/trends', p => p.locator('h1').first().waitFor({ timeout: 30_000 })],
+      ['landing-pages', '/landing-pages', p => p.locator('h1').first().waitFor({ timeout: 30_000 })],
       ['weekly', '/weekly', p => p.locator('h1').first().waitFor({ timeout: 30_000 })],
     ];
     // A fresh tab per still: five 2x pages in one tab ran the renderer out of memory.

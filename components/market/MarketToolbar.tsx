@@ -2,10 +2,9 @@
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, ChevronDown, X, Users, TrendingUp, Package, Store, Globe, SlidersHorizontal,
-  LayoutGrid, CalendarDays, Eye, EyeOff, Crosshair, Radar, Blocks, Languages, Coins, Palette, AtSign, Puzzle, type LucideIcon,
+  Search, ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal,
+  LayoutGrid, Eye, EyeOff, Crosshair, ShoppingBag, type LucideIcon,
 } from 'lucide-react';
-import { flag } from '@/lib/format';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -15,6 +14,7 @@ import type { CategoryNode, ProfileKey, TechFacets } from '@/lib/market/shops';
 import { MARKET_PLATFORM_FILTERS } from '@/lib/market-platforms';
 import { PlatformIcon } from './PlatformIcon';
 import { ExportCsv } from './ExportCsv';
+import { ShopFilterChips, SHOP_FILTER_KEYS } from './ShopFilterChips';
 
 /** Debounce a value: returns the value only after `delay` ms of inactivity. */
 function useDebounce<T>(value: T, delay: number): T {
@@ -81,30 +81,10 @@ export const CHIP_ON = 'bg-foreground text-background';
 const compact = (n: number) =>
   n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${Math.round(n / 1_000)}K` : String(n);
 
-const COUNTRIES = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE', 'BR', 'MX', 'JP', 'IN'];
-const regionName = (() => {
-  try {
-    const dn = new Intl.DisplayNames(['en'], { type: 'region' });
-    return (c: string) => dn.of(c) ?? c;
-  } catch {
-    return (c: string) => c;
-  }
-})();
-const countryOptions = COUNTRIES.map(c => ({ value: c, label: `${flag(c)} ${regionName(c)}` }));
-
 /** Filters that count toward the "N active" badge and the Clear button. */
-const FILTER_KEYS = ['traffic', 'growth', 'productsMin', 'country', 'visitorCountry', 'category', 'subcategory', 'created', 'viewed', 'tracked', 'pixel', 'tech', 'language', 'currency', 'theme', 'social', 'app', 'q'] as const;
+const FILTER_KEYS = [...SHOP_FILTER_KEYS, 'category', 'subcategory', 'viewed', 'tracked', 'q'] as const;
 
 interface Option { value: string; label: string }
-
-/** The StoreLeads profile chips, in Trendtrack's order. */
-const PROFILE_CHIPS: { key: ProfileKey; label: string; icon: LucideIcon; searchable?: boolean }[] = [
-  { key: 'language', label: 'Language', icon: Languages, searchable: true },
-  { key: 'currency', label: 'Currency', icon: Coins, searchable: true },
-  { key: 'theme', label: 'Theme', icon: Palette, searchable: true },
-  { key: 'app', label: 'App', icon: Puzzle, searchable: true },
-  { key: 'social', label: 'Socials', icon: AtSign },
-];
 
 const SOCIAL_LABELS: Record<string, string> = {
   facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube', pinterest: 'Pinterest',
@@ -125,11 +105,13 @@ function chosen(label: string, option: string): string {
  * A filter chip: icon + label + chevron; picking an option sets one URL param.
  * `searchable` adds a type-to-filter box for long option lists (technologies).
  */
-export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable, anyLabel = 'Any', title }: {
+export function FilterChip({ icon: Icon, label, value, options, onChange, badge, searchable, anyLabel = 'Any', showAny = anyLabel !== 'Any', title }: {
   icon: LucideIcon; label: string; value: string; options: Option[];
   onChange: (v: string) => void; badge?: string; searchable?: boolean;
   /** Text of the "no choice" item (e.g. a sort's default order). */
   anyLabel?: string; title?: string;
+  /** Print "Label: <anyLabel>" on the chip when nothing is picked (default: when anyLabel is custom). */
+  showAny?: boolean;
 }) {
   const active = options.find(o => o.value === value);
   const [needle, setNeedle] = useState('');
@@ -141,7 +123,7 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
     <DropdownMenu onOpenChange={o => { if (!o) setNeedle(''); }}>
       <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label} title={title}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
-        <span>{active ? chosen(label, active.label) : anyLabel !== 'Any' ? `${label}: ${anyLabel}` : label}</span>
+        <span>{active ? chosen(label, active.label) : showAny ? `${label}: ${anyLabel}` : label}</span>
         {badge && !active && <span className="rounded-full bg-[var(--a-green)] px-1.5 py-px text-[10px] font-semibold text-white">{badge}</span>}
         <ChevronDown className="h-3.5 w-3.5 shrink-0 opacity-70" />
       </DropdownMenuTrigger>
@@ -347,43 +329,26 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
       </div>
 
       {filtersOpen && <div id="shop-filters" className="flex flex-wrap items-center gap-2">
-        <FilterChip icon={Users} label="Traffic" value={p('traffic')} onChange={v => set({ traffic: v })} options={[
-          { value: '10k', label: '10K+ visits' }, { value: '100k', label: '100K+ visits' },
-          { value: '1m', label: '1M+ visits' }, { value: '10m', label: '10M+ visits' },
-        ]} />
-        <FilterChip icon={TrendingUp} label="Traffic Growth" value={p('growth')} onChange={v => set({ growth: v })} options={[
-          { value: 'declining', label: 'Declining' }, { value: 'positive', label: 'Positive' },
-          { value: '10', label: '10%+ growth' }, { value: '25', label: '25%+ growth' }, { value: '50', label: '50%+ growth' },
-        ]} />
-        <FilterChip icon={Package} label="Products" value={p('productsMin')} onChange={v => set({ productsMin: v })}
-          options={[['10', '10+'], ['25', '25+'], ['50', '50+'], ['100', '100+'], ['500', '500+'], ['1000', '1,000+']]
-            .map(([value, l]) => ({ value, label: `${l} products` }))} />
-        <FilterChip icon={Store} label="Shop Origin" value={p('country')} onChange={v => set({ country: v })} options={countryOptions} />
-        <FilterChip icon={Globe} label="Visitor Country" value={p('visitorCountry')} onChange={v => set({ visitorCountry: v })} options={countryOptions} />
-        {subcategories.length > 0 && (
-          <FilterChip icon={LayoutGrid} label="Subcategory" value={subId} onChange={v => set({ subcategory: v })}
-            options={subcategories.map(c => ({ value: c.id, label: `${c.name} (${compact(c.brandCount)})` }))} />
-        )}
-        <FilterChip icon={CalendarDays} label="Creation Date" value={p('created')} onChange={v => set({ created: v })} options={[
-          { value: '30d', label: 'Last 30 days' }, { value: '90d', label: 'Last 90 days' },
-          { value: '1y', label: 'Last year' }, { value: '2y', label: 'Last 2 years' },
-        ]} />
-        {techOptions.length > 0 && (
-          <FilterChip icon={Blocks} label="Technology" value={p('tech')} onChange={v => set({ tech: v })} options={techOptions} searchable />
-        )}
-        {pixelOptions.length > 0 && (
-          <FilterChip icon={Radar} label="Pixels" value={p('pixel')} onChange={v => set({ pixel: v })} options={pixelOptions} />
-        )}
-        {profileOptions && PROFILE_CHIPS.map(c => profileOptions[c.key].length > 0 && (
-          <FilterChip key={c.key} icon={c.icon} label={c.label} value={p(c.key)} onChange={v => set({ [c.key]: v })}
-            options={profileOptions[c.key]} searchable={c.searchable} />
-        ))}
-        <FilterChip icon={Eye} label="Viewed" value={p('viewed')} onChange={v => set({ viewed: v })} options={[
-          { value: 'only', label: 'Viewed' }, { value: 'exclude', label: 'Not viewed' },
-        ]} />
-        <FilterChip icon={Crosshair} label="Brandtracker" value={p('tracked')} onChange={v => set({ tracked: v })} options={[
-          { value: 'only', label: 'In Brandtracker' }, { value: 'exclude', label: 'Not in Brandtracker' },
-        ]} />
+        <ShopFilterChips params={params} set={set} tech={tech} profileOptions={profileOptions}
+          techOptions={techOptions} pixelOptions={pixelOptions}
+          before={<>
+            {/* Without niche facets the category row's sub-categories stay the niche filter. */}
+            {!tech?.niches?.some(n => n.count > 0) && subcategories.length > 0 && (
+              <FilterChip icon={LayoutGrid} label="Subcategory" value={subId} onChange={v => set({ subcategory: v })}
+                options={subcategories.map(c => ({ value: c.id, label: `${c.name} (${compact(c.brandCount)})` }))} />
+            )}
+            <FilterChip icon={Eye} label="Viewed" value={p('viewed')} onChange={v => set({ viewed: v })} anyLabel="All" showAny={false} options={[
+              { value: 'only', label: 'Viewed' }, { value: 'exclude', label: 'New (not viewed)' },
+            ]} />
+            <FilterChip icon={Crosshair} label="Brandtracker" value={p('tracked')} onChange={v => set({ tracked: v })} anyLabel="All" showAny={false} options={[
+              { value: 'only', label: 'In Brandtracker' }, { value: 'exclude', label: 'Not in Brandtracker' },
+            ]} />
+          </>}
+          plan={
+            <FilterChip icon={ShoppingBag} label="Shopify Plan" value={p('plan')} onChange={v => set({ plan: v })} anyLabel="All plans" showAny={false} options={[
+              { value: 'plus', label: 'Only Shopify Plus' }, { value: 'non-plus', label: 'Not Shopify Plus' },
+            ]} />
+          } />
 
         {activeCount > 0 && (
           <button

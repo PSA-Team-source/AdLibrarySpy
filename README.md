@@ -63,6 +63,15 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 - Save ads to folders and share them with your team. The **Advertisers** screen ranks brands by creative count
 - **Export CSV** of the current search: ad and page ids, run dates, status, format, placements, copy, landing and media URLs
 
+### Products and landing pages: what the ads point at
+
+<img src="public/landing/landing-pages.webp" alt="Landing pages explorer: advertorials, listicles, quizzes and homepages ranked by active Meta ads" width="820">
+
+- **Products**: winning products, the products Meta ads send people to, with active and new ads, advertisers, price and when ads started
+- **Landing pages**: every advertorial, listicle, quiz, collection and homepage that ads send traffic to,
+  ranked by active ads, with new ads in the last 14 days, advertisers, first and last seen, ad countries
+  and the store's traffic
+
 ### Store dossier: everything about one store
 
 <img src="public/landing/dossier.webp" alt="Store dossier for Gymshark" width="820">
@@ -84,7 +93,7 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 
 ### Trends and the Monday report
 
-<img src="public/landing/weekly.webp" alt="Weekly report" width="820">
+<img src="public/landing/trends.webp" alt="Trends: new Meta ads this week, ad formats and niches gaining share" width="820">
 
 - **Trends**: what advertisers launched on Meta this week vs last — products getting the most new ads,
   stores launching the most ads, brand-new advertisers, niches and ad formats gaining share — plus the
@@ -92,8 +101,6 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 - **The weekly report**: stores scaling their ads, the fastest traffic growth, ad peaks and the newest
   winners, published every Monday at [/weekly](https://adlibraryspy.com/weekly) and sent by email if you opt in
 - **Growing with no ads**: fast-growing stores with no Meta ads, so you can tell paid growth from organic
-- **Landing pages** ([/landing-pages](https://adlibraryspy.com/landing-pages)): every non-product page that
-  ads send traffic to, ranked by how many ads point at it
 - Public, shareable pages for every store (`/store/{domain}`), a store directory by niche, country and
   tech, and [/trending](https://adlibraryspy.com/trending)
 

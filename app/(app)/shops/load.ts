@@ -5,7 +5,8 @@
 import type { Ctx } from '@/lib/auth/guard';
 import type { AdPreview, Shop, ShopRow } from '@/lib/types';
 import { queryShops, favoriteIds } from '@/lib/data';
-import { applyCrux, cleanDomain, countShops, PROFILE_KEYS } from '@/lib/market/shops';
+import { applyCrux, cleanDomain, countShops } from '@/lib/market/shops';
+import { parseShopQuery } from '@/lib/market/shop-query';
 import { storeAdPreviews } from '@/lib/market/creatives';
 import { shopRowSignals, applyRowSignals } from '@/lib/market/shop-signals';
 import { hiddenShopIds, storeIdOf, trackedShopIdList, viewedShopIds } from './data';
@@ -32,24 +33,6 @@ export interface ShopsPayload {
 }
 
 const num = (v: string | undefined) => (v && Number.isFinite(+v) ? +v : undefined);
-
-function trafficRange(value: string | undefined) {
-  const min: Record<string, number> = { '10k': 10_000, '100k': 100_000, '1m': 1_000_000, '10m': 10_000_000 };
-  return { trafficMin: value ? min[value] : undefined };
-}
-
-function growthRange(value: string | undefined) {
-  if (value === 'declining') return { growthMax: -0.01 };
-  if (value === 'positive') return { growthMin: 0 };
-  const min: Record<string, number> = { '10': 10, '25': 25, '50': 50 };
-  return { growthMin: value ? min[value] : undefined };
-}
-
-function createdAfter(value: string | undefined) {
-  const days: Record<string, number> = { '30d': 30, '90d': 90, '1y': 365, '2y': 730 };
-  if (!value || !days[value]) return undefined;
-  return new Date(Date.now() - days[value] * 86_400_000).toISOString();
-}
 
 function toRow(s: Shop, saved: boolean, viewed: boolean): ShopsRow {
   return {
@@ -103,14 +86,10 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
   const keepIds: string[] | null = keep ? [...(keep as Set<string>)].filter(id => !drop.has(id)) : null;
 
   const qp = {
-    q: sp.q, country: sp.country, platform: sp.platform,
+    q: sp.q, platform: sp.platform,
     category: sp.subcategory || sp.category,
-    productsMin: num(sp.productsMin), productsMax: num(sp.productsMax),
-    avgPriceMin: num(sp.avgPriceMin), avgPriceMax: num(sp.avgPriceMax),
-    ...trafficRange(sp.traffic), ...growthRange(sp.growth),
-    visitorCountry: sp.visitorCountry, createdAfter: createdAfter(sp.created),
-    pixels: sp.pixel ? [sp.pixel] : undefined, tech: sp.tech ? [sp.tech] : undefined,
-    profile: Object.fromEntries(PROFILE_KEYS.filter(k => sp[k]).map(k => [k, [sp[k]!]])),
+    // Every chip's URL (new names and the older ones saved searches carry): lib/market/shop-query.ts.
+    ...parseShopQuery(sp),
     storeIds: keepIds?.map(storeIdOf), excludeStoreIds: keepIds ? undefined : [...drop].map(storeIdOf),
     sort: sp.sort, dir: sp.dir, view: sp.view, page, limit,
   };

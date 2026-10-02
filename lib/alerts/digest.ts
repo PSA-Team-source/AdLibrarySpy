@@ -134,11 +134,21 @@ const LABEL: Record<string, string> = {
   store: 'Store', from: 'From', to: 'To', euUk: 'EU/UK', hook: 'Hook', angle: 'Angle', funnelStage: 'Funnel',
   offer: 'Offer', urgency: 'Urgency', productsMin: 'Products ≥', productsMax: 'Products ≤',
   avgPriceMin: 'Avg price ≥', avgPriceMax: 'Avg price ≤', viewed: 'Viewed', tracked: 'Tracked', hidden: 'Hidden', view: 'View',
+  minTraffic: 'Traffic ≥', maxTraffic: 'Traffic ≤', minProducts: 'Products ≥', maxProducts: 'Products ≤',
+  minPrice: 'Price ≥ $', maxPrice: 'Price ≤ $', minAds: 'Ads ≥', maxAds: 'Ads ≤',
+  creationCountry: 'Shop origin', excludeCreationCountry: 'Not from', minDate: 'Created after', maxDate: 'Created before',
+  nicheSub: 'Sub-niche', language: 'Language', currency: 'Currency', theme: 'Theme', social: 'Socials', app: 'App',
+  excludeApp: 'Without app', excludePixel: 'Without pixel', plan: 'Shopify plan',
+  minRating: 'Trustpilot ≥', maxRating: 'Trustpilot ≤', minReviews: 'Reviews ≥', maxReviews: 'Reviews ≤',
 };
+
+/** Growth rules (`1m:gt:20,and:6m:lt:-10`) in words; older single values pass through. */
+const growthWords = (v: string) => v.split(',').map(p => p
+  .replace(/^(and|or):/, '$1 ').replace(/(\d)m:gt:(-?[\d.]+)/, '$1 mo > $2%').replace(/(\d)m:lt:(-?[\d.]+)/, '$1 mo < $2%')).join(' ');
 
 /** "Search: shoes · Country: US" — the filter set in words; '' = no filters. */
 export function describeQuery(qs: string): string {
-  return [...new URLSearchParams(qs)].map(([k, v]) => `${LABEL[k] ?? k}: ${v}`).join(' · ');
+  return [...new URLSearchParams(qs)].map(([k, v]) => `${LABEL[k] ?? k}: ${k === 'growth' ? growthWords(v) : v.split('|').join(', ')}`).join(' · ');
 }
 
 /** Result ids the user has not been shown, in result order. */

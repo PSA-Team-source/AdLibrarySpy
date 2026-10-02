@@ -280,7 +280,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: 'search_landing_pages',
     title: 'Search ad landing pages',
-    description: 'Search the pages Meta ads send people to (advertorials, listicles, quizzes, collections, homepages), '
+    description: 'Search the pages Meta ads send people to (product pages, advertorials, listicles, quizzes, collections, homepages), '
       + 'ranked by the ads behind them. Each page carries its URL, title, page type, screenshot or share image, active ad count, '
       + 'ads started in the last 14 days, advertiser pages, first/last seen dates, ad countries and the store with its traffic.',
     scope: 'discovery.read',

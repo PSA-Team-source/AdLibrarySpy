@@ -1,10 +1,10 @@
-// Landing pages: the pages Meta ads send people to (advertorials, listicles,
+// Landing pages: the pages Meta ads send people to (product pages, advertorials, listicles,
 // quizzes, collections, homepages), ranked by the ads behind them. Served by the
 // Go API (GET /market/landing-pages). Store fields map exactly like Products.
 import { marketGet, MarketError } from './client';
 import { mapStore, type SampleAd, type WinningProductStore } from './products';
 
-export const LANDING_PAGE_TYPES = ['advertorial', 'listicle', 'quiz', 'collection', 'homepage', 'other'] as const;
+export const LANDING_PAGE_TYPES = ['product', 'advertorial', 'listicle', 'quiz', 'collection', 'homepage', 'other'] as const;
 export type LandingPageType = (typeof LANDING_PAGE_TYPES)[number];
 
 export interface LandingPage {

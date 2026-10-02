@@ -77,7 +77,7 @@ Send \`{"jsonrpc":"2.0","id":1,"method":"tools/list"}\` first to get every tool'
 | \`get_shop\` | Full dossier for \`shop\` (domain or \`shp_…\` id): traffic history, ranks, engagement, traffic sources, top countries and keywords, catalogue, recent creatives |
 | \`find_similar_shops\` | Lookalikes of a \`shop\` (same category, similar traffic) |
 | \`search_products\` | Winning products: storefront products Meta ads land on, with price, active and new ads, advertiser pages, first-ad date |
-| \`search_landing_pages\` | Landing pages ads send people to (advertorial, listicle, quiz, collection, homepage), with active and new ads, advertisers, first/last seen, countries |
+| \`search_landing_pages\` | Landing pages ads send people to (product page, advertorial, listicle, quiz, collection, homepage), with active and new ads, advertisers, first/last seen, countries |
 | \`search_ads\` | Creatives by \`query\`, \`mediaType\`, \`country\`, or AI label (\`hook\`, \`angle\`, \`funnelStage\`, \`offer\`, \`urgency\`) |
 | \`get_ad\` | One creative with its AI labels and confidence |
 | \`creative_breakdown\` | How one store's ads split by hook, angle, offer and funnel stage |

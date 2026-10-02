@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 const LP_KEY = 'landing-pages';
 
 const TYPE_LABEL: Record<LandingPageType, string> = {
-  advertorial: 'Advertorial', listicle: 'Listicle', quiz: 'Quiz',
+  product: 'Product page', advertorial: 'Advertorial', listicle: 'Listicle', quiz: 'Quiz',
   collection: 'Collection', homepage: 'Homepage', other: 'Other page',
 };
 
@@ -355,7 +355,7 @@ export function LandingPagesExplorer({ categories, initial, initialParams, rende
   return (
     <ShallowUrlProvider>
       <PageShell fullHeight className="apple-ui gap-5 bg-[var(--a-canvas)]" title="Landing pages"
-        description="The pages Meta ads send people to: advertorials, listicles, quizzes and more, ranked by the ads behind them.">
+        description="The pages Meta ads send people to: product pages, advertorials, listicles, quizzes and more, ranked by the ads behind them.">
         <Toolbar categories={categories} types={types.current} />
 
         {q.isError && (

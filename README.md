@@ -68,7 +68,7 @@ this repository is the code that runs [adlibraryspy.com](https://adlibraryspy.co
 <img src="public/landing/landing-pages.webp" alt="Landing pages explorer: advertorials, listicles, quizzes and homepages ranked by active Meta ads" width="820">
 
 - **Products**: winning products, the products Meta ads send people to, with active and new ads, advertisers, price and when ads started
-- **Landing pages**: every advertorial, listicle, quiz, collection and homepage that ads send traffic to,
+- **Landing pages**: every product page, advertorial, listicle, quiz, collection and homepage that ads send traffic to,
   ranked by active ads, with new ads in the last 14 days, advertisers, first and last seen, ad countries
   and the store's traffic
 

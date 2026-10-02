@@ -83,6 +83,26 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   const { set, prefetch, params, pending } = useSetParam();
   const get = (k: string) => params.get(k) ?? '';
 
+  // Video style is the filter people flip through, and a pick is a round trip
+  // to the US origin (~360ms+ from Asia). Render every style's result in the
+  // background once the page is idle, so the pick is served from the router
+  // cache with no network — waiting for the menu to open was too late.
+  const styleValues = (labelFacets?.facets.style ?? []).map(e => e.value).join(',');
+  useEffect(() => {
+    if (!styleValues) return;
+    const current = params.get('style') ?? '';
+    const run = () => {
+      for (const v of styleValues.split(',')) if (v !== current) prefetch({ style: v });
+      if (current) prefetch({ style: '' });
+    };
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 1500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(run, 300);
+    return () => clearTimeout(id);
+  }, [styleValues, params, prefetch]);
+
   const [term, setTerm] = useState(get('q'));
   useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
   // Search as you type, like Shops: push once the term settles.

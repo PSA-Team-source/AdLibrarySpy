@@ -135,7 +135,7 @@ The full rules are in [docs/data-honesty.md](docs/data-honesty.md).
 Updated every week by a GitHub Action from the public weekly report.
 
 <!-- leaderboard:start -->
-**Week 39, 2026** · updated 2026-09-25 · [full week](leaderboard/weekly/2026-w39.md) · [all weeks](leaderboard/weekly/)
+**Week 40, 2026** · updated 2026-09-28 · [full week](leaderboard/weekly/2026-w40.md) · [all weeks](leaderboard/weekly/)
 
 ### Top scaling stores
 

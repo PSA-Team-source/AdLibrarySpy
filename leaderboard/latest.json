@@ -1,10 +1,10 @@
 {
-  "week": "2026-w39",
-  "publishedAt": "2026-09-25T11:21:14.943Z",
-  "url": "https://adlibraryspy.com/weekly/2026-w39",
+  "week": "2026-w40",
+  "publishedAt": "2026-09-28T06:00:02.255Z",
+  "url": "https://adlibraryspy.com/weekly/2026-w40",
   "data": {
-    "week": "2026-w39",
-    "weekEnd": "2026-09-27",
+    "week": "2026-w40",
+    "weekEnd": "2026-10-04",
     "products": [
       {
         "image": "https://cdn.shopify.com/s/files/1/0508/1795/8095/products/10163368.png?v=1624604027",
@@ -23,12 +23,28 @@
         "storeName": "Power Crunch"
       },
       {
+        "image": "https://cdn.shopify.com/s/files/1/0524/8866/7330/files/Before_13.png?v=1771764358",
+        "price": 0,
+        "title": "45-85 Flock Size - Nesting Herbs Saver Bundle (20 Packs)",
+        "domain": "roostys.co",
+        "currency": "USD",
+        "storeName": "Roosty's"
+      },
+      {
         "image": "https://cdn.shopify.com/s/files/1/1246/0173/files/43A7478-Edit.jpg?v=1784666794",
         "price": 0,
         "title": "Cancelled Again Hoodie",
         "domain": "antisocialsocialclub.com",
         "currency": "USD",
         "storeName": "AntiSocialSocialClub"
+      },
+      {
+        "image": "https://cdn.shopify.com/s/files/1/0053/1798/4323/files/SB_2026_BYOB_Banana_Bag_DTC_PDP_Stack_Front_of_Pack_V2.jpg?v=1778517564",
+        "price": 0,
+        "title": "Build Your Own Bag - Daily",
+        "domain": "sunbum.com",
+        "currency": "USD",
+        "storeName": "Official Sun Bum® Website"
       },
       {
         "image": "https://cdn.shopify.com/s/files/1/0584/6256/8509/files/1_8.jpg?v=1768817035",
@@ -71,36 +87,20 @@
         "storeName": "Absolute Eclipse"
       },
       {
-        "image": "https://cdn.shopify.com/s/files/1/0751/4351/2317/files/1.Hero.jpg?v=1785261099",
+        "image": "https://cdn.shopify.com/s/files/1/0787/6768/5867/files/prime_268.jpg?v=1764680654",
         "price": 0,
-        "title": "Mellow x AVIO Travel Neck Pillow",
-        "domain": "mellowsleep.com",
+        "title": "SIGMA 380L CHEST FREEZER GREY",
+        "domain": "compughana.com",
         "currency": "USD",
-        "storeName": "mellow sleep"
+        "storeName": "CompuGhana"
       },
       {
-        "image": "https://cdn.shopify.com/s/files/1/0586/8463/7392/files/800_Kids_BIAY.jpg?v=1781813000",
+        "image": "https://cdn.shopify.com/s/files/1/0690/4499/4288/files/pack-resines-sans-thc_1_3696217f-7632-4295-a56a-5a53593fa41f.png?v=1787902683",
         "price": 0,
-        "title": "The Bible In A Year For Kids: A 52-Week Journey Through God's Word",
-        "domain": "spiralbible.com",
-        "currency": "USD",
-        "storeName": "Spiral Bible™"
-      },
-      {
-        "image": "https://cdn.shopify.com/s/files/1/0840/6840/1492/files/vertopal.com_13_2b265afb-5245-4500-9b8f-3f221a1b85b8.heic?v=1727707343",
-        "price": 0,
-        "title": "Dallas",
-        "domain": "puppies-yoga.com",
-        "currency": "USD",
-        "storeName": "Puppies & Yoga in US"
-      },
-      {
-        "image": "https://cdn.shopify.com/s/files/1/0779/0673/9384/files/1_20_287_29.jpg?v=1781731131",
-        "price": 0,
-        "title": "Resilia® Ethiopian Black Seed Oil",
-        "domain": "resilia.shop",
-        "currency": "USD",
-        "storeName": "Resilia®"
+        "title": "PACK DÉCOUVERTE RÉSINES 0% THC",
+        "domain": "delihemp.com",
+        "currency": "EUR",
+        "storeName": "Deli Hemp"
       }
     ],
     "sections": [
@@ -328,70 +328,80 @@
             "logo": "https://mellowsleep.com/cdn/shop/files/Social_PFP_3.jpg?crop=center&height=32&v=1746200184&width=32",
             "name": "mellow sleep",
             "niche": "Home & Garden",
-            "value": 15461,
-            "detail": "Peak of 15,461 active Meta ads in 7 days (recorded 2026-09-24) · 2.1M visits in Aug 2026 (SimilarWeb)",
+            "value": 15706,
+            "detail": "Peak of 15,706 active Meta ads in 7 days (recorded 2026-09-25) · 2.1M visits in Aug 2026 (SimilarWeb)",
             "domain": "mellowsleep.com",
-            "metric": "15K ads",
-            "country": "US"
-          },
-          {
-            "logo": "https://shopeverly.shop/cdn/shop/files/1_b2973c49-3606-45f0-943f-c68326d15b15_32x32.jpg?v=1766634105",
-            "name": "Everly® Pumpkin Seed Oil Softgels",
-            "niche": "Apparel",
-            "value": 9133,
-            "detail": "Peak of 9,133 active Meta ads in 7 days (recorded 2026-09-17) · 139K visits in Aug 2026 (SimilarWeb)",
-            "domain": "shopeverly.shop",
-            "metric": "9.1K ads",
+            "metric": "16K ads",
             "country": "US"
           },
           {
             "logo": "https://spiralbible.com/cdn/shop/files/ProfileImage_SB_eec21b8a-dedc-4159-aac9-f56b7dbbddb5.jpg?crop=center&height=32&v=1724294206&width=32",
             "name": "Spiral Bible™",
             "niche": "People & Society",
-            "value": 8954,
-            "detail": "Peak of 8,954 active Meta ads in 7 days (recorded 2026-09-21) · 248K visits in Aug 2026 (SimilarWeb)",
+            "value": 10013,
+            "detail": "Peak of 10,013 active Meta ads in 7 days (recorded 2026-09-25) · 248K visits in Aug 2026 (SimilarWeb)",
             "domain": "spiralbible.com",
-            "metric": "9K ads",
-            "country": "US"
-          },
-          {
-            "logo": "https://puppies-yoga.com/cdn/shop/files/Frame_141.png?crop=center&height=32&v=1745531129&width=32",
-            "name": "Puppies & Yoga in US",
-            "niche": "Pets & Animals",
-            "value": 7182,
-            "detail": "Peak of 7,182 active Meta ads in 7 days (recorded 2026-09-18) · 118K visits in Aug 2026 (SimilarWeb)",
-            "domain": "puppies-yoga.com",
-            "metric": "7.2K ads",
+            "metric": "10K ads",
             "country": "US"
           },
           {
             "logo": "https://resilia.shop/cdn/shop/files/Resilia_32x32.webp?v=1753868569",
             "name": "Resilia®",
             "niche": "Health",
-            "value": 7133,
-            "detail": "Peak of 7,133 active Meta ads in 7 days (recorded 2026-09-15) · 9.9M visits in Aug 2026 (SimilarWeb)",
+            "value": 8787,
+            "detail": "Peak of 8,787 active Meta ads in 7 days (recorded 2026-09-25) · 9.9M visits in Aug 2026 (SimilarWeb)",
             "domain": "resilia.shop",
-            "metric": "7.1K ads",
+            "metric": "8.8K ads",
             "country": "US"
           },
           {
             "logo": "https://assets.skool.com/skool/8d5e2d4df1b645148f07ae0d9df14c51.png",
             "name": "Skool",
             "niche": "Internet",
-            "value": 7114,
-            "detail": "Peak of 7,114 active Meta ads in 7 days (recorded 2026-09-20) · 38M visits in Aug 2026 (SimilarWeb)",
+            "value": 8132,
+            "detail": "Peak of 8,132 active Meta ads in 7 days (recorded 2026-09-25) · 38M visits in Aug 2026 (SimilarWeb)",
             "domain": "skool.com",
-            "metric": "7.1K ads",
+            "metric": "8.1K ads",
             "country": ""
+          },
+          {
+            "logo": "https://puppies-yoga.com/cdn/shop/files/Frame_141.png?crop=center&height=32&v=1745531129&width=32",
+            "name": "Puppies & Yoga in US",
+            "niche": "Pets & Animals",
+            "value": 7177,
+            "detail": "Peak of 7,177 active Meta ads in 7 days (recorded 2026-09-20) · 118K visits in Aug 2026 (SimilarWeb)",
+            "domain": "puppies-yoga.com",
+            "metric": "7.2K ads",
+            "country": "US"
+          },
+          {
+            "logo": "https://veinci.com/cdn/shop/files/favicon_Deep_Purple.png?v=1721397452&width=180",
+            "name": "Veinci",
+            "niche": "Apparel",
+            "value": 7105,
+            "detail": "Peak of 7,105 active Meta ads in 7 days (recorded 2026-09-25) · 119K visits in Aug 2026 (SimilarWeb)",
+            "domain": "veinci.com",
+            "metric": "7.1K ads",
+            "country": "US"
           },
           {
             "logo": "https://glovbeauty.com/cdn/shop/files/favicon.png?crop=center&height=32&v=1691565284&width=32",
             "name": "Glov Beauty",
             "niche": "Beauty & Fitness",
-            "value": 6632,
-            "detail": "Peak of 6,632 active Meta ads in 7 days (recorded 2026-09-19) · 281K visits in Aug 2026 (SimilarWeb)",
+            "value": 7020,
+            "detail": "Peak of 7,020 active Meta ads in 7 days (recorded 2026-09-25) · 281K visits in Aug 2026 (SimilarWeb)",
             "domain": "glovbeauty.com",
-            "metric": "6.6K ads",
+            "metric": "7K ads",
+            "country": "US"
+          },
+          {
+            "logo": "https://atmastore.com/cdn/shop/files/atma_favicon.png?v=1729472972&width=180",
+            "name": "Atma",
+            "niche": "Apparel",
+            "value": 6658,
+            "detail": "Peak of 6,658 active Meta ads in 7 days (recorded 2026-09-25) · 64K visits in Aug 2026 (SimilarWeb)",
+            "domain": "atmastore.com",
+            "metric": "6.7K ads",
             "country": "US"
           },
           {
@@ -402,16 +412,6 @@
             "detail": "Peak of 6,576 active Meta ads in 7 days (recorded 2026-09-25) · 2.9M visits in Aug 2026 (SimilarWeb)",
             "domain": "emmafy.com",
             "metric": "6.6K ads",
-            "country": "US"
-          },
-          {
-            "logo": "https://atmastore.com/cdn/shop/files/atma_favicon.png?v=1729472972&width=180",
-            "name": "Atma",
-            "niche": "Apparel",
-            "value": 6457,
-            "detail": "Peak of 6,457 active Meta ads in 7 days (recorded 2026-09-22) · 64K visits in Aug 2026 (SimilarWeb)",
-            "domain": "atmastore.com",
-            "metric": "6.5K ads",
             "country": "US"
           },
           {
@@ -605,10 +605,10 @@
         "source": "SimilarWeb measured visits, Aug 2026; niche from the store's category in the index."
       }
     ],
-    "weekLabel": "Week 39, 2026",
-    "weekStart": "2026-09-21",
+    "weekLabel": "Week 40, 2026",
+    "weekStart": "2026-09-28",
     "indexMonth": "2026-09",
-    "generatedAt": "2026-09-25T11:21:14.942Z",
+    "generatedAt": "2026-09-28T06:00:02.254Z",
     "trafficPeriod": "2026-08"
   }
 }

@@ -349,6 +349,7 @@ export const TOOLS: ToolDef[] = [
       angle: labelArray('angle', 'angles'),
       funnelStage: labelArray('funnelStage', 'funnel stages'),
       offer: labelArray('offer', 'offer types'),
+      style: labelArray('style', 'video styles (video ads only)'),
       urgency: { type: 'boolean', description: 'true = only creatives the model judged to use urgency.' },
       includeNonStores: { type: 'boolean', description: 'true = also include advertisers that are not online stores (big brands, publishers). Default false: only known online stores.' },
       limit: int('Number of results, 1-50. Defaults to 12.', 1, 50),
@@ -364,6 +365,7 @@ export const TOOLS: ToolDef[] = [
         angle: cleanLabelValues('angle', args.angle),
         funnelStage: cleanLabelValues('funnelStage', args.funnelStage),
         offer: cleanLabelValues('offer', args.offer),
+        style: cleanLabelValues('style', args.style),
         urgency: args.urgency === true,
         limit: Math.min(50, Number(args.limit) || 12),
       });

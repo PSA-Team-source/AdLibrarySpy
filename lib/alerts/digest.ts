@@ -132,7 +132,7 @@ const LABEL: Record<string, string> = {
   traffic: 'Traffic', growth: 'Growth', created: 'Created', pixel: 'Pixel', tech: 'Tech', sort: 'Sort', dir: 'Order',
   visitorCountry: 'Visitors from', media: 'Media', format: 'Format', placement: 'Placement', niche: 'Niche',
   store: 'Store', from: 'From', to: 'To', euUk: 'EU/UK', hook: 'Hook', angle: 'Angle', funnelStage: 'Funnel',
-  offer: 'Offer', urgency: 'Urgency', productsMin: 'Products ≥', productsMax: 'Products ≤',
+  offer: 'Offer', style: 'Video style', urgency: 'Urgency', productsMin: 'Products ≥', productsMax: 'Products ≤',
   avgPriceMin: 'Avg price ≥', avgPriceMax: 'Avg price ≤', viewed: 'Viewed', tracked: 'Tracked', hidden: 'Hidden', view: 'View',
   minTraffic: 'Traffic ≥', maxTraffic: 'Traffic ≤', minProducts: 'Products ≥', maxProducts: 'Products ≤',
   minPrice: 'Price ≥ $', maxPrice: 'Price ≤ $', minAds: 'Ads ≥', maxAds: 'Ads ≤',

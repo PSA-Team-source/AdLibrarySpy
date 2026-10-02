@@ -11,7 +11,7 @@ import { unstable_cache } from 'next/cache';
 import type { Ad, Shop } from '@/lib/types';
 import { queryShops } from '@/lib/data';
 import { categories, categoryTree, countShops, getShops, listShops } from '@/lib/market/shops';
-import { storeAdPreviews } from '@/lib/market/creatives';
+import { listAds, storeAdPreviews } from '@/lib/market/creatives';
 import { listWinningProducts, type WinningProduct } from '@/lib/market/products';
 import { chQuery } from '@/lib/clickhouse';
 import { mapLimit } from '@/lib/seo/directory';
@@ -232,6 +232,60 @@ export const loadAdTrends = unstable_cache(async (today: string): Promise<AdTren
     formats: shares(formats, id => FORMAT_NAMES[id]).sort((a, b) => b.share - a.share),
   };
 }, ['trends:ads:v2'], { revalidate: HOUR });
+
+// ---------- video styles (market__creatives.ai_style, Go services/creativestyles) ----------
+// Every live video ad is watched (4 frames) by a vision model and filed under one
+// style. Shares are of the video ads that carry a confident style, so how many
+// we have watched does not move them.
+
+/** Same names the API returns (Go domain.CreativeStyles). */
+const STYLE_NAMES: Record<string, string> = {
+  cartoon: 'Cartoon & animation', vsl: 'Video sales letter', ugc: 'UGC selfie', talking_head: 'Talking head',
+  podcast: 'Podcast clip', street_interview: 'Street interview', skit: 'Skit & drama', demo: 'Product demo',
+  before_after: 'Before & after', screen_recording: 'Screen recording', slideshow: 'Slideshow', lifestyle: 'Lifestyle film',
+};
+/** Same gate as the API's ai_labels (Go domain.DefaultCreativeLabelGate). */
+const STYLE_MIN_CONF = 0.5;
+/** Below this many styled video ads this week the mix is too thin to show. */
+const STYLES_MIN_WEEK = 300;
+
+export interface VideoStyle {
+  id: string; name: string; cur: number; prev: number; share: number;
+  /** Share change vs last week; absent while last week is too thin to compare. */
+  lift?: number;
+  ads: Ad[];
+}
+export interface VideoStyles { from: string; to: string; styled: number; styles: VideoStyle[] }
+
+export const loadVideoStyles = unstable_cache(async (today: string): Promise<VideoStyles> => {
+  const w = adWeeks(today);
+  // CDC keeps several versions of a row; each ad counts once, by its newest style.
+  const rows = await chQuery(`
+    SELECT s AS k, uniqExactIf(id, cur) AS cur, uniqExactIf(id, NOT cur) AS prev FROM (
+      SELECT id, argMax(ai_style, _cdc_version) AS s, argMax(ai_style_conf, _cdc_version) AS c,
+             any(${CUR}) AS cur
+        FROM market_research.market__creatives
+       WHERE ${LIVE} AND ${WEEKS} AND display_format = 'video'
+       GROUP BY id)
+    WHERE s != '' AND c >= {minConf:Float32}
+    GROUP BY k FORMAT JSONEachRow`, { ...w, minConf: STYLE_MIN_CONF });
+  const known = rows.filter(r => STYLE_NAMES[String(r.k)]);
+  const cT = known.reduce((a, r) => a + Number(r.cur), 0), pT = known.reduce((a, r) => a + Number(r.prev), 0);
+  if (cT < STYLES_MIN_WEEK) throw new Error(`trends styles: only ${cT} styled video ads this week`);
+
+  const styles = known.map((r): VideoStyle => {
+    const id = String(r.k), cur = Number(r.cur), prev = Number(r.prev);
+    const lift = adLift(cur, prev, cT, pT);
+    return { id, name: STYLE_NAMES[id], cur, prev, share: cur / cT, ...(lift != null ? { lift } : {}), ads: [] };
+  }).filter(s => s.cur > 0).sort((a, b) => b.share - a.share);
+
+  // Example ads: this week's, renderable, from the API (cached media, not expired CDN links).
+  await mapLimit(styles, 4, async s => {
+    s.ads = await listAds({ style: [s.id], from: w.from, limit: 4 })
+      .then(r => r.items).catch(() => [] as Ad[]);
+  });
+  return { from: w.from, to: w.to, styled: cT, styles };
+}, ['trends:video-styles:v1'], { revalidate: HOUR });
 
 /** Products the most new Meta ads point at (last 14 days), one per store. */
 export const loadHotProducts = unstable_cache(async (): Promise<WinningProduct[]> => {

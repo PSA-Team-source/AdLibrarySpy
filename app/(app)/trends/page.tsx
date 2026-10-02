@@ -2,13 +2,13 @@ import { Suspense } from 'react';
 import { PageShell } from '@/components/layouts/page-shell';
 import { nicheHref, parseBand } from '@/lib/trends';
 import { NichesSection, RisersSection, Skeleton, type TrendLinks } from './sections';
-import { AdNichesSection, AdPulse, HotProductsSection, NewBrandsSection, ScalingSection, loadAds } from './ad-sections';
+import { AdNichesSection, AdPulse, HotProductsSection, NewBrandsSection, ScalingSection, VideoStylesSection, loadAds } from './ad-sections';
 
 export const metadata = { title: 'Trends' };
 export const dynamic = 'force-dynamic';
 
 // Two halves. First the daily signal — what advertisers launched on Meta this
-// week vs last (ad-sections.tsx: the week, hot products, stores scaling, brand
+// week vs last (ad-sections.tsx: the week, video styles, hot products, stores scaling, brand
 // new advertisers, niches moving). Then the monthly one — SimilarWeb traffic
 // breakouts (sections.tsx, shared with the public /trending page).
 const links: TrendLinks = {
@@ -29,9 +29,12 @@ export default async function TrendsPage({ searchParams }: { searchParams: Promi
   const band = parseBand(sp.band);
   const noAds = sp.ads === 'none';
   return (
-    <PageShell title="Trends" description="What advertisers launched on Meta this week, which products and stores they are pushing, and where traffic is breaking out this month.">
+    <PageShell title="Trends" description="What advertisers launched on Meta this week, the video styles they are using, which products and stores they are pushing, and where traffic is breaking out this month.">
       <Suspense fallback={<Skeleton h="h-[360px]" />}>
         <AdWeek />
+      </Suspense>
+      <Suspense fallback={<Skeleton h="h-[420px]" />}>
+        <VideoStylesSection />
       </Suspense>
       <Suspense fallback={<Skeleton h="h-[520px]" />}>
         <HotProductsSection />

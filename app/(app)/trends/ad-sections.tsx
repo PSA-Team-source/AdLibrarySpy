@@ -6,7 +6,7 @@ import { BrandLogo } from '@/components/market/BrandLogo';
 import { ProductImage } from '@/components/ShopMedia';
 import { compact, flag, money } from '@/lib/format';
 import { liftLabel, weekLabel } from '@/lib/trends';
-import { loadAdTrends, loadHotProducts, type AdShare, type AdStore, type AdTrends } from './load';
+import { loadAdTrends, loadHotProducts, loadVideoStyles, type AdShare, type AdStore, type AdTrends } from './load';
 import { TrendProductCard } from './product-card';
 
 // The daily half of /trends: what advertisers launched on Meta in the last 7
@@ -90,6 +90,47 @@ function Lift({ lift }: { lift: number }) {
       title="Change in its share of all new ads, this week vs last">
       {label === 'same' ? 'no change' : label}
     </span>
+  );
+}
+
+// ---------- video styles ----------
+
+export async function VideoStylesSection() {
+  const d = await loadVideoStyles(todayUtc()).catch(err => { console.error('[trends styles]', err); return null; });
+  if (!d?.styles.length) return null;
+  return (
+    <SectionCard
+      title="Video styles advertisers are using"
+      description={`How this week's new video ads are made, from ${n(d.styled)} we watched (${weekLabel(d.from, d.to)}). Change is each style's share vs the week before.`}
+      actions={<Link href={`/ads?media=video&from=${d.from}`} className={seeAll}>See video ads <ArrowRight className="h-4 w-4" /></Link>}
+    >
+      <ul className="grid gap-x-8 gap-y-1 md:grid-cols-2">
+        {d.styles.map(s => (
+          <li key={s.id}>
+            <Link href={`/ads?style=${s.id}&from=${d.from}`} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
+              <span className="min-w-0 flex-1">
+                <span className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="truncate text-foreground">{s.name}</span>
+                  <span className="shrink-0 tabular-nums text-muted-foreground">
+                    {Math.round(s.share * 100) || '<1'}%{s.lift != null && <Lift lift={s.lift} />}
+                  </span>
+                </span>
+                <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                  <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(1, s.share * 100)}%` }} />
+                </span>
+              </span>
+              {s.ads.length > 0 && (
+                <span className="flex shrink-0 gap-1">
+                  {s.ads.slice(0, 3).map(a => (
+                    <ProductImage key={a.id} src={a.image} alt="" className="h-10 w-10 rounded-md border border-border object-cover max-sm:[&:nth-child(n+3)]:hidden" />
+                  ))}
+                </span>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </SectionCard>
   );
 }
 

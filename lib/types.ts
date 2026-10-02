@@ -267,6 +267,8 @@ export interface AdLabels {
   angle?: AdLabel;
   funnelStage?: AdLabel;
   offer?: AdLabel;
+  /** Video ads only. */
+  style?: AdLabel;
   /** Present only when the model judged the copy urgent. */
   urgency?: { probability: number };
   model: string;

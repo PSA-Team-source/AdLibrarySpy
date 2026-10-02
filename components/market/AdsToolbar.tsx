@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import {
   Search, X, ArrowDownUp, CalendarRange, ChevronDown, SlidersHorizontal, Film, Shapes, LayoutTemplate, Globe, Landmark,
-  Store, Anchor, Compass, Filter, Tag, Timer,
+  Store, Anchor, Compass, Filter, Tag, Timer, Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LabelFacets, LabelField, FacetEntry } from '@/lib/market/labels';
@@ -13,6 +13,7 @@ import { flag } from '@/lib/format';
 
 /** Label filter selects, in reading order. The option text comes from the API. */
 const LABEL_SELECTS: { field: LabelField; any: string }[] = [
+  { field: 'style', any: 'Video style' },
   { field: 'hook', any: 'Hook' },
   { field: 'angle', any: 'Angle' },
   { field: 'funnelStage', any: 'Funnel Stage' },
@@ -63,11 +64,11 @@ const euUkOptions = [
   ...[...EU_UK_COUNTRIES].sort((a, b) => nameOf(a).localeCompare(nameOf(b))).map(c => ({ value: c, label: `${flag(c)} ${nameOf(c)}` })),
 ];
 const sortOptions = Object.entries(AD_SORTS).filter(([k]) => k !== 'relevance').map(([value, v]) => ({ value, label: v.label }));
-const LABEL_ICONS = { hook: Anchor, angle: Compass, funnelStage: Filter, offer: Tag } as const;
+const LABEL_ICONS = { hook: Anchor, angle: Compass, funnelStage: Filter, offer: Tag, style: Clapperboard } as const;
 
 /** Every URL key a filter writes — drives the active count and Clear. */
 const FILTER_KEYS = ['from', 'to', 'media', 'format', 'placement', 'country', 'euUk', 'store', 'allAdvertisers',
-  'hook', 'angle', 'funnelStage', 'offer', 'urgency'] as const;
+  'hook', 'angle', 'funnelStage', 'offer', 'style', 'urgency'] as const;
 
 // With no search and no sort the index returns its own order, top spending
 // first; with a search it ranks by relevance (creatives.ts).

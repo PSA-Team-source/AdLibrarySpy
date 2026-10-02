@@ -88,6 +88,7 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
   const l = ad.labels;
   const breakdown = l
     ? [
+        l.style && { name: 'Video style', value: l.style.label, confidence: l.style.confidence },
         l.hook && { name: 'Hook', value: l.hook.label, confidence: l.hook.confidence },
         l.angle && { name: 'Angle', value: l.angle.label, confidence: l.angle.confidence },
         l.funnelStage && { name: 'Funnel stage', value: l.funnelStage.label, confidence: l.funnelStage.confidence },

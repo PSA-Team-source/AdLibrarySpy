@@ -1,4 +1,4 @@
-// AI creative labels (hook / angle / funnel stage / offer / urgency).
+// AI creative labels (hook / angle / funnel stage / offer / urgency / video style).
 //
 // Produced by a text classifier run over each creative's ad text and served
 // by the Go creatives endpoints as `ai_labels`. These are MODEL JUDGMENTS with a
@@ -19,6 +19,8 @@ export const LABEL_TAXONOMY = {
   angle: ['problem_solution', 'quality', 'value_price', 'health_wellness', 'convenience', 'identity_style', 'gifting', 'sustainability', 'novelty'],
   funnelStage: ['awareness', 'consideration', 'conversion', 'retention'],
   offer: ['percent_off', 'amount_off', 'bundle', 'free_shipping', 'free_gift', 'sale_event', 'none'],
+  // Video ads only, judged from frames by a vision model (Go domain/creative_style.go).
+  style: ['cartoon', 'vsl', 'ugc', 'talking_head', 'podcast', 'street_interview', 'skit', 'demo', 'before_after', 'screen_recording', 'slideshow', 'lifestyle'],
 } as const;
 
 export type LabelField = keyof typeof LABEL_TAXONOMY;
@@ -26,7 +28,7 @@ export const LABEL_FIELDS = Object.keys(LABEL_TAXONOMY) as LabelField[];
 
 /** API field name (snake_case) for each categorical label. */
 const API_KEY: Record<LabelField, string> = {
-  hook: 'hook', angle: 'angle', funnelStage: 'funnel_stage', offer: 'offer',
+  hook: 'hook', angle: 'angle', funnelStage: 'funnel_stage', offer: 'offer', style: 'style',
 };
 
 /** Server-side label filters. Values within a field are OR'd, fields AND'd. */
@@ -35,6 +37,7 @@ export interface LabelFilter {
   angle?: string[];
   funnelStage?: string[];
   offer?: string[];
+  style?: string[];
   urgency?: boolean;
 }
 
@@ -137,6 +140,7 @@ export function mapLabelFacets(payload: unknown): LabelFacets | null {
       angle: mapFacetList(f.angle),
       funnelStage: mapFacetList(f.funnel_stage),
       offer: mapFacetList(f.offer),
+      style: mapFacetList(f.style),
       urgency: mapFacetList(f.urgency),
     },
   };

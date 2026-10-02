@@ -15,6 +15,7 @@ export function adLabelsFromParams(sp: Record<string, string | undefined>): Labe
     angle: cleanLabelValues('angle', sp.angle),
     funnelStage: cleanLabelValues('funnelStage', sp.funnelStage),
     offer: cleanLabelValues('offer', sp.offer),
+    style: cleanLabelValues('style', sp.style),
     urgency: sp.urgency === '1',
   };
 }

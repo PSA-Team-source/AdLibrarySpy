@@ -100,7 +100,10 @@ export async function loadShops(ctx: Ctx, sp: Record<string, string | undefined>
   const [res, allPlatforms] = await Promise.all([
     none ? { items: [] as Shop[], total: 0 } : queryShops(qp, { crux: false }),
     none ? 0 : sp.platform ? null
-      : countShops({ ...qp, platform: 'all' }, 300).catch(() => null),
+      // 80ms budget: on a common search word the all-platform count is a
+      // wildcard over every store URL (~300ms) and held the whole list. Late =
+      // the headline uses the list total; the count still lands in the cache.
+      : Promise.race([countShops({ ...qp, platform: 'all' }, 300).catch(() => null), new Promise<null>(r => setTimeout(() => r(null), 80))]),
   ]);
   mark('index');
   // The same lists re-applied to the rows, so a backend that has not learned

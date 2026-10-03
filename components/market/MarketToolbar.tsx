@@ -3,8 +3,8 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import type { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types';
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal,
-  LayoutGrid, Store, Eye, EyeOff, Crosshair, ShoppingBag, type LucideIcon,
+  Search, ChevronLeft, ChevronRight, ChevronDown, X,
+  LayoutGrid, Store, Eye, Crosshair, ShoppingBag, type LucideIcon,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
@@ -228,25 +228,25 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
   }, [tech]);
 
   const activeCount = FILTER_KEYS.filter(k => params.get(k)).length;
-  // The filter chips fold away behind one button so the table gets the height
-  // (feedback: only 3 stores fit). Remembered per browser; a per-viewer
-  // convenience, so a blocked storage just means it opens closed.
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  useEffect(() => {
-    try { setFiltersOpen(localStorage.getItem('shops.filtersOpen') === '1'); } catch { /* storage blocked */ }
-  }, []);
-  const toggleFilters = () => setFiltersOpen(open => {
-    try { localStorage.setItem('shops.filtersOpen', open ? '0' : '1'); } catch { /* storage blocked */ }
-    return !open;
-  });
-  const hideViewed = p('viewed') === 'exclude';
   const showingHidden = p('hidden') === 'show';
 
-  // Platform + category dropdowns and view toggles (search sits beside the
-  // page title, ShopSearch), then the folded filter chips. Sorting lives on the table's column headers.
+  // Row 1: preset views + Hidden/Export. Row 2: every filter side by side in
+  // one row that scrolls sideways — no "Filters" button to open first. Search
+  // sits beside the page title (SearchBox); sorting lives on the column headers.
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">{views}</div>
+        {(hiddenCount > 0 || showingHidden) && (
+          <button type="button" onClick={() => set({ hidden: showingHidden ? '' : 'show' })} aria-pressed={showingHidden}
+            className={cn(CHIP, 'shrink-0', showingHidden ? CHIP_ON : CHIP_OFF)}>
+            {showingHidden ? 'Back to Shops' : `Hidden (${hiddenCount.toLocaleString()})`}
+          </button>
+        )}
+        <ExportCsv kind="shops" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
+      </div>
+
+      <div id="shop-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
         <FilterChip icon={Store} label="Platform" value={platform === 'all' ? '' : platform}
           anyLabel="All platforms" showAny={false}
           onChange={v => set({ platform: v === 'shopify' ? '' : v || 'all' })}
@@ -256,30 +256,6 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
             onChange={v => set({ category: v, subcategory: '' })}
             options={categoryTabs.map(c => ({ value: c.id, label: c.name }))} />
         )}
-        <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="shop-filters"
-          className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters{activeCount > 0 && <span className="tabular-nums">({activeCount})</span>}
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} aria-hidden />
-        </button>
-        <button type="button" onClick={() => set({ viewed: hideViewed ? '' : 'exclude' })}
-          aria-pressed={hideViewed} title={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
-          aria-label={hideViewed ? 'Show shops you have viewed' : 'Hide shops you have viewed'}
-          className={cn('inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors', FOCUS,
-            hideViewed ? CHIP_ON : CHIP_OFF)}>
-          <EyeOff className="h-4 w-4" />
-        </button>
-        {(hiddenCount > 0 || showingHidden) && (
-          <button type="button" onClick={() => set({ hidden: showingHidden ? '' : 'show' })} aria-pressed={showingHidden}
-            className={cn(CHIP, 'shrink-0', showingHidden ? CHIP_ON : CHIP_OFF)}>
-            {showingHidden ? 'Back to Shops' : `Hidden (${hiddenCount.toLocaleString()})`}
-          </button>
-        )}
-        <ExportCsv kind="shops" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
-        {views && <div className="min-w-0 flex-1 basis-full lg:basis-0">{views}</div>}
-      </div>
-
-      {filtersOpen && <div id="shop-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
         <ShopFilterChips params={params} set={set} tech={tech} profileOptions={profileOptions}
           techOptions={techOptions} pixelOptions={pixelOptions}
           before={<>
@@ -309,7 +285,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
             <X className="h-3 w-3" /> Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
           </button>
         )}
-      </div>}
+      </div>
     </div>
   );
 }

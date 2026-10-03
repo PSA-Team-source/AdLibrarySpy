@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import {
-  X, ArrowDownUp, CalendarRange, ChevronDown, SlidersHorizontal, Film, Shapes, LayoutTemplate, Globe, Landmark,
+  X, ArrowDownUp, CalendarRange, ChevronDown, Film, Shapes, LayoutTemplate, Globe, Landmark,
   Store, Anchor, Compass, Filter, Tag, Timer, Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -83,47 +83,21 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   const { set, prefetch, params, pending } = useSetParam();
   const get = (k: string) => params.get(k) ?? '';
 
-  // Video style is the filter people flip through, and a pick is a round trip
-  // to the US origin (~360ms+ from Asia). Render every style's result in the
-  // background once the page is idle, so the pick is served from the router
-  // cache with no network — waiting for the menu to open was too late.
-  const styleValues = (labelFacets?.facets.style ?? []).map(e => e.value).join(',');
+  // Ads are in every script; a result needing an Inter subset not yet loaded
+  // (Cyrillic, Greek, Latin-ext) held the swap ~1s on the font download.
+  // Fetch every subset once idle. Results are NOT pre-rendered here: warming
+  // every style + niche fired ~25 full renders per view (and again per click),
+  // which queued the user's own click behind them for 5-10s. The menus
+  // prefetch their options when opened (onPrefetch).
   useEffect(() => {
-    if (!styleValues) return;
-    const current = params.get('style') ?? '';
-    const run = () => {
-      // Ads are in every script; a result needing an Inter subset not yet
-      // loaded (Cyrillic, Greek, Latin-ext) held the swap ~1s on the font
-      // download. Fetch every subset now, while idle.
-      document.fonts.forEach(f => { if (f.status === 'unloaded') f.load().catch(() => {}); });
-      for (const v of styleValues.split(',')) if (v !== current) prefetch({ style: v });
-      if (current) prefetch({ style: '' });
-    };
+    const run = () => document.fonts.forEach(f => { if (f.status === 'unloaded') f.load().catch(() => {}); });
     if ('requestIdleCallback' in window) {
       const id = window.requestIdleCallback(run, { timeout: 1500 });
       return () => window.cancelIdleCallback(id);
     }
     const id = setTimeout(run, 300);
     return () => clearTimeout(id);
-  }, [styleValues, params, prefetch]);
-
-  // Niche chips likewise: a pick from Asia waited the full US round trip.
-  // Render the biggest niches' first page in the background once idle.
-  const nicheIds = niches.slice(0, 12).map(n => n.id).join(',');
-  useEffect(() => {
-    if (!nicheIds) return;
-    const current = params.get('niche') ?? '';
-    const run = () => {
-      for (const id of nicheIds.split(',')) if (id !== current) prefetch({ niche: id });
-      if (current) prefetch({ niche: '' });
-    };
-    if ('requestIdleCallback' in window) {
-      const id = window.requestIdleCallback(run, { timeout: 2000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(run, 500);
-    return () => clearTimeout(id);
-  }, [nicheIds, params, prefetch]);
+  }, []);
 
   const [from, setFrom] = useState(get('from'));
   const [to, setTo] = useState(get('to'));
@@ -132,16 +106,6 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   // One chip each: a date range, and EU/UK with its country, count once.
   const activeCount = FILTER_KEYS.filter(k => get(k)).length
     - (get('from') && get('to') ? 1 : 0) - (get('euUk') === '1' && get('country') ? 1 : 0);
-  // Folded by default like Shops so the grid gets the height; remembered per
-  // browser (a per-viewer convenience — blocked storage just means closed).
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  useEffect(() => {
-    try { setFiltersOpen(localStorage.getItem('ads.filtersOpen') === '1'); } catch { /* storage blocked */ }
-  }, []);
-  const toggleFilters = () => setFiltersOpen(open => {
-    try { localStorage.setItem('ads.filtersOpen', open ? '0' : '1'); } catch { /* storage blocked */ }
-    return !open;
-  });
   const today = new Date().toISOString().slice(0, 10);
   const niche = get('niche');
   const euUk = get('euUk') === '1';
@@ -157,33 +121,20 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
 
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-
-      <div className="flex flex-wrap items-center gap-2">
+      <div id="ad-filters" className="flex flex-wrap items-center gap-2">
         {niches.length > 0 && (
           <FilterChip icon={Shapes} label="Niche" value={niche} anyLabel="All niches" showAny={false}
             onChange={v => set({ niche: v })} onPrefetch={v => prefetch({ niche: v })}
             options={niches.map(n => ({ value: n.id, label: n.name }))} />
         )}
-        <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="ad-filters"
-          className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters{activeCount > 0 && <span className="tabular-nums">({activeCount})</span>}
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} aria-hidden />
-        </button>
         <FilterChip icon={ArrowDownUp} label="Sort" value={get('sort')} anyLabel={get('q') ? 'Relevance' : 'Top spending'}
           onChange={v => set({ sort: v })} onPrefetch={v => prefetch({ sort: v })} options={sortOptions} />
         <ExportCsv kind="ads" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
-      </div>
-
-      {storeFilter && (
-        <div className="flex items-center">
+        {storeFilter && (
           <button type="button" onClick={() => set({ store: '' })} aria-label="Clear shop filter" className={cn(CHIP, CHIP_ON)}>
             <Store className="h-3.5 w-3.5" /> Ads from {storeFilter.label} <X className="h-3.5 w-3.5 opacity-70" />
           </button>
-        </div>
-      )}
-
-      {filtersOpen && <div id="ad-filters" className="flex flex-wrap items-center gap-2">
+        )}
         {!get('store') && (
           <button type="button" role="switch" aria-checked={!allAdvertisers}
             onClick={() => set({ allAdvertisers: allAdvertisers ? '' : '1' })}
@@ -265,7 +216,7 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
             <X className="h-3 w-3" /> Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
           </button>
         )}
-      </div>}
+      </div>
     </div>
   );
 }

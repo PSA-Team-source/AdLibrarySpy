@@ -2,11 +2,11 @@
 // The Landing pages explorer: the pages Meta ads send people to, built exactly
 // like the Products explorer — one server render, then every filter, sort and
 // page change is a small JSON fetch (GET /api/landing-pages) keyed by the query.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDownRight, ArrowUpRight, CalendarDays, ChevronDown, ExternalLink, Globe, LayoutGrid, LayoutTemplate, SlidersHorizontal, Users, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, CalendarDays, ExternalLink, Globe, LayoutGrid, LayoutTemplate, Users, X } from 'lucide-react';
 import { PageShell } from '@/components/layouts/page-shell';
 import { FilterChip, MarketPagination, SearchBox, ShallowUrlProvider, useSetParam } from '@/components/market/MarketToolbar';
 import { SortableHeader } from '@/components/market/SortableHeader';
@@ -43,9 +43,6 @@ async function fetchLandingPages(qs: string, signal: AbortSignal): Promise<Landi
 }
 
 const FOCUS = 'outline-none focus-visible:shadow-[0_0_0_4px_var(--a-focus)]';
-const PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
-const ON = 'bg-foreground text-background';
-const OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
 const COUNTRIES = ['US', 'GB', 'CA', 'AU', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'SE', 'BR', 'MX', 'JP', 'IN', 'HK'];
 const regionName = (() => {
@@ -76,9 +73,6 @@ function Toolbar({ categories, types }: { categories: CategoryNode[]; types: { t
   const { set, params, pending } = useSetParam();
   const p = (k: string) => params.get(k) ?? '';
 
-  const [open, setOpen] = useState(false);
-  useEffect(() => { try { setOpen(localStorage.getItem('landingPages.filtersOpen') === '1'); } catch { /* storage blocked */ } }, []);
-  const toggle = () => setOpen(o => { try { localStorage.setItem('landingPages.filtersOpen', o ? '0' : '1'); } catch { /* storage blocked */ } return !o; });
 
   const categoryId = p('category');
   const tabs = useMemo(() => categories.filter(c => c.brandCount > 0 || c.id === categoryId).sort((a, b) => b.brandCount - a.brandCount), [categories, categoryId]);
@@ -89,21 +83,12 @@ function Toolbar({ categories, types }: { categories: CategoryNode[]; types: { t
 
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      <div className="flex flex-wrap items-center gap-2">
+      <div id="lp-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
         {tabs.length > 0 && (
           <FilterChip icon={LayoutGrid} label="Category" value={categoryId} anyLabel="All categories" showAny={false}
             onChange={v => set({ category: v, subcategory: '' })} options={tabs.map(c => ({ value: c.id, label: c.name }))} />
         )}
         <TypeChips types={types} />
-        <button type="button" onClick={toggle} aria-expanded={open} aria-controls="lp-filters"
-          className={cn(PILL, 'h-9 shrink-0', active > 0 ? ON : OFF)}>
-          <SlidersHorizontal className="h-4 w-4" aria-hidden />
-          Filters{active > 0 && <span className="tabular-nums">({active})</span>}
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} aria-hidden />
-        </button>
-      </div>
-      {open && (
-        <div id="lp-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
           {subs.length > 0 && (
             <FilterChip icon={LayoutGrid} label="Subcategory" value={p('subcategory')} onChange={v => set({ subcategory: v })}
               options={subs.map(c => ({ value: c.id, label: c.name }))} />
@@ -124,8 +109,7 @@ function Toolbar({ categories, types }: { categories: CategoryNode[]; types: { t
               <X className="h-3 w-3" /> Clear {active} filter{active > 1 ? 's' : ''}
             </button>
           )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

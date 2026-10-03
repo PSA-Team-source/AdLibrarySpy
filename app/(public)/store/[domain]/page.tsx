@@ -100,7 +100,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
 
   const [similar, adBundle, adHistory, profile, creativeTotal] = await Promise.all([
     similarShops(shop, 6).catch(() => []),
-    storeAdBundle(shop.domain, 8).catch(() => ({ ads: [], countries: [] })),
+    storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
     storeAdHistory(shop.storeId),
     storeProfile(shop.storeId),
     creativeCountFor(shop.domain),

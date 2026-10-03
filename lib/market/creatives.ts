@@ -409,10 +409,12 @@ export async function storeAds(domain: string, limit = 24): Promise<Ad[]> {
 export async function storeAdBundle(
   domain: string,
   adLimit = 12,
+  /** Newest ads the country shares are counted over (60 rows reached 684KB / 250ms). */
+  sample = 60,
 ): Promise<{ ads: Ad[]; countries: CountryShare[] }> {
   if (!domain) return { ads: [], countries: [] };
   try {
-    const { items } = await storeAdsRaw(domain, 60);
+    const { items } = await storeAdsRaw(domain, sample);
     return { ads: items.slice(0, Math.max(0, adLimit)), countries: countryShares(items) };
   } catch {
     return { ads: [], countries: [] };

@@ -748,7 +748,8 @@ export async function similarShops(shop: Shop, limit = 6): Promise<Shop[]> {
   const band = measured(shop)
     ? { trafficMin: Math.floor(shop.monthlyVisits / 10), trafficMax: Math.ceil(shop.monthlyVisits * 10) }
     : {};
-  const base: ShopFilter = { category: catId, platform: shop.platform || 'shopify', limit: 100, ...band };
+  // Pool = 3x what is shown (min 30): 100 full rows cost 60-270ms in Go, 30 cost ~20ms.
+  const base: ShopFilter = { category: catId, platform: shop.platform || 'shopify', limit: Math.min(100, Math.max(30, limit * 3)), ...band };
   const home = [...new Set([shop.country, shop.visitorCountries?.[0]?.code].filter(Boolean) as string[])];
   const pages = await Promise.all([
     listShops(base, { crux: false }),

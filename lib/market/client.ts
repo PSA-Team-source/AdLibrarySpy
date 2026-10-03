@@ -14,6 +14,8 @@ const BASE = process.env.MARKET_API_BASE || 'https://api.platformdtc.com/api/v1'
 // restart takes; nginx fails over for api.platformdtc.com, this process talks to
 // :5900 directly, so it fails over itself — at once, no backoff.
 const FALLBACK = process.env.MARKET_API_FALLBACK || '';
+// Ops: log every read slower than this many ms (unset = off).
+const TRACE_MS = Number(process.env.MARKET_TRACE_MS || 0);
 const TIMEOUT_MS = Number(process.env.MARKET_TIMEOUT_MS || 12_000);
 const OUTAGE_BUDGET_MS = Number(process.env.MARKET_OUTAGE_BUDGET_MS || 25_000);
 const STALE_BUDGET_MS = Number(process.env.MARKET_STALE_BUDGET_MS || 2_500);
@@ -84,6 +86,7 @@ export async function marketRequest<T>(
     headers.Authorization = `Bearer ${await marketToken()}`;
   }
 
+  const started = now();
   let lastErr: unknown;
   let base = deps.base ?? BASE;
   const fallback = deps.fallback ?? FALLBACK;
@@ -99,6 +102,7 @@ export async function marketRequest<T>(
       if (!res.ok) throw new MarketError(res.status, path);
       const text = await res.text();
       const value = JSON.parse(text) as T;
+      if (TRACE_MS && now() - started >= TRACE_MS) console.warn(`[market-trace] ${now() - started}ms ${method} ${path} ${text.length}B`);
       if (text.length <= LAST_GOOD_MAX_BYTES) remember(key, value);
       return value;
     } catch (err) {

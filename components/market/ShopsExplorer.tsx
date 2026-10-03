@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageShell } from '@/components/layouts/page-shell';
-import { MarketPagination, MarketToolbar, Segments, ShallowUrlProvider } from '@/components/market/MarketToolbar';
+import { MarketPagination, MarketToolbar, Segments, ShopSearch, ShallowUrlProvider } from '@/components/market/MarketToolbar';
 import { SaveSearchButton } from '@/components/market/SaveSearchButton';
 import { ShopExplorerTable } from '@/components/market/ShopExplorerTable';
 import { SHOPS_KEY } from '@/components/market/shops-cache';
@@ -117,7 +117,7 @@ export function ShopsExplorer({ categories, tech, initial, initialParams, render
         fullHeight
         className="apple-ui gap-5 bg-[var(--a-canvas)]"
         title={showHidden ? 'Hidden shops' : 'Shops'}
-        actions={showHidden ? undefined : <>{intro}<SaveSearchButton kind="shops" /></>}
+        actions={showHidden ? <ShopSearch /> : <><ShopSearch />{intro}<SaveSearchButton kind="shops" /></>}
         titleAdornment={(data?.allPlatformsTotal ?? data?.total) != null
           ? <span className="inline-flex items-center rounded-full bg-[var(--a-fill)] px-3 py-1 text-[13px] font-semibold tabular-nums text-foreground" title="Shops across all platforms">{(data!.allPlatformsTotal ?? data!.total)!.toLocaleString()}</span>
           : undefined}

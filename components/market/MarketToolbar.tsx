@@ -4,7 +4,7 @@ import type { PrefetchKind } from 'next/dist/client/components/router-reducer/ro
 import { createContext, useCallback, useContext, useTransition, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, ChevronDown, X, SlidersHorizontal,
-  LayoutGrid, Eye, EyeOff, Crosshair, ShoppingBag, type LucideIcon,
+  LayoutGrid, Store, Eye, EyeOff, Crosshair, ShoppingBag, type LucideIcon,
 } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger,
@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { CategoryNode, ProfileKey, TechFacets } from '@/lib/market/shops';
 import { MARKET_PLATFORM_FILTERS } from '@/lib/market-platforms';
-import { PlatformIcon } from './PlatformIcon';
 import { ExportCsv } from './ExportCsv';
 import { ShopFilterChips, SHOP_FILTER_KEYS } from './ShopFilterChips';
 
@@ -83,8 +82,6 @@ const PILL_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hove
 
 // Top Brands' platform and category rows: capsules, grey until picked.
 export const TB_PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
-const TB_ON = 'bg-foreground text-background';
-const TB_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
 export const CHIP = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
 export const CHIP_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
@@ -184,29 +181,6 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
   const subId = params.get('subcategory') ?? '';
   const p = (k: string) => params.get(k) ?? '';
 
-  const [term, setTerm] = useState(params.get('q') ?? '');
-  // Sync input when URL changes externally (e.g. Clear button)
-  useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
-  // /shops paints from the edge before it hydrates; hydration keeps what was
-  // typed in the box in that window, so adopt it (declared after the URL sync
-  // above, which would otherwise reset it to the URL's value on mount).
-  const termRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    const typed = termRef.current?.value ?? '';
-    if (typed && typed !== (params.get('q') ?? '')) setTerm(typed);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Auto-search: debounce the raw term and push to URL when it settles
-  const debouncedTerm = useDebounce(term, 300);
-  useEffect(() => {
-    const currentQ = params.get('q') ?? '';
-    if (debouncedTerm !== currentQ) {
-      set({ q: debouncedTerm });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTerm]);
-
   // Subcategories belong to the chosen parent; the second chip only appears
   // once a parent is picked, so the control count stays low by default. A
   // category no shop of the served month is filed under is not offered: it
@@ -269,60 +243,20 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
   const hideViewed = p('viewed') === 'exclude';
   const showingHidden = p('hidden') === 'show';
 
-  // Top Brands' platform row and category row, then search + view toggles,
-  // then the filter chips. Sorting lives on the table's column headers.
+  // Platform + category dropdowns and view toggles (search sits beside the
+  // page title, ShopSearch), then the folded filter chips. Sorting lives on the table's column headers.
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      {/* One swipeable row on a phone (six platforms wrapped to three rows). */}
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-       <div className="flex min-w-max gap-1.5 sm:min-w-0 sm:flex-wrap">
-        {MARKET_PLATFORM_FILTERS.map(pl => (
-          <button key={pl.id} type="button" onClick={() => set({ platform: pl.id === 'shopify' ? '' : pl.id })}
-            aria-pressed={platform === pl.id} className={cn(TB_PILL, platform === pl.id ? TB_ON : TB_OFF)}>
-            <PlatformIcon platform={pl.id} className="h-4 w-4 shrink-0" />
-            {(pl.id === 'all' || pl.id === 'other') && <span className={cn('h-3 w-3 shrink-0 rounded-full', pl.color)} aria-hidden />}
-            {pl.name}
-          </button>
-        ))}
-       </div>
-      </div>
-
-      {categoryTabs.length > 0 && (
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max gap-1.5">
-            {[{ id: '', name: 'All Categories' }, ...categoryTabs].map(c => (
-              <button key={c.id || 'all'} type="button" onClick={() => set({ category: c.id, subcategory: '' })}
-                aria-pressed={categoryId === c.id} className={cn(TB_PILL, categoryId === c.id ? TB_ON : TB_OFF)}>
-                {c.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <form
-          className="relative min-w-0 flex-1 basis-full sm:basis-0"
-          onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}
-        >
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
-          <input
-            ref={termRef}
-            type="search"
-            value={term}
-            onChange={e => setTerm(e.target.value)}
-            placeholder="Search shops, keywords…"
-            aria-label="Search shops, keywords"
-            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
-          />
-          {term && (
-            <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100"
-              aria-label="Clear search">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </form>
+      <div className="flex flex-wrap items-center gap-2">
+        <FilterChip icon={Store} label="Platform" value={platform === 'all' ? '' : platform}
+          anyLabel="All platforms" showAny={false}
+          onChange={v => set({ platform: v === 'shopify' ? '' : v || 'all' })}
+          options={MARKET_PLATFORM_FILTERS.filter(pl => pl.id !== 'all').map(pl => ({ value: pl.id, label: pl.name }))} />
+        {categoryTabs.length > 0 && (
+          <FilterChip icon={LayoutGrid} label="Category" value={categoryId} anyLabel="All categories" showAny={false}
+            onChange={v => set({ category: v, subcategory: '' })}
+            options={categoryTabs.map(c => ({ value: c.id, label: c.name }))} />
+        )}
         <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="shop-filters"
           className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
           <SlidersHorizontal className="h-4 w-4" aria-hidden />
@@ -377,6 +311,59 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
         )}
       </div>}
     </div>
+  );
+}
+
+
+/** The Shops search box; sits on the title row so the list keeps the height. */
+export function ShopSearch() {
+  const { set, params, pending } = useSetParam();
+  const [term, setTerm] = useState(params.get('q') ?? '');
+  // Sync input when URL changes externally (e.g. Clear button)
+  useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
+  // /shops paints from the edge before it hydrates; hydration keeps what was
+  // typed in the box in that window, so adopt it (declared after the URL sync
+  // above, which would otherwise reset it to the URL's value on mount).
+  const termRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const typed = termRef.current?.value ?? '';
+    if (typed && typed !== (params.get('q') ?? '')) setTerm(typed);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-search: debounce the raw term and push to URL when it settles
+  const debouncedTerm = useDebounce(term, 300);
+  useEffect(() => {
+    const currentQ = params.get('q') ?? '';
+    if (debouncedTerm !== currentQ) {
+      set({ q: debouncedTerm });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTerm]);
+
+  return (
+    <form
+      className={cn('relative w-full sm:w-72 lg:w-96', pending && 'opacity-60')}
+      onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}
+    >
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
+      <input
+        ref={termRef}
+        type="search"
+        value={term}
+        onChange={e => setTerm(e.target.value)}
+        placeholder="Search shops, keywords…"
+        aria-label="Search shops, keywords"
+        className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
+      />
+      {term && (
+        <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100"
+          aria-label="Clear search">
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </form>
   );
 }
 

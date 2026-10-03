@@ -6,7 +6,7 @@ import { BrandLogo } from '@/components/market/BrandLogo';
 import { ProductImage } from '@/components/ShopMedia';
 import { compact, flag, money } from '@/lib/format';
 import { liftLabel, weekLabel } from '@/lib/trends';
-import { loadAdTrends, loadHotProducts, loadVideoStyles, type AdShare, type AdStore, type AdTrends } from './load';
+import { lastDay, loadAdTrends, loadHotProducts, loadVideoStyles, movingNiches, type AdShare, type AdStore, type AdTrends } from './load';
 import { TrendProductCard } from './product-card';
 
 // The daily half of /trends: what advertisers launched on Meta in the last 7
@@ -18,32 +18,42 @@ const up = 'text-emerald-600 dark:text-emerald-400';
 const down = 'text-rose-600 dark:text-rose-400';
 const n = (v: number) => v.toLocaleString('en-US');
 
-/** Today as a UTC date — the cache key, so the week rolls over at midnight UTC. */
-const todayUtc = () => new Date().toISOString().slice(0, 10);
+/** Weeks back the page can be read at (0 = the latest full week). */
+export const WEEKS_BACK = 4;
+export const parseWeeksBack = (v?: string) => Math.min(WEEKS_BACK - 1, Math.max(0, Number.parseInt(v ?? '', 10) || 0));
 
-export async function loadAds(): Promise<AdTrends | null> {
-  return loadAdTrends(todayUtc()).catch(err => { console.error('[trends ads]', err); return null; });
+/**
+ * The week's exclusive end as a UTC date — also the cache key, so the latest week
+ * rolls over at midnight UTC. `back` steps whole weeks into the past.
+ */
+export const weekEnd = (back = 0) => new Date(Date.now() - back * 7 * 86_400_000).toISOString().slice(0, 10);
+
+export async function loadAds(back = 0): Promise<AdTrends | null> {
+  return loadAdTrends(weekEnd(back)).catch(err => { console.error('[trends ads]', err); return null; });
 }
+
+/** /ads query for one week ("from=…&to=…"), the same window the numbers count. */
+const range = (d: { from: string; to: string }) => `from=${d.from}&to=${lastDay(d.to)}`;
 
 function Change({ cur, prev }: { cur: number; prev: number }) {
   if (!prev) return null;
   const pct = Math.round((cur / prev - 1) * 100);
-  if (!pct) return <span className="text-xs text-muted-foreground">same as last week</span>;
-  return <span className={`text-xs font-medium tabular-nums ${pct > 0 ? up : down}`}>{pct > 0 ? '+' : '−'}{Math.abs(pct)}% vs last week</span>;
+  if (!pct) return <span className="text-xs text-muted-foreground">same as the week before</span>;
+  return <span className={`text-xs font-medium tabular-nums ${pct > 0 ? up : down}`}>{pct > 0 ? '+' : '−'}{Math.abs(pct)}% vs the week before</span>;
 }
 
 // ---------- the week at a glance ----------
 
-export function AdPulse({ d }: { d: AdTrends }) {
+export function AdPulse({ d, back = 0 }: { d: AdTrends; back?: number }) {
   const tiles = [
     { label: 'New Meta ads launched', cur: d.newAds, prev: d.prevNewAds },
     { label: 'Brands launching ads', cur: d.advertisers, prev: d.prevAdvertisers },
   ];
   return (
     <SectionCard
-      title="This week in Meta ads"
+      title={back ? `Meta ads, ${weekLabel(d.from, d.to)}` : 'This week in Meta ads'}
       description={`Ads that started running ${weekLabel(d.from, d.to)}, compared with the week before.`}
-      actions={<Link href={`/ads?from=${d.from}`} className={seeAll}>See this week&apos;s ads <ArrowRight className="h-4 w-4" /></Link>}
+      actions={<Link href={`/ads?${range(d)}`} className={seeAll}>See these ads <ArrowRight className="h-4 w-4" /></Link>}
     >
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
         <div className="grid grid-cols-2 gap-3">
@@ -76,6 +86,25 @@ export function AdPulse({ d }: { d: AdTrends }) {
                 </li>
               ))}
             </ul>
+            {d.placements.length > 0 && <>
+              <h3 className="mt-6 text-sm font-semibold text-foreground">Where they run</h3>
+              <p className="text-xs text-muted-foreground">Share of new ads placed on each app. Most ads run on several, so these add up to more than 100%.</p>
+              <ul className="mt-3 space-y-2.5">
+                {d.placements.map(f => (
+                  <li key={f.id}>
+                    <Link href={`/ads?placement=${f.id}&${range(d)}`} className="-mx-2 block rounded-md px-2 py-1 hover:bg-accent">
+                      <span className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="text-foreground">{f.name}</span>
+                        <span className="tabular-nums text-muted-foreground">{Math.round(f.share * 100) || '<1'}% <Lift lift={f.lift} /></span>
+                      </span>
+                      <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                        <span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(1, Math.min(100, f.share * 100))}%` }} />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>}
           </div>
         )}
       </div>
@@ -87,7 +116,7 @@ function Lift({ lift }: { lift: number }) {
   const label = liftLabel(lift);
   return (
     <span className={`ml-1 text-xs font-medium tabular-nums ${label === 'same' ? 'text-muted-foreground' : lift > 1 ? up : down}`}
-      title="Change in its share of all new ads, this week vs last">
+      title="Change in its share of all new ads vs the week before">
       {label === 'same' ? 'no change' : label}
     </span>
   );
@@ -95,19 +124,19 @@ function Lift({ lift }: { lift: number }) {
 
 // ---------- video styles ----------
 
-export async function VideoStylesSection() {
-  const d = await loadVideoStyles(todayUtc()).catch(err => { console.error('[trends styles]', err); return null; });
+export async function VideoStylesSection({ back = 0 }: { back?: number }) {
+  const d = await loadVideoStyles(weekEnd(back)).catch(err => { console.error('[trends styles]', err); return null; });
   if (!d?.styles.length) return null;
   return (
     <SectionCard
       title="Video styles advertisers are using"
-      description={`How this week's new video ads are made, from ${n(d.styled)} we watched (${weekLabel(d.from, d.to)}). Change is each style's share vs the week before.`}
-      actions={<Link href={`/ads?media=video&from=${d.from}`} className={seeAll}>See video ads <ArrowRight className="h-4 w-4" /></Link>}
+      description={`How the week's new video ads are made, from ${n(d.styled)} we watched (${weekLabel(d.from, d.to)}). Change is each style's share vs the week before.`}
+      actions={<Link href={`/ads?media=video&${range(d)}`} className={seeAll}>See video ads <ArrowRight className="h-4 w-4" /></Link>}
     >
       <ul className="grid gap-x-8 gap-y-1 md:grid-cols-2">
         {d.styles.map(s => (
           <li key={s.id}>
-            <Link href={`/ads?style=${s.id}&from=${d.from}`} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
+            <Link href={`/ads?style=${s.id}&${range(d)}`} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="truncate text-foreground">{s.name}</span>
@@ -175,7 +204,7 @@ function StoreCell({ s }: { s: AdStore }) {
   );
 }
 
-function AdThumbs({ s, from }: { s: AdStore; from: string }) {
+function AdThumbs({ s, d }: { s: AdStore; d: AdTrends }) {
   return (
     <span className="flex items-center justify-end gap-1.5">
       {s.ads.map(a => (
@@ -183,7 +212,7 @@ function AdThumbs({ s, from }: { s: AdStore; from: string }) {
           <ProductImage src={a.image} alt="" className="h-10 w-10 rounded-md border border-border object-cover" />
         </Link>
       ))}
-      <Link href={`/ads?store=${encodeURIComponent(s.domain)}&from=${from}`} className="ml-1 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground">
+      <Link href={`/ads?store=${encodeURIComponent(s.domain)}&${range(d)}`} className="ml-1 whitespace-nowrap text-xs text-muted-foreground hover:text-foreground">
         See ads
       </Link>
     </span>
@@ -200,8 +229,8 @@ export function ScalingSection({ d }: { d: AdTrends }) {
           <TableRow>
             <TableHead className="w-12 pl-6">#</TableHead>
             <TableHead className="max-sm:w-[65%]">Shop</TableHead>
-            <TableHead className="text-right">New ads<span className="max-sm:hidden"> this week</span></TableHead>
-            <TableHead className="text-right">Last week</TableHead>
+            <TableHead className="text-right">New ads<span className="max-sm:hidden"> that week</span></TableHead>
+            <TableHead className="text-right">Week before</TableHead>
             <TableHead className="text-right" title="Facebook pages the new ads ran from">Pages</TableHead>
             <TableHead className="text-right">Video</TableHead>
             <TableHead className="pr-6 text-right">Latest ads</TableHead>
@@ -211,7 +240,7 @@ export function ScalingSection({ d }: { d: AdTrends }) {
           {d.scaling.map((s, i) => (
             <TableRow key={s.id}>
               <TableCell className="pl-6 tabular-nums text-muted-foreground">{i + 1}</TableCell>
-              <TableCell><StoreCell s={s} /><div className="mt-2 sm:hidden [&>span]:justify-start"><AdThumbs s={s} from={d.from} /></div></TableCell>
+              <TableCell><StoreCell s={s} /><div className="mt-2 sm:hidden [&>span]:justify-start"><AdThumbs s={s} d={d} /></div></TableCell>
               <TableCell className="text-right font-semibold tabular-nums text-foreground">{n(s.newAds)}</TableCell>
               <TableCell className="text-right">
                 <span className="block tabular-nums text-muted-foreground">{n(s.prevAds)}</span>
@@ -219,7 +248,7 @@ export function ScalingSection({ d }: { d: AdTrends }) {
               </TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground">{n(s.pages)}</TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground">{Math.round(s.videoShare * 100)}%</TableCell>
-              <TableCell className="pr-6"><AdThumbs s={s} from={d.from} /></TableCell>
+              <TableCell className="pr-6"><AdThumbs s={s} d={d} /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -233,7 +262,7 @@ export function NewBrandsSection({ d }: { d: AdTrends }) {
   const day = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   return (
     <SectionCard padded={false} title="New brands that just started advertising"
-      description="Shopify stores whose first Meta ad ever started this week, already with 20+ ads. Catch them before everyone else does.">
+      description={`Shopify stores whose first Meta ad ever started in the week, already with 20+ ads (${weekLabel(d.from, d.to)}). Catch them before everyone else does.`}>
       <Table className="max-sm:table-fixed sm:min-w-[760px] max-sm:[&_tr>*:nth-child(2)]:hidden max-sm:[&_tr>*:nth-child(4)]:hidden max-sm:[&_tr>*:nth-child(5)]:hidden" containerClassName="pt-2">
         <TableHeader>
           <TableRow>
@@ -247,11 +276,11 @@ export function NewBrandsSection({ d }: { d: AdTrends }) {
         <TableBody>
           {d.newBrands.map(s => (
             <TableRow key={s.id}>
-              <TableCell className="pl-6"><StoreCell s={s} /><div className="mt-2 sm:hidden [&>span]:justify-start"><AdThumbs s={s} from={d.from} /></div></TableCell>
+              <TableCell className="pl-6"><StoreCell s={s} /><div className="mt-2 sm:hidden [&>span]:justify-start"><AdThumbs s={s} d={d} /></div></TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground">{s.firstAd ? day(s.firstAd) : null}</TableCell>
               <TableCell className="text-right font-semibold tabular-nums text-foreground">{n(s.newAds)}</TableCell>
               <TableCell className="text-right tabular-nums text-muted-foreground">{Math.round(s.videoShare * 100)}%</TableCell>
-              <TableCell className="pr-6"><AdThumbs s={s} from={d.from} /></TableCell>
+              <TableCell className="pr-6"><AdThumbs s={s} d={d} /></TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -263,8 +292,7 @@ export function NewBrandsSection({ d }: { d: AdTrends }) {
 // ---------- niches ----------
 
 export function AdNichesSection({ d }: { d: AdTrends }) {
-  const rising = d.niches.filter(x => x.lift >= 1.05).slice(0, 8);
-  const cooling = d.niches.filter(x => x.lift <= 0.95).slice(-5).reverse();
+  const { rising, cooling } = movingNiches(d.niches);
   if (!rising.length && !cooling.length) return null;
   const col = (title: string, rows: AdShare[]) => rows.length > 0 && (
     <div>
@@ -272,12 +300,19 @@ export function AdNichesSection({ d }: { d: AdTrends }) {
       <ul className="mt-2 divide-y divide-border">
         {rows.map(x => (
           <li key={x.id}>
-            <Link href={`/ads?niche=${x.id}&from=${d.from}`} className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-2 hover:bg-accent">
-              <span className="min-w-0">
+            <Link href={`/ads?niche=${x.id}&${range(d)}`} className="-mx-2 flex items-center gap-3 rounded-md px-2 py-2 hover:bg-accent">
+              <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-foreground">{x.name}</span>
-                <span className="block text-xs tabular-nums text-muted-foreground">{n(x.cur)} new ads · {n(x.prev)} last week</span>
+                <span className="block text-xs tabular-nums text-muted-foreground">{n(x.cur)} new ads · {n(x.prev)} the week before</span>
               </span>
-              <Lift lift={x.lift} />
+              {!!x.ads?.length && (
+                <span className="flex shrink-0 gap-1">
+                  {x.ads.map(a => (
+                    <ProductImage key={a.id} src={a.image} alt="" className="h-9 w-9 rounded-md border border-border object-cover max-sm:[&:nth-child(n+3)]:hidden" />
+                  ))}
+                </span>
+              )}
+              <span className="w-12 shrink-0 text-right"><Lift lift={x.lift} /></span>
             </Link>
           </li>
         ))}

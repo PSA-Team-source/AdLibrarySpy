@@ -139,17 +139,38 @@ export interface AdStore {
   firstAd?: string;
   ads: Ad[];
 }
-export interface AdShare { id: string; name: string; cur: number; prev: number; share: number; lift: number }
+export interface AdShare {
+  id: string; name: string; cur: number; prev: number; share: number; lift: number;
+  /** A few of this week's ads (rising/cooling niches only). */
+  ads?: Ad[];
+}
 export interface AdTrends {
   from: string; to: string; prevFrom: string;
   newAds: number; prevNewAds: number; advertisers: number; prevAdvertisers: number;
-  scaling: AdStore[]; newBrands: AdStore[]; niches: AdShare[]; formats: AdShare[];
+  scaling: AdStore[]; newBrands: AdStore[]; niches: AdShare[]; formats: AdShare[]; placements: AdShare[];
 }
 
 const FORMAT_NAMES: Record<string, string> = {
   video: 'Video', image: 'Single image', dco: 'Dynamic creative', carousel: 'Carousel',
   dpa: 'Catalogue (DPA)', event: 'Event', multi_images: 'Multiple images',
 };
+
+/** Meta's publisher_platform values. An ad usually runs on several, so shares overlap. */
+const PLACEMENT_NAMES: Record<string, string> = {
+  facebook: 'Facebook', instagram: 'Instagram', threads: 'Threads', whatsapp: 'WhatsApp',
+  audience_network: 'Audience Network', messenger: 'Messenger',
+};
+
+/** Niche rows the section shows: rising first (biggest lift), then cooling (biggest drop). */
+export function movingNiches(niches: AdShare[]): { rising: AdShare[]; cooling: AdShare[] } {
+  return {
+    rising: niches.filter(x => x.lift >= 1.05).slice(0, 8),
+    cooling: niches.filter(x => x.lift <= 0.95).slice(-5).reverse(),
+  };
+}
+
+/** The last day inside a [from, to) week, for /ads links (their end date is inclusive). */
+export const lastDay = (to: string) => new Date(Date.parse(`${to}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 
 /**
  * Index rows for ClickHouse store ids, in the given order: real Shopify stores
@@ -185,7 +206,7 @@ async function resolveStores(rows: Record<string, unknown>[], keep: number): Pro
 export const loadAdTrends = unstable_cache(async (today: string): Promise<AdTrends> => {
   const w = adWeeks(today);
   const p = { ...w };
-  const [totals, stores, fresh, niches, formats, names] = await Promise.all([
+  const [totals, stores, fresh, niches, formats, placements, names] = await Promise.all([
     chQuery(`SELECT uniqExactIf(id, ${CUR}) AS cur, uniqExactIf(id, NOT ${CUR}) AS prev,
                     uniqExactIf(store_id, ${CUR} AND store_id != '') AS sc, uniqExactIf(store_id, NOT ${CUR} AND store_id != '') AS sp
                FROM market_research.market__creatives WHERE ${LIVE} AND ${WEEKS} FORMAT JSONEachRow`, p),
@@ -208,14 +229,20 @@ export const loadAdTrends = unstable_cache(async (today: string): Promise<AdTren
     chQuery(`SELECT ifNull(display_format, '') AS k, uniqExactIf(id, ${CUR}) AS cur, uniqExactIf(id, NOT ${CUR}) AS prev
                FROM market_research.market__creatives WHERE ${LIVE} AND ${WEEKS}
               GROUP BY k FORMAT JSONEachRow`, p),
+    chQuery(`SELECT k, uniqExactIf(id, ${CUR}) AS cur, uniqExactIf(id, NOT ${CUR}) AS prev
+               FROM market_research.market__creatives
+              ARRAY JOIN JSONExtract(ifNull(publisher_platform, '[]'), 'Array(String)') AS k
+              WHERE ${LIVE} AND ${WEEKS}
+              GROUP BY k FORMAT JSONEachRow`, p),
     categories(),
   ]);
   const t = totals[0] ?? {};
   const newAds = Number(t.cur) || 0, prevNewAds = Number(t.prev) || 0;
   if (!newAds || !prevNewAds) throw new Error('trends ads: no new ads counted');
 
-  const shares = (rows: Record<string, unknown>[], name: (id: string) => string | undefined): AdShare[] => {
-    const cT = rows.reduce((a, r) => a + Number(r.cur), 0), pT = rows.reduce((a, r) => a + Number(r.prev), 0);
+  // Totals default to the rows' sum (each ad in one row); placements overlap, so they divide by all new ads.
+  const shares = (rows: Record<string, unknown>[], name: (id: string) => string | undefined,
+    cT = rows.reduce((a, r) => a + Number(r.cur), 0), pT = rows.reduce((a, r) => a + Number(r.prev), 0)): AdShare[] => {
     return rows.flatMap(r => {
       const id = String(r.k), n = name(id), cur = Number(r.cur), prev = Number(r.prev);
       const lift = adLift(cur, prev, cT, pT);
@@ -223,15 +250,26 @@ export const loadAdTrends = unstable_cache(async (today: string): Promise<AdTren
     });
   };
 
-  const [scaling, newBrands] = await Promise.all([resolveStores(stores, 15), resolveStores(fresh, 12)]);
+  const nicheShares = shares(niches, id => names[id]).sort((a, b) => b.lift - a.lift);
+  const { rising, cooling } = movingNiches(nicheShares);
+  const [scaling, newBrands] = await Promise.all([
+    resolveStores(stores, 15),
+    resolveStores(fresh, 12),
+    // Example ads per shown niche, from this week, renderable (API media, not expired CDN links).
+    mapLimit([...rising, ...cooling], 4, async x => {
+      x.ads = await listAds({ category: x.id, from: w.from, to: lastDay(w.to), limit: 3 })
+        .then(r => r.items).catch(() => [] as Ad[]);
+    }),
+  ]);
   return {
     ...w, newAds, prevNewAds,
     advertisers: Number(t.sc) || 0, prevAdvertisers: Number(t.sp) || 0,
     scaling, newBrands,
-    niches: shares(niches, id => names[id]).sort((a, b) => b.lift - a.lift),
+    niches: nicheShares,
     formats: shares(formats, id => FORMAT_NAMES[id]).sort((a, b) => b.share - a.share),
+    placements: shares(placements, id => PLACEMENT_NAMES[id], newAds, prevNewAds).sort((a, b) => b.share - a.share),
   };
-}, ['trends:ads:v2'], { revalidate: HOUR });
+}, ['trends:ads:v3'], { revalidate: HOUR });
 
 // ---------- video styles (market__creatives.ai_style, Go services/creativestyles) ----------
 // Every live video ad is watched (4 frames) by a vision model and filed under one
@@ -281,7 +319,7 @@ export const loadVideoStyles = unstable_cache(async (today: string): Promise<Vid
 
   // Example ads: this week's, renderable, from the API (cached media, not expired CDN links).
   await mapLimit(styles, 4, async s => {
-    s.ads = await listAds({ style: [s.id], from: w.from, limit: 4 })
+    s.ads = await listAds({ style: [s.id], from: w.from, to: lastDay(w.to), limit: 4 })
       .then(r => r.items).catch(() => [] as Ad[]);
   });
   return { from: w.from, to: w.to, styled: cT, styles };

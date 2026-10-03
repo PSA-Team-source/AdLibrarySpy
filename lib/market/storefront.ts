@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 // Facts a Shopify store publishes about itself, read from its own public
 // storefront: /meta.json (myshopify domain, currency, published product count),
 // the homepage's Shopify.theme / Shopify.locale globals, and the storefront's
@@ -263,4 +264,18 @@ export async function storeProfile(storeId: string): Promise<StoreProfile | null
   } catch {
     return null;
   }
+}
+
+const memoFacts = unstable_cache(storefrontFacts, ['storefront-facts-v1'], { revalidate: 3600 });
+
+/**
+ * Storefront facts for a page that must not wait on the merchant's own site:
+ * six live fetches (multi-MB pages, past Next's 2MB fetch cache) took 0.4-2s
+ * and held the whole cached /store page. Answers from the per-domain memo, or
+ * null after `ms`; the read keeps going and fills the memo for the next render.
+ * ponytail: a cold store's first copy (1h ISR) shows no storefront chips.
+ */
+export function storefrontFactsFast(domain: string, ms = 150): Promise<StorefrontFacts | null> {
+  const read = memoFacts(domain).catch(() => null);
+  return Promise.race([read, new Promise<null>(r => setTimeout(() => r(null), ms))]);
 }

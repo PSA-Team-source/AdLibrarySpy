@@ -5,7 +5,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { ArrowRight, ArrowUpRight, Calendar, Coins, Globe, Languages, LayoutGrid, Palette, Store, Users } from 'lucide-react';
 import { getShop, similarShops, storeAdBundle } from '@/lib/data';
 import { creativeCountFor } from '@/lib/market/creatives';
-import { storefrontFacts, storeAdHistory, storeProfile, type StorefrontFacts } from '@/lib/market/storefront';
+import { storefrontFactsFast, storeAdHistory, storeProfile, type StorefrontFacts } from '@/lib/market/storefront';
 import { ageOf, compact, flag, monthYear, pct } from '@/lib/format';
 import type { Shop } from '@/lib/types';
 import { growthTitle, monthLabel, trafficCaption, trafficTitle } from '@/lib/traffic/similarweb';
@@ -95,7 +95,7 @@ async function StorefrontProducts({ factsP, shop }: { factsP: Promise<Storefront
 export default async function PublicStorePage({ params }: { params: Params }) {
   const shop = await load((await params).domain);
   const factsP: Promise<StorefrontFacts | null> = shop.platform === 'shopify'
-    ? storefrontFacts(shop.domain).catch(() => null)
+    ? storefrontFactsFast(shop.domain)
     : Promise.resolve(null);
 
   const [similar, adBundle, adHistory, profile, creativeTotal] = await Promise.all([

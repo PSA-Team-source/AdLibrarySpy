@@ -103,13 +103,13 @@ export default async function PublicStorePage({ params }: { params: Params }) {
   const shop = await load(raw);
   const same = early === shop.domain;
   const factsP: Promise<StorefrontFacts | null> = shop.platform === 'shopify'
-    ? storefrontFactsFast(shop.domain)
+    ? storefrontFactsFast(shop.domain, 30) // memo answers in ms; a cold store never makes 150ms anyway
     : Promise.resolve(null);
 
   const [similar, adBundle, adHistory, profile, creativeTotal] = await Promise.all([
-    // ponytail: 100ms budget; a cold pool (shared, cached 6h) finishes in the
+    // ponytail: 60ms budget; a cold pool (shared, cached 6h) finishes in the
     // background and the next render of any store in that niche shows it.
-    Promise.race([similarShops(shop, 6).catch(() => []), new Promise<Awaited<ReturnType<typeof similarShops>>>(r => setTimeout(() => r([]), 100))]),
+    Promise.race([similarShops(shop, 6).catch(() => []), new Promise<Awaited<ReturnType<typeof similarShops>>>(r => setTimeout(() => r([]), 60))]),
     same && adBundleP ? adBundleP : storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
     storeAdHistory(shop.storeId),
     same && profileP ? profileP : storeProfile(shop.domain),

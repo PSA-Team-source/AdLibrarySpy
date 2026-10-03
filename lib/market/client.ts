@@ -10,6 +10,10 @@
 // 4xx (except 429) is a real answer ("not found", our bug) and is thrown at once.
 
 const BASE = process.env.MARKET_API_BASE || 'https://api.platformdtc.com/api/v1';
+// Hot standby (.220 :5911). The primary refuses connections for the seconds a
+// restart takes; nginx fails over for api.platformdtc.com, this process talks to
+// :5900 directly, so it fails over itself — at once, no backoff.
+const FALLBACK = process.env.MARKET_API_FALLBACK || '';
 const TIMEOUT_MS = Number(process.env.MARKET_TIMEOUT_MS || 12_000);
 const OUTAGE_BUDGET_MS = Number(process.env.MARKET_OUTAGE_BUDGET_MS || 25_000);
 const STALE_BUDGET_MS = Number(process.env.MARKET_STALE_BUDGET_MS || 2_500);
@@ -52,11 +56,17 @@ export function isTransient(err: unknown): boolean {
   return true; // fetch TypeError (ECONNREFUSED/ECONNRESET), AbortError (timeout), bad JSON mid-restart
 }
 
+/** The process is not listening (a restart): nothing was sent, so another host is safe. */
+function isRefused(err: unknown): boolean {
+  const code = (err as { cause?: { code?: string } })?.cause?.code;
+  return code === 'ECONNREFUSED';
+}
+
 export async function marketRequest<T>(
   method: 'GET' | 'POST',
   path: string,
   opts: { auth?: boolean; revalidate?: number; body?: unknown; optional?: boolean } = {},
-  deps: { fetchImpl?: typeof fetch; now?: () => number; sleep?: (ms: number) => Promise<void> } = {},
+  deps: { fetchImpl?: typeof fetch; now?: () => number; sleep?: (ms: number) => Promise<void>; base?: string; fallback?: string } = {},
 ): Promise<T> {
   const doFetch = deps.fetchImpl ?? fetch;
   const now = deps.now ?? Date.now;
@@ -75,11 +85,14 @@ export async function marketRequest<T>(
   }
 
   let lastErr: unknown;
+  let base = deps.base ?? BASE;
+  const fallback = deps.fallback ?? FALLBACK;
   for (let attempt = 0; ; attempt++) {
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), Math.max(1_000, Math.min(TIMEOUT_MS, deadline - now())));
+    let refused = false;
     try {
-      const res = await doFetch(`${BASE}${path}`, {
+      const res = await doFetch(`${base}${path}`, {
         method, headers, body, signal: ac.signal,
         next: { revalidate: opts.revalidate ?? 300 },
       } as RequestInit);
@@ -91,12 +104,15 @@ export async function marketRequest<T>(
     } catch (err) {
       if (!isTransient(err)) throw err;
       lastErr = err;
+      refused = isRefused(err);
     } finally {
       clearTimeout(timer);
     }
+    if (refused && fallback && base !== fallback) { base = fallback; continue; }
     const wait = Math.min(1_500, 200 * 2 ** attempt);
     if (now() + wait >= deadline) break;
     await sleep(wait);
+    base = deps.base ?? BASE; // both refused: after the wait, the primary first again
   }
   if (stale !== undefined) {
     console.warn(`[market] ${key.trim()} unavailable (${String((lastErr as Error)?.message ?? lastErr)}); serving last good copy`);

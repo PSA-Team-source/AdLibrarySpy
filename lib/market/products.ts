@@ -4,7 +4,7 @@
 // joins the store from the Shops index and reads title, image and price from
 // the storefront itself. A product the storefront never described is not in
 // the list, so every row here has a real title.
-import { marketGet } from './client';
+import { MarketError, marketGet } from './client';
 
 export interface WinningProductStore {
   /** top-brands store_id; '' = the store is not in the Shops index (no dossier link). */
@@ -58,6 +58,8 @@ export interface WinningProductsPage {
   /** Currencies present across the whole list, most products first. */
   currencies: { code: string; count: number }[];
   updatedAt: string | null;
+  /** True while the API is still gathering the list (503). */
+  building?: boolean;
 }
 
 export interface WinningProductsQuery {
@@ -133,7 +135,16 @@ export async function listWinningProducts(q: WinningProductsQuery): Promise<Winn
   }
   // The list is rebuilt in the background every 30 min; 60s keeps a page fresh
   // enough while repeated browsing is served from Next's data cache.
-  const payload = await marketGet<{ data?: Record<string, unknown> }>(`/market/winning-products?${p}`, { auth: true, revalidate: 60 });
+  let payload: { data?: Record<string, unknown> };
+  try {
+    // retries set = short retry budget: a 503 means "still gathering", not a restart to wait out.
+    payload = await marketGet<{ data?: Record<string, unknown> }>(`/market/winning-products?${p}`, { auth: true, revalidate: 60, retries: 1 });
+  } catch (err) {
+    if (err instanceof MarketError && err.status === 503) {
+      return { items: [], total: 0, page: 1, limit: q.limit ?? 0, hasMore: false, currencies: [], updatedAt: null, building: true };
+    }
+    throw err;
+  }
   const d = payload?.data ?? {};
   const pg = (d.pagination ?? {}) as Record<string, unknown>;
   const items = (Array.isArray(d.items) ? (d.items as Record<string, unknown>[]) : []).map(mapWinningProduct);

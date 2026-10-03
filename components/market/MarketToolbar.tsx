@@ -118,7 +118,8 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
   anyLabel?: string; title?: string;
   /** Print "Label: <anyLabel>" on the chip when nothing is picked (default: when anyLabel is custom). */
   showAny?: boolean;
-  /** Called with every option's value when the menu opens (prefetch their results). */
+  /** Called with an option's value when it is hovered or focused (prefetch its result).
+   *  One at a time: warming every option on open queued ~16 full renders ahead of the click. */
   onPrefetch?: (value: string) => void;
 }) {
   const active = options.find(o => o.value === value);
@@ -128,10 +129,7 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
     ? options.filter(o => o.label.toLowerCase().includes(needle.trim().toLowerCase()))
     : options;
   return (
-    <DropdownMenu onOpenChange={o => {
-      if (!o) setNeedle('');
-      else if (onPrefetch) for (const opt of options.slice(0, 16)) if (opt.value !== value) onPrefetch(opt.value);
-    }}>
+    <DropdownMenu onOpenChange={o => { if (!o) setNeedle(''); }}>
       <DropdownMenuTrigger className={cn(CHIP, active ? CHIP_ON : CHIP_OFF)} aria-label={label} title={title}>
         <Icon className="h-3.5 w-3.5 shrink-0" />
         <span>{active ? chosen(label, active.label) : showAny ? `${label}: ${anyLabel}` : label}</span>
@@ -158,8 +156,11 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
           </div>
         )}
         <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
-          <DropdownMenuRadioItem value="">{anyLabel}</DropdownMenuRadioItem>
-          {shown.map(o => <DropdownMenuRadioItem key={o.value} value={o.value}>{o.label}</DropdownMenuRadioItem>)}
+          <DropdownMenuRadioItem value="" onFocus={value && onPrefetch ? () => onPrefetch('') : undefined}>{anyLabel}</DropdownMenuRadioItem>
+          {shown.map(o => (
+            <DropdownMenuRadioItem key={o.value} value={o.value}
+              onFocus={onPrefetch && o.value !== value ? () => onPrefetch(o.value) : undefined}>{o.label}</DropdownMenuRadioItem>
+          ))}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>

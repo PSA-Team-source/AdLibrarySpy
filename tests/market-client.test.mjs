@@ -35,3 +35,11 @@ test('no copy + down past the budget throws (page shows its error state)', async
   await assert.rejects(marketRequest('GET', '/t4', {}, { fetchImpl: async () => { throw refused(); }, ...c }));
   assert.ok(c.now() >= 20_000);
 });
+
+test('a refused primary fails over to the standby at once', async () => {
+  const c = clock(); const hit = [];
+  const fetchImpl = async url => { hit.push(url.split('/t9')[0]); if (url.startsWith('http://p')) throw refused(); return ok({ via: 'standby' }); };
+  assert.deepEqual(await marketRequest('GET', '/t9', {}, { fetchImpl, ...c, base: 'http://p', fallback: 'http://s' }), { via: 'standby' });
+  assert.deepEqual(hit, ['http://p', 'http://s']);
+  assert.equal(c.now(), 0, 'no backoff before the standby');
+});

@@ -4,6 +4,7 @@ import WooCommerceIcon from '@/components/icon/WooCommerceIcon';
 import MagentoIcon from '@/components/icon/MagentoIcon';
 import SquarespaceIcon from '@/components/icon/SquarespaceIcon';
 import WixIcon from '@/components/icon/WixIcon';
+import SquareIcon from '@/components/icon/SquareIcon';
 import ShoplazzaIcon from '@/components/icon/ShoplazzaIcon';
 import ShoplineIcon from '@/components/icon/ShoplineIcon';
 
@@ -13,6 +14,7 @@ export function PlatformIcon({ platform, className = 'w-4 h-4' }: { platform: st
     case 'woocommerce':  return <WooCommerceIcon className={className} />;
     case 'magento':      return <MagentoIcon className={className} />;
     case 'wix':          return <WixIcon className={className} />;
+    case 'square':       return <SquareIcon className={className} />;
     case 'squarespace':  return <SquarespaceIcon className={className} />;
     case 'shoplazza':    return <ShoplazzaIcon className={className} />;
     case 'shopline':     return <ShoplineIcon className={className} />;

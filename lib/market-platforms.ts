@@ -6,6 +6,8 @@ export const STANDARD_MARKET_PLATFORMS = [
   { id: 'woocommerce', name: 'WooCommerce', color: 'bg-purple-600' },
   { id: 'shopline', name: 'Shopline', color: 'bg-cyan-500' },
   { id: 'shoplazza', name: 'Shoplazza', color: 'bg-teal-500' },
+  { id: 'wix', name: 'Wix', color: 'bg-neutral-900' },
+  { id: 'square', name: 'Square', color: 'bg-zinc-700' },
 ] as const;
 
 export const MARKET_PLATFORM_FILTERS = [

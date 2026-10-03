@@ -6,7 +6,7 @@ import { ageOf, compact, flag } from '@/lib/format';
 import { Sparkline } from '@/components/charts';
 import { ChartDetail } from '@/components/market/DetailDialogs';
 import { BrandLogo } from '@/components/market/BrandLogo';
-import { MarketPagination } from '@/components/market/MarketToolbar';
+import { MarketPagination, SearchBox } from '@/components/market/MarketToolbar';
 import { ProductImage } from '@/components/ShopMedia';
 import { requireCtx } from '@/lib/auth/guard';
 import { PageShell } from '@/components/layouts/page-shell';
@@ -95,6 +95,7 @@ export default async function AdvertisersPage({ searchParams }: { searchParams: 
   return (
     <PageShell
       title="Advertisers"
+      actions={<SearchBox placeholder="Search advertisers…" label="Search advertisers" />}
       titleAdornment={res.total != null ? <span className="pill tabular-nums">{res.total.toLocaleString()}</span> : undefined}
     >
       <AdvertisersToolbar selects={SELECTS} sorts={SORTS} />

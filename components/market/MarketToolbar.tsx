@@ -315,8 +315,8 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
 }
 
 
-/** The Shops search box; sits on the title row so the list keeps the height. */
-export function ShopSearch() {
+/** A list's search box (URL param `q`); sits on the title row so the list keeps the height. */
+export function SearchBox({ placeholder = 'Search shops, keywords…', label = 'Search shops, keywords' }: { placeholder?: string; label?: string }) {
   const { set, params, pending } = useSetParam();
   const [term, setTerm] = useState(params.get('q') ?? '');
   // Sync input when URL changes externally (e.g. Clear button)
@@ -352,8 +352,8 @@ export function ShopSearch() {
         type="search"
         value={term}
         onChange={e => setTerm(e.target.value)}
-        placeholder="Search shops, keywords…"
-        aria-label="Search shops, keywords"
+        placeholder={placeholder}
+        aria-label={label}
         className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
       />
       {term && (

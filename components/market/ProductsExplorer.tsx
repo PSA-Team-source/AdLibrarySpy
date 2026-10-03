@@ -7,9 +7,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowDownRight, ArrowUpRight, CalendarDays, ChevronDown, ExternalLink, Globe, LayoutGrid, Search, SlidersHorizontal, Users, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, CalendarDays, ChevronDown, ExternalLink, Globe, LayoutGrid, SlidersHorizontal, Users, Wallet, X } from 'lucide-react';
 import { PageShell } from '@/components/layouts/page-shell';
-import { FilterChip, MarketPagination, ShallowUrlProvider, useDebounce, useSetParam } from '@/components/market/MarketToolbar';
+import { FilterChip, MarketPagination, SearchBox, ShallowUrlProvider, useSetParam } from '@/components/market/MarketToolbar';
 import { SortableHeader } from '@/components/market/SortableHeader';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { RankBadge } from '@/components/market/PlatformIcon';
@@ -95,13 +95,6 @@ function PriceRange() {
 function Toolbar({ categories, currencies }: { categories: CategoryNode[]; currencies: { code: string; count: number }[] }) {
   const { set, params, pending } = useSetParam();
   const p = (k: string) => params.get(k) ?? '';
-  const [term, setTerm] = useState(p('q'));
-  useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
-  const debounced = useDebounce(term, 300);
-  useEffect(() => {
-    if (debounced !== (params.get('q') ?? '')) set({ q: debounced });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debounced]);
 
   const [open, setOpen] = useState(false);
   useEffect(() => { try { setOpen(localStorage.getItem('products.filtersOpen') === '1'); } catch { /* storage blocked */ } }, []);
@@ -116,29 +109,11 @@ function Toolbar({ categories, currencies }: { categories: CategoryNode[]; curre
 
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      {tabs.length > 0 && (
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max gap-1.5">
-            {[{ id: '', name: 'All Categories' }, ...tabs].map(c => (
-              <button key={c.id || 'all'} type="button" onClick={() => set({ category: c.id, subcategory: '' })}
-                aria-pressed={categoryId === c.id} className={cn(PILL, categoryId === c.id ? ON : OFF)}>{c.name}</button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <form className="relative min-w-0 flex-1 basis-full sm:basis-0" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
-          <input type="search" value={term} onChange={e => setTerm(e.target.value)} placeholder="Search products, brands, stores…"
-            aria-label="Search products, brands, stores"
-            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]" />
-          {term && (
-            <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }} aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </form>
+      <div className="flex flex-wrap items-center gap-2">
+        {tabs.length > 0 && (
+          <FilterChip icon={LayoutGrid} label="Category" value={categoryId} anyLabel="All categories" showAny={false}
+            onChange={v => set({ category: v, subcategory: '' })} options={tabs.map(c => ({ value: c.id, label: c.name }))} />
+        )}
         <button type="button" onClick={toggle} aria-expanded={open} aria-controls="product-filters"
           className={cn(PILL, 'h-9 shrink-0', active > 0 ? ON : OFF)}>
           <SlidersHorizontal className="h-4 w-4" aria-hidden />
@@ -147,7 +122,7 @@ function Toolbar({ categories, currencies }: { categories: CategoryNode[]; curre
         </button>
       </div>
       {open && (
-        <div id="product-filters" className="flex flex-wrap items-center gap-2">
+        <div id="product-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
           {subs.length > 0 && (
             <FilterChip icon={LayoutGrid} label="Subcategory" value={p('subcategory')} onChange={v => set({ subcategory: v })}
               options={subs.map(c => ({ value: c.id, label: c.name }))} />
@@ -354,8 +329,8 @@ export function ProductsExplorer({ categories, initial, initialParams, renderedA
 
   return (
     <ShallowUrlProvider>
-      <PageShell fullHeight className="apple-ui gap-5 bg-[var(--a-canvas)]" title="Products"
-        description="Winning products: the storefront products Meta ads send traffic to, ranked by the ads behind them.">
+      <PageShell fullHeight className="apple-ui gap-3 bg-[var(--a-canvas)]" title={<span title="Winning products: the storefront products Meta ads send traffic to, ranked by the ads behind them.">Products</span>}
+        actions={<SearchBox placeholder="Search products, brands, stores…" label="Search products, brands, stores" />}>
         <Toolbar categories={categories} currencies={currencies.current} />
 
         {q.isError && (

@@ -1,14 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
 import {
-  Search, X, ArrowDownUp, CalendarRange, ChevronDown, SlidersHorizontal, Film, Shapes, LayoutTemplate, Globe, Landmark,
+  X, ArrowDownUp, CalendarRange, ChevronDown, SlidersHorizontal, Film, Shapes, LayoutTemplate, Globe, Landmark,
   Store, Anchor, Compass, Filter, Tag, Timer, Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LabelFacets, LabelField, FacetEntry } from '@/lib/market/labels';
 import { AD_SORTS, EU_UK_COUNTRIES } from '@/lib/market/ad-options';
 import { ExportCsv } from './ExportCsv';
-import { CHIP, CHIP_OFF, CHIP_ON, FOCUS, TB_PILL, FilterChip, useSetParam, useDebounce } from './MarketToolbar';
+import { CHIP, CHIP_OFF, CHIP_ON, FOCUS, FilterChip, useSetParam } from './MarketToolbar';
 import { flag } from '@/lib/format';
 
 /** Label filter selects, in reading order. The option text comes from the API. */
@@ -72,8 +72,8 @@ const FILTER_KEYS = ['from', 'to', 'media', 'format', 'placement', 'country', 'e
 
 // With no search and no sort the index returns its own order, top spending
 // first; with a search it ranks by relevance (creatives.ts).
-// Same layout and recipes as the Shops toolbar (MarketToolbar): niche capsule
-// row, search + Filters toggle + export, then the dropdown chips.
+// Same layout and recipes as the Shops toolbar (MarketToolbar): niche dropdown,
+// Filters toggle, sort + export on one row (search sits on the title row).
 export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   storeFilter?: { id: string; label: string };
   /** null = no label data for this search, so no label filters are rendered. */
@@ -125,14 +125,6 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
     return () => clearTimeout(id);
   }, [nicheIds, params, prefetch]);
 
-  const [term, setTerm] = useState(get('q'));
-  useEffect(() => { setTerm(params.get('q') ?? ''); }, [params]);
-  // Search as you type, like Shops: push once the term settles.
-  const debouncedTerm = useDebounce(term, 400);
-  useEffect(() => {
-    if (debouncedTerm.trim() !== (params.get('q') ?? '')) set({ q: debouncedTerm.trim() });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTerm]);
   const [from, setFrom] = useState(get('from'));
   const [to, setTo] = useState(get('to'));
   useEffect(() => { setFrom(params.get('from') ?? ''); setTo(params.get('to') ?? ''); }, [params]);
@@ -165,35 +157,13 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
 
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
-      {niches.length > 0 && (
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <div className="flex min-w-max gap-1.5">
-            {[{ id: '', name: 'All Niches' }, ...niches].map(n => (
-              <button key={n.id || 'all'} type="button" onClick={() => set({ niche: n.id })}
-                onPointerEnter={() => prefetch({ niche: n.id })} onFocus={() => prefetch({ niche: n.id })}
-                aria-pressed={niche === n.id} className={cn(TB_PILL, niche === n.id ? CHIP_ON : CHIP_OFF)}>
-                {n.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
-        <form className="relative min-w-0 flex-1 basis-full sm:basis-0" onSubmit={e => { e.preventDefault(); set({ q: term.trim() }); }}>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
-          <input
-            type="search" value={term} onChange={e => setTerm(e.target.value)}
-            placeholder="Search ads, advertisers…" aria-label="Search ads by copy, headline or advertiser"
-            className="h-9 w-full rounded-[10px] bg-[var(--a-fill)] pl-9 pr-10 [&::-webkit-search-cancel-button]:appearance-none text-[15px] tracking-[-0.01em] text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus-visible:shadow-[0_0_0_4px_var(--a-focus)]"
-          />
-          {term && (
-            <button type="button" onClick={() => { setTerm(''); set({ q: '' }); }} aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 opacity-60 transition-opacity hover:opacity-100">
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </form>
+      <div className="flex flex-wrap items-center gap-2">
+        {niches.length > 0 && (
+          <FilterChip icon={Shapes} label="Niche" value={niche} anyLabel="All niches" showAny={false}
+            onChange={v => set({ niche: v })} onPrefetch={v => prefetch({ niche: v })}
+            options={niches.map(n => ({ value: n.id, label: n.name }))} />
+        )}
         <button type="button" onClick={toggleFilters} aria-expanded={filtersOpen} aria-controls="ad-filters"
           className={cn(CHIP, 'h-9 shrink-0', activeCount > 0 ? CHIP_ON : CHIP_OFF)}>
           <SlidersHorizontal className="h-4 w-4" aria-hidden />

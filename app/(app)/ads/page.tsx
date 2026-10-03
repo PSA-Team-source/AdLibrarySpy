@@ -5,7 +5,7 @@ import { AdsToolbar } from '@/components/market/AdsToolbar';
 import { SaveSearchButton } from '@/components/market/SaveSearchButton';
 import { AdsNavRegister } from '@/components/market/AdClient';
 import { PageShell } from '@/components/layouts/page-shell';
-import { MarketPagination } from '@/components/market/MarketToolbar';
+import { MarketPagination, SearchBox } from '@/components/market/MarketToolbar';
 import { creativeNiches } from '@/lib/market/shops';
 import { hasLabelFilter } from '@/lib/market/labels';
 import { ADS_PAGE_SIZE, adFilterFromParams, adLabelsFromParams } from '@/lib/market/ads-params';
@@ -48,7 +48,7 @@ export default async function AdsPage({ searchParams }: { searchParams: Promise<
     <PageShell
       title="Ads"
       fullHeight
-      actions={<SaveSearchButton kind="ads" />}
+      actions={<><SearchBox placeholder="Search ads, advertisers…" label="Search ads by copy, headline or advertiser" /><SaveSearchButton kind="ads" /></>}
       titleAdornment={
         <span className="flex items-center gap-2">
           {/* The index holds Meta ads only, so Meta is the one network tab. */}

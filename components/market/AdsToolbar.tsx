@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import type { LabelFacets, LabelField, FacetEntry } from '@/lib/market/labels';
 import { AD_SORTS, EU_UK_COUNTRIES } from '@/lib/market/ad-options';
 import { ExportCsv } from './ExportCsv';
-import { CHIP, CHIP_OFF, CHIP_ON, FOCUS, FilterChip, useSetParam } from './MarketToolbar';
+import { CHIP, CHIP_OFF, CHIP_ON, FOCUS, FilterChip, PlatformChip, useSetParam } from './MarketToolbar';
 import { flag } from '@/lib/format';
 
 /** Label filter selects, in reading order. The option text comes from the API. */
@@ -122,6 +122,8 @@ export function AdsToolbar({ storeFilter, labelFacets, niches }: {
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
       <div id="ad-filters" className="flex flex-wrap items-center gap-2">
+        {/* A shop's own ads show whatever its platform, so the chip steps aside. */}
+        {!storeFilter && <PlatformChip params={params} set={set} prefetch={prefetch} />}
         {niches.length > 0 && (
           <FilterChip icon={Shapes} label="Niche" value={niche} anyLabel="All niches" showAny={false}
             onChange={v => set({ niche: v })} onPrefetch={v => prefetch({ niche: v })}

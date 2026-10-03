@@ -108,6 +108,25 @@ function chosen(label: string, option: string): string {
 }
 
 /**
+ * The store platform chip every market list shows (Shops, Ads, Products,
+ * Landing pages). No `platform` in the URL = Shopify, the loaders' default;
+ * `platform=all` = every platform.
+ */
+export function PlatformChip({ params, set, prefetch }: {
+  params: { get(key: string): string | null };
+  set: (e: Record<string, string>) => void; prefetch?: (e: Record<string, string>) => void;
+}) {
+  const platform = params.get('platform') || 'shopify';
+  const value = (v: string) => (v === 'shopify' ? '' : v || 'all');
+  return (
+    <FilterChip icon={Store} label="Platform" value={platform === 'all' ? '' : platform}
+      anyLabel="All platforms" showAny={false}
+      onChange={v => set({ platform: value(v) })} onPrefetch={prefetch && (v => prefetch({ platform: value(v) }))}
+      options={MARKET_PLATFORM_FILTERS.filter(pl => pl.id !== 'all').map(pl => ({ value: pl.id, label: pl.name }))} />
+  );
+}
+
+/**
  * A filter chip: icon + label + chevron; picking an option sets one URL param.
  * `searchable` adds a type-to-filter box for long option lists (technologies).
  */
@@ -194,8 +213,6 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
     () => categories.filter(c => c.brandCount > 0 || c.id === categoryId).sort((a, b) => b.brandCount - a.brandCount),
     [categories, categoryId],
   );
-  // No platform in the URL = Shopify (the loader's default), as the list shows.
-  const platform = params.get('platform') || 'shopify';
   const pixelOptions = useMemo(
     () => (tech?.pixels ?? []).map(t => ({ value: t.name, label: `${t.name} (${compact(t.count)})` })),
     [tech],
@@ -248,10 +265,7 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views 
       </div>
 
       <div id="shop-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
-        <FilterChip icon={Store} label="Platform" value={platform === 'all' ? '' : platform}
-          anyLabel="All platforms" showAny={false}
-          onChange={v => set({ platform: v === 'shopify' ? '' : v || 'all' })}
-          options={MARKET_PLATFORM_FILTERS.filter(pl => pl.id !== 'all').map(pl => ({ value: pl.id, label: pl.name }))} />
+        <PlatformChip params={params} set={set} />
         {categoryTabs.length > 0 && (
           <FilterChip icon={LayoutGrid} label="Category" value={categoryId} anyLabel="All categories" showAny={false}
             onChange={v => set({ category: v, subcategory: '' })}

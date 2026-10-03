@@ -4,6 +4,7 @@
 import { cleanLabelValues, type LabelFilter } from './labels';
 import { isAdSort } from './ad-options';
 import type { AdFilter } from './creatives';
+import { marketPlatformParam } from '@/lib/market-platforms';
 
 export const ADS_PAGE_SIZE = 25; // 5 columns × 5 rows
 
@@ -34,6 +35,7 @@ export function adFilterFromParams(sp: Record<string, string | undefined>): AdFi
     category: sp.niche,
     sort: isAdSort(sp.sort) ? sp.sort : undefined,
     storeDomain: sp.store,
+    platform: marketPlatformParam(sp.platform),
     // "Only online stores" is on unless the URL opts out (Filters toggle).
     storesOnly: sp.allAdvertisers !== '1',
     ...adLabelsFromParams(sp),

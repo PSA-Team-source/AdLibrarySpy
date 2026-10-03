@@ -21,3 +21,12 @@ export const CREATIVE_PLATFORM_FILTERS = [
   ...STANDARD_MARKET_PLATFORMS.map(({ id, name }) => ({ id, name })),
   { id: MARKET_PLATFORM_OTHER, name: 'Other' },
 ] as const;
+
+/**
+ * A list URL's `platform` → the API's: none = Shopify (every list's default),
+ * `all` = no filter (undefined), an unknown value = Shopify.
+ */
+export function marketPlatformParam(v: string | undefined | null): string | undefined {
+  if (v === MARKET_PLATFORM_ALL) return undefined;
+  return MARKET_PLATFORM_FILTERS.some(p => p.id === v && p.id !== MARKET_PLATFORM_ALL) ? v! : 'shopify';
+}

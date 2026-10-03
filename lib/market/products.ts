@@ -72,6 +72,8 @@ export interface WinningProductsQuery {
   trafficMin?: string;
   launched?: string;
   store?: string;
+  /** Store platform; undefined = every platform. */
+  platform?: string;
   sort?: string;
   dir?: string;
   page?: number;

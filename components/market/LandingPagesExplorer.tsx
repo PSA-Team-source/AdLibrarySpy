@@ -8,7 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowDownRight, ArrowUpRight, CalendarDays, ExternalLink, Globe, LayoutGrid, LayoutTemplate, Users, X } from 'lucide-react';
 import { PageShell } from '@/components/layouts/page-shell';
-import { FilterChip, MarketPagination, SearchBox, ShallowUrlProvider, useSetParam } from '@/components/market/MarketToolbar';
+import { FilterChip, MarketPagination, PlatformChip, SearchBox, ShallowUrlProvider, useSetParam } from '@/components/market/MarketToolbar';
 import { SortableHeader } from '@/components/market/SortableHeader';
 import { BrandLogo } from '@/components/market/BrandLogo';
 import { RankBadge } from '@/components/market/PlatformIcon';
@@ -84,6 +84,7 @@ function Toolbar({ categories, types }: { categories: CategoryNode[]; types: { t
   return (
     <div className={cn('flex shrink-0 flex-col gap-2 transition-opacity', pending && 'opacity-60')}>
       <div id="lp-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
+        <PlatformChip params={params} set={set} />
         {tabs.length > 0 && (
           <FilterChip icon={LayoutGrid} label="Category" value={categoryId} anyLabel="All categories" showAny={false}
             onChange={v => set({ category: v, subcategory: '' })} options={tabs.map(c => ({ value: c.id, label: c.name }))} />

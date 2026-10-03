@@ -173,6 +173,8 @@ export interface AdFilter extends LabelFilter {
    * paging stay exact. Ignored when storeDomain names a brand explicitly.
    */
   storesOnly?: boolean;
+  /** Store platform (shopify… | other); undefined = every platform. Ignored with storeDomain. */
+  platform?: string;
   page?: number;
   limit?: number;
 }
@@ -233,6 +235,7 @@ export async function listAds(f: AdFilter = {}): Promise<AdPage> {
   // across copy and domains and let other brands' ads into a brand's list.
   if (f.storeDomain) base.set('storeDomain', f.storeDomain);
   else if (f.storesOnly) base.set('storesOnly', 'true');
+  if (!f.storeDomain && f.platform) base.set('platform', f.platform);
   if (f.q) base.set('search', f.q);
   // EU/UK is a server-side country list; a single EU country narrows it.
   const country = f.country?.toUpperCase();

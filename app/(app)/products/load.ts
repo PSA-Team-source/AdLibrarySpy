@@ -3,6 +3,8 @@
 // so both always return the same rows. Mirrors app/(app)/shops/load.ts.
 import { listWinningProducts, type WinningProductsPage } from '@/lib/market/products';
 
+import { marketPlatformParam } from '@/lib/market-platforms';
+
 export const PAGE_SIZE = 25;
 
 /** Traffic chip value → minimum monthly store visits. */
@@ -25,6 +27,7 @@ export async function loadProducts(sp: Record<string, string | undefined>, limit
     trafficMin: sp.traffic && TRAFFIC_MIN[sp.traffic] ? String(TRAFFIC_MIN[sp.traffic]) : undefined,
     launched: sp.launched && LAUNCHED_DAYS.has(sp.launched) ? sp.launched : undefined,
     store: sp.store || undefined,
+    platform: marketPlatformParam(sp.platform),
     sort: sp.sort || undefined,
     dir: sp.dir === 'asc' ? 'asc' : undefined,
     page,

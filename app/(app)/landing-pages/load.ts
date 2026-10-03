@@ -2,6 +2,8 @@
 // and GET /api/landing-pages, so both return the same rows. Mirrors products/load.ts.
 import { LANDING_PAGE_TYPES, listLandingPages, type LandingPagesPage } from '@/lib/market/landing-pages';
 
+import { marketPlatformParam } from '@/lib/market-platforms';
+
 export const PAGE_SIZE = 25;
 
 const TRAFFIC_MIN: Record<string, number> = { '10k': 10_000, '100k': 100_000, '1m': 1_000_000, '10m': 10_000_000 };
@@ -19,6 +21,7 @@ export async function loadLandingPages(sp: Record<string, string | undefined>, l
     trafficMin: sp.traffic && TRAFFIC_MIN[sp.traffic] ? String(TRAFFIC_MIN[sp.traffic]) : undefined,
     launched: sp.launched && LAUNCHED_DAYS.has(sp.launched) ? sp.launched : undefined,
     store: sp.store || undefined,
+    platform: marketPlatformParam(sp.platform),
     sort: sp.sort || undefined,
     dir: sp.dir === 'asc' ? 'asc' : undefined,
     page,

@@ -72,7 +72,7 @@ export default async function HomePage() {
   const google = await googleClientId();
 
   return (
-    <main className="min-h-screen bg-[#050807] font-sans text-white antialiased">
+    <main className="lp-root min-h-screen bg-black font-sans text-white antialiased">
       {/* Served from the Cloudflare edge (zone Cache Rule), so a shared link's hit often never reaches middleware's als_ref. */}
       <RefBeacon />
       <MetaPixel />
@@ -84,98 +84,102 @@ export default async function HomePage() {
 
       <SiteHeader donateUrl={donateUrl} />
 
-      {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pt-24">
-        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[520px] max-w-4xl rounded-full opacity-40 blur-[120px]" style={{ background: `radial-gradient(closest-side, ${LIME}55, transparent)` }} />
-        <div className="relative mx-auto max-w-4xl text-center">
-          <p className="mx-auto inline-flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-full border px-4 py-1.5 text-sm"
-            style={{ borderColor: `${LIME}66`, background: `${LIME}14` }}>
-            <span className="font-bold tracking-wide" style={{ color: LIME }}>100% FREE</span>
-            <span className="h-1 w-1 rounded-full bg-white/40" aria-hidden />
-            <span className="font-semibold text-white">Built for the Community</span>
-            <span className="text-xs text-white/55">no card, no trial</span>
-          </p>
-          <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-6xl">
-            See what&apos;s winning in ecommerce <span style={{ color: LIME }}>right now</span>
+      {/* ---------- hero: Tesla-style full-bleed panel (product tour fills the screen,
+          title top-centre, actions bottom-centre). Silent loop; phones get the 540p encode. ---------- */}
+      <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden px-4 sm:px-6">
+        {/* Real ad creatives from the library fill the screen; no wall data = plain black (never a placeholder). */}
+        {wall.length >= 6 && (
+          <ul aria-hidden className="lp-kenburns absolute -inset-[6%] -z-20 grid opacity-60 saturate-[.8] grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+            {[...wall, ...wall].slice(0, 24).map((ad, i) => (
+              <li key={i} className="hidden overflow-hidden rounded-md has-[img]:block"><ProductImage src={ad.image} alt="" className="h-full w-full object-cover" /></li>
+            ))}
+          </ul>
+        )}
+        <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_50%_45%,rgba(0,0,0,.25),rgba(0,0,0,.85)_75%),linear-gradient(180deg,rgba(0,0,0,.85)_0%,rgba(0,0,0,.2)_35%,rgba(0,0,0,.4)_60%,rgba(0,0,0,.95)_100%)]" />
+
+        <div className="mx-auto mt-[11vh] max-w-4xl text-center">
+          <h1 className="lp-rise text-balance text-[40px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-6xl lg:text-7xl">
+            See what&apos;s winning in ecommerce
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-pretty text-base text-white/65 sm:mt-5 sm:text-lg">
-            Search stores by traffic, platform, category and tech stack, study the Meta ads behind them, and track your competitors. Every feature is{' '}
-            <mark className="rounded bg-transparent px-0.5 font-semibold" style={{ color: LIME, boxShadow: `inset 0 -0.45em 0 ${LIME}33` }}>100% free</mark>, for everyone.
+          <p className="lp-rise mt-3 text-pretty text-base text-white/80 sm:text-lg" style={{ ['--d' as string]: '150ms' }}>
+            {shops != null ? `${compact(shops)} stores and their Meta ads. ` : 'Stores and their Meta ads. '}
+            <span className="underline decoration-white/50 underline-offset-4">100% free</span>, for everyone.
           </p>
-          {/* Sign up right here: email, then the 6-digit code, without leaving the page
-              (an ad visitor in the Facebook/Instagram browser loses nothing to a page
-              load or to the emailed link opening elsewhere). Same actions as /signup. */}
-          <div className="signed-in-only mt-7 sm:mt-9">
-            <Link href="/shops" className="inline-flex h-12 items-center gap-2 rounded-xl px-6 text-[15px] font-semibold text-[#071004]" style={{ background: LIME }}>
-              Go to your dashboard <ArrowRight className="h-4 w-4" aria-hidden />
-            </Link>
+        </div>
+
+        {/* The product, centre stage (Tesla puts the car here): a real production capture. */}
+        {wall.length >= 6 ? <div className="flex-1" /> : (
+          <div className="lp-rise mx-auto mt-10 flex w-full max-w-5xl flex-1 items-center [perspective:1600px]" style={{ ['--d' as string]: '250ms' }}>
+          <img src="/landing/shops.webp" alt="AdLibrarySpy shops explorer: stores ranked by Meta ads with traffic, growth and top products" width={2000} height={1097} fetchPriority="high"
+            className="lp-tilt w-full rounded-xl border border-white/10 shadow-[0_60px_160px_-40px_rgba(167,244,90,.35)]" />
+        </div>
+        )}
+
+        {/* Sign up right here: email, then the 6-digit code, without leaving the page
+            (an ad visitor in the Facebook/Instagram browser loses nothing to a page
+            load or to the emailed link opening elsewhere). Same actions as /signup. */}
+        <div className="mx-auto mb-[6vh] mt-10 w-full max-w-xl text-center">
+          <div className="signed-in-only lp-rise flex flex-col justify-center gap-3 sm:flex-row" style={{ ['--d' as string]: '300ms' }}>
+            <Link href="/shops" className="lp-btn lp-btn-primary">Go to your dashboard</Link>
+            <Link href="/stores" className="lp-btn lp-btn-glass">Browse shops</Link>
           </div>
-          <div id="start" className="signed-out-only mx-auto mt-7 max-w-md scroll-mt-24 sm:mt-9">
-            <EmailSignIn variant="hero" layout="inline" pendingLabel="Sending…"
-              submitLabel={<>Start free <ArrowRight className="h-4 w-4" aria-hidden /></>}>
+          <div id="start" className="signed-out-only lp-rise scroll-mt-24" style={{ ['--d' as string]: '300ms' }}>
+            <EmailSignIn variant="hero" layout="inline" pendingLabel="Sending…" submitLabel="Start free">
               <input type="hidden" name="landing" value="/" />
               <input type="hidden" name="ref" value="home:hero" />
               <label className="block min-w-0 flex-1">
                 <span className="sr-only">Work email</span>
                 <input name="email" type="email" autoComplete="email" inputMode="email" required placeholder="you@company.com"
-                  className="h-12 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 text-base text-white placeholder:text-white/45 focus:border-[#a7f45a] focus:outline-none focus:ring-2 focus:ring-[#a7f45a]/30" />
+                  className="h-12 w-full rounded-[4px] border border-white/25 bg-black/40 px-4 text-base text-white backdrop-blur-md placeholder:text-white/55 focus:border-white focus:outline-none" />
               </label>
             </EmailSignIn>
-            <p className="mt-3 text-xs text-white/55">No password, no card. We email you a 6-digit code.</p>
+            <p className="mt-3 text-xs text-white/65">No password, no card. We email you a 6-digit code. · <Link href="/stores" className="underline underline-offset-2 hover:text-white">Browse shops first</Link></p>
           </div>
-          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/75">
-            {shops != null && <li className="inline-flex items-center gap-2"><Store className="h-4 w-4" style={{ color: LIME }} aria-hidden />{compact(shops)} stores indexed</li>}
-            <li className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4" style={{ color: LIME }} aria-hidden />Traffic measured by SimilarWeb</li>
-          </ul>
-          <Link href="/stores" className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white">
-            Or browse the shops directory <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-          </Link>
-          <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-            <AgentCopyLine big label="Or paste into any AI agent" value={AGENT_MESSAGE} />
-            <a href="#ai" className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white/70 hover:text-white">
-              <Bot className="h-3.5 w-3.5" aria-hidden /> How it works <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-            </a>
+          <div className="lp-rise mx-auto mt-8 w-full rounded-lg border border-white/15 bg-black/50 p-4 text-left backdrop-blur-xl" style={{ ['--d' as string]: '450ms' }}>
+            <AgentCopyLine label="Or connect any AI: paste this into Claude, ChatGPT or Cursor" value={AGENT_MESSAGE} />
+            <a href="#ai" className="mt-2 inline-flex items-center gap-1.5 text-xs text-white/65 hover:text-white"><Bot className="h-3.5 w-3.5" aria-hidden /> How it works</a>
           </div>
+          <a href="#tour" aria-label="Scroll down" className="lp-cue mx-auto mt-8 hidden w-fit text-white/70 sm:block">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d="m6 9 6 6 6-6" /></svg>
+          </a>
         </div>
+      </section>
 
-        {/* Product tour: motion design over real production crops and live numbers
-            (scripts/fb-video-v2.mjs --set=home). Silent loop; phones get the 540p encode. */}
-        <div className="relative mx-auto mt-14 max-w-5xl">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-2 shadow-[0_40px_120px_-30px_rgba(167,244,90,.35)] sm:rounded-3xl sm:p-3">
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-[#050807] sm:rounded-2xl">
-              <video className="block aspect-video w-full motion-reduce:hidden" autoPlay muted loop playsInline preload="metadata"
-                poster="/landing/tour-20260927.webp" aria-label="AdLibrarySpy product tour: the live Meta ads library, the store behind an ad, its SimilarWeb traffic, its best sellers, its live ad count over time, and Brandtracker">
-                <source src="/landing/tour-20260927-m.webm" type="video/webm" media="(max-width: 639px)" />
-                <source src="/landing/tour-20260927-m.mp4" type="video/mp4" media="(max-width: 639px)" />
-                <source src="/landing/tour-20260927.webm" type="video/webm" />
-                <source src="/landing/tour-20260927.mp4" type="video/mp4" />
-              </video>
-              <img src="/landing/tour-20260927.webp" alt="AdLibrarySpy: spy on any Shopify store. Live Meta ads, SimilarWeb traffic, best sellers" width={1600} height={900} className="hidden aspect-video w-full motion-reduce:block" />
-            </div>
-          </div>
-        </div>
+      <div className="border-b border-white/10 px-4 py-6 sm:px-6">
+        <ul className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-3 text-[13px] text-white/55">
+          <li className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" aria-hidden />Meta Ad Library</li>
+          <li className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4" aria-hidden />SimilarWeb traffic</li>
+          <li className="inline-flex items-center gap-2"><Store className="h-4 w-4" aria-hidden />Shopify storefront feeds</li>
+          <li className="inline-flex items-center gap-2"><Globe className="h-4 w-4" aria-hidden />PlatformDTC market index</li>
+          <li><a href="#ai" className="inline-flex items-center gap-2 hover:text-white"><Bot className="h-4 w-4" aria-hidden />Works in any AI agent</a></li>
+        </ul>
+      </div>
 
-        <div className="mx-auto mt-12 max-w-4xl text-center">
-          <p className="text-xs uppercase tracking-[0.18em] text-white/45">Built on real sources</p>
-          <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-white/75">
-            <li className="inline-flex items-center gap-2"><Layers3 className="h-4 w-4" aria-hidden />Meta Ad Library</li>
-            <li className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4" aria-hidden />SimilarWeb traffic</li>
-            <li className="inline-flex items-center gap-2"><Store className="h-4 w-4" aria-hidden />Shopify storefront feeds</li>
-            <li className="inline-flex items-center gap-2"><Globe className="h-4 w-4" aria-hidden />PlatformDTC market index</li>
-          </ul>
+      {/* Product tour: motion design over real production crops and live numbers
+          (scripts/fb-video-v2.mjs --set=home). Its own full-bleed panel: the video carries captions. */}
+      <section id="tour" className="relative flex min-h-[100svh] items-center justify-center px-4 py-20 sm:px-6" aria-label="Product tour">
+        <div className="lp-zoom w-full max-w-7xl overflow-hidden rounded-lg">
+        <video className="block aspect-video w-full motion-reduce:hidden" autoPlay muted loop playsInline preload="metadata"
+          poster="/landing/tour-20260927.webp" aria-label="AdLibrarySpy product tour: the live Meta ads library, the store behind an ad, its SimilarWeb traffic, its best sellers, its live ad count over time, and Brandtracker">
+          <source src="/landing/tour-20260927-m.webm" type="video/webm" media="(max-width: 639px)" />
+          <source src="/landing/tour-20260927-m.mp4" type="video/mp4" media="(max-width: 639px)" />
+          <source src="/landing/tour-20260927.webm" type="video/webm" />
+          <source src="/landing/tour-20260927.mp4" type="video/mp4" />
+        </video>
+        <img src="/landing/tour-20260927.webp" alt="AdLibrarySpy: spy on any Shopify store. Live Meta ads, SimilarWeb traffic, best sellers" width={1600} height={900} className="hidden aspect-video w-full motion-reduce:block" />
         </div>
       </section>
 
       {/* ---------- feature sheet ---------- */}
-      <div id="features" className="rounded-t-[32px] bg-[#f6f7f5] text-[#0b0f0d] sm:rounded-t-[48px]">
-        <Feature kicker="Shops" title={<>Find the stores<br className="hidden sm:block" /> winning right now</>}
+      <div id="features" className="text-white">
+        <Feature kicker="Shops" title={<>Find the stores winning right now</>}
           body="Filter the whole index by platform, category, traffic, growth, country, apps and pixels. Every row shows measured visits and growth, AOV, live and peak Meta ads, and top products."
           cta={{ href: '/signup?ref=home:shops', label: 'Explore shops free' }}
           points={[[Filter, 'Platform, category, traffic, growth, country, tech & pixel filters'], [BarChart3, 'SimilarWeb visits for the exact store'], [Eye, 'Hide what you have already seen']]}>
           <Shot src="/landing/shops.webp" url="adlibraryspy.com/shops" alt="Shops explorer ranked by peak Meta ads, with platform and category filters, monthly traffic, growth, AOV and top products" />
         </Feature>
 
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 pb-20 sm:px-6 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-5 px-4 pb-28 sm:px-6 lg:grid-cols-2">
           <Card title="Analyze any store" body="Traffic over time, visitor countries, live ads over time, products, apps and similar shops — in one dossier.">
             <Shot src="/landing/dossier.webp" url="adlibraryspy.com/shops/gymshark" alt="Gymshark shop dossier with traffic and live ads charts" />
           </Card>
@@ -185,26 +189,26 @@ export default async function HomePage() {
         </div>
 
         {top.length > 0 && (
-          <section className="border-y border-black/5 bg-white px-4 py-20 sm:px-6" aria-labelledby="top-stores">
-            <div className="mx-auto max-w-6xl">
+          <section className="border-y border-white/10 bg-[#070908] px-4 py-28 sm:px-6" aria-labelledby="top-stores">
+            <div className="lp-reveal mx-auto max-w-6xl">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
                   <Kicker>Live from the index</Kicker>
-                  <h2 id="top-stores" className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Biggest Shopify stores this month</h2>
-                  <p className="mt-2 text-sm text-black/55">Ranked by monthly visits measured by SimilarWeb{month ? ` (${month})` : ''}. Open any store — no account needed.</p>
+                  <h2 id="top-stores" className="mt-4 text-4xl font-medium tracking-[-0.035em] sm:text-6xl">Biggest Shopify stores this month</h2>
+                  <p className="mt-3 text-sm text-white/50">Ranked by monthly visits measured by SimilarWeb{month ? ` (${month})` : ''}. Open any store — no account needed.</p>
                 </div>
                 <Link href="/stores" className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline">Full directory <ArrowRight className="h-4 w-4" aria-hidden /></Link>
               </div>
               <ol className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {top.map((s, i) => (
                   <li key={s.id} className="min-w-0">
-                    <Link href={storePath(s.domain)} className="flex h-full min-w-0 items-center gap-3 rounded-2xl border border-black/[0.07] bg-[#f9faf8] p-4 transition-colors hover:border-black/20">
-                      <span className="w-5 text-sm tabular-nums text-black/40">{i + 1}</span>
+                    <Link href={storePath(s.domain)} className="flex h-full min-w-0 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition duration-500 hover:-translate-y-1 hover:border-white/25 hover:bg-white/[0.06]">
+                      <span className="w-5 text-sm tabular-nums text-white/35">{i + 1}</span>
                       <BrandLogo logo={s.logo} domain={s.domain} name={s.name} size={40} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold">{s.name}</span>
-                        <span className="block truncate text-xs text-black/50">{s.domain}</span>
-                        <span className="mt-1 flex items-center gap-2 text-xs text-black/70">
+                        <span className="block truncate text-xs text-white/45">{s.domain}</span>
+                        <span className="mt-1 flex items-center gap-2 text-xs text-white/70">
                           <span className="inline-flex items-center gap-1"><Users className="h-3 w-3" aria-hidden />{compact(measuredVisits(s))}</span>
                           {s.metaAds > 0 && <span className="inline-flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />{compact(s.metaAds)} ads</span>}
                           {s.country && <span aria-label={s.country}>{flag(s.country)}</span>}
@@ -218,7 +222,7 @@ export default async function HomePage() {
           </section>
         )}
 
-        <Feature kicker="Ads" title={<>The ads library<br className="hidden sm:block" /> for ecommerce</>}
+        <Feature kicker="Ads" title={<>The ads library for ecommerce</>}
           body="Search Meta ad creatives by brand, niche, format, placement and country. Open any ad for its copy, landing page, run dates and the brand's other ads."
           cta={{ href: '/signup?ref=home:ads', label: 'Explore ads free' }}
           points={[[Search, 'Search copy, brands and landing pages'], [CalendarDays, 'Run dates and placements per ad'], [Share2, 'Save to folders and share with your team']]}
@@ -227,13 +231,13 @@ export default async function HomePage() {
         </Feature>
 
         {wall.length >= 6 && (
-          <section className="px-4 pb-20 sm:px-6" aria-label="Health niche ad creatives from the library">
+          <section className="px-4 pb-28 sm:px-6" aria-label="Health niche ad creatives from the library">
             <div className="mx-auto max-w-6xl">
-              <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
+              <ul className="lp-reveal grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
                 {wall.map(ad => (
                   <li key={ad.id} className="hidden has-[img]:block">
-                    <Link href={adPath(ad.id)} className="group relative block overflow-hidden rounded-xl border border-black/[0.07] bg-white">
-                      <ProductImage src={ad.image} alt={`${ad.advertiser} ad`} className="aspect-square w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" />
+                    <Link href={adPath(ad.id)} className="group relative block overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+                      <ProductImage src={ad.image} alt={`${ad.advertiser} ad`} className="aspect-square w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]" />
                       <span className="block truncate px-2.5 py-2 text-xs font-medium">{ad.advertiser}</span>
                     </Link>
                   </li>
@@ -251,10 +255,10 @@ export default async function HomePage() {
         </Feature>
 
         <section className="px-4 pb-24 sm:px-6" aria-labelledby="ai">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 rounded-[28px] bg-[#0b0f0d] p-6 text-white sm:p-12 lg:grid-cols-2">
+          <div className="lp-reveal mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 text-white sm:p-12 lg:grid-cols-2">
             <div>
               <Kicker dark>AI access</Kicker>
-              <h2 id="ai" className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Ask your AI</h2>
+              <h2 id="ai" className="mt-4 text-4xl font-medium tracking-[-0.035em] sm:text-5xl">Ask your AI</h2>
               <p className="mt-3 text-white/65">Send your agent one message. Claude, ChatGPT, Cursor or any agent that can open a link reads our guide and starts researching stores and Meta ads for you. No sign-up form, no password, no key to copy.</p>
               <ol className="mt-6 space-y-2 text-sm text-white/75">
                 <li className="flex gap-2"><span style={{ color: LIME }}>1.</span> Copy the message.</li>
@@ -279,10 +283,10 @@ export default async function HomePage() {
 
       {/* ---------- open source ---------- */}
       <section className="px-4 pt-24 sm:px-6" aria-labelledby="oss">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 sm:p-12 lg:grid-cols-[1.3fr_1fr]">
+        <div className="lp-reveal mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 rounded-[28px] border border-white/10 bg-white/[0.03] p-6 sm:p-12 lg:grid-cols-[1.3fr_1fr]">
           <div>
             <Kicker dark>Open source</Kicker>
-            <h2 id="oss" className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Built in the open. Help build it.</h2>
+            <h2 id="oss" className="mt-4 text-4xl font-medium tracking-[-0.035em] sm:text-5xl">Built in the open. Help build it.</h2>
             <p className="mt-3 text-white/65">Every line of AdLibrarySpy is on GitHub under the MIT license: the web app, the Chrome extension, the MCP server and the CLI. Found a bug, want a filter, or have a data source we should add? Open an issue or send a pull request.</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <a href={REPO_URL} target="_blank" rel="noopener" className="inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-[#071004]" style={{ background: LIME }}>
@@ -318,10 +322,10 @@ export default async function HomePage() {
 
       {/* ---------- FAQ ---------- */}
       <section id="faq" className="px-4 py-24 sm:px-6">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[1fr_1.4fr]">
+        <div className="lp-reveal mx-auto grid max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[1fr_1.4fr]">
           <div>
             <Kicker dark>FAQ</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">Questions, answered</h2>
+            <h2 className="mt-4 text-4xl font-medium tracking-[-0.035em] sm:text-5xl">Questions, answered</h2>
             <p className="mt-3 text-sm text-white/60">Comparing tools? Read the <Link href="/vs/trendtrack" className="underline">honest AdLibrarySpy vs TrendTrack breakdown</Link>.</p>
           </div>
           <div className="divide-y divide-white/10 border-y border-white/10">
@@ -339,9 +343,9 @@ export default async function HomePage() {
 
       {/* ---------- final CTA ---------- */}
       <section className="relative overflow-hidden px-4 pb-24 sm:px-6">
-        <div className="relative mx-auto max-w-4xl rounded-[28px] border border-white/10 bg-white/[0.03] px-6 py-14 text-center">
+        <div className="lp-reveal relative mx-auto max-w-5xl px-6 py-20 text-center">
           <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 opacity-40 blur-[90px]" style={{ background: `radial-gradient(closest-side, ${LIME}44, transparent)` }} />
-          <h2 className="text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-5xl">Know what&apos;s working before everyone else</h2>
+          <h2 className="text-balance text-4xl font-medium tracking-[-0.045em] sm:text-7xl">Know what&apos;s working before everyone else</h2>
           <p className="mt-5 text-lg font-semibold">
             <span style={{ color: LIME }}>100% FREE</span> <span className="text-white/40" aria-hidden>·</span> Built for the Community
           </p>
@@ -376,19 +380,19 @@ export default async function HomePage() {
 }
 
 
-function Kicker({ children, dark = false }: { children: ReactNode; dark?: boolean }) {
+function Kicker({ children }: { children: ReactNode; dark?: boolean }) {
   return (
-    <span className={`font-mono text-xs uppercase tracking-[0.18em] ${dark ? 'text-white/55' : 'text-black/45'}`}>
-      <span style={{ color: dark ? LIME : '#4d8f1d' }}>[</span> {children} <span style={{ color: dark ? LIME : '#4d8f1d' }}>]</span>
+    <span className="inline-flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.35em] text-white/50">
+      <span className="h-px w-8" style={{ background: LIME }} aria-hidden />{children}
     </span>
   );
 }
 
 function BrowserBar({ url }: { url: string }) {
   return (
-    <div className="flex items-center gap-3 border-b border-black/[0.06] bg-[#f3f4f2] px-3 py-2">
-      <span className="flex gap-1.5" aria-hidden>{[0, 1, 2].map(i => <i key={i} className="h-2.5 w-2.5 rounded-full bg-black/15" />)}</span>
-      <span className="mx-auto rounded-md bg-white px-3 py-0.5 text-[11px] text-black/45">{url}</span>
+    <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.04] px-3 py-2">
+      <span className="flex gap-1.5" aria-hidden>{[0, 1, 2].map(i => <i key={i} className="h-2.5 w-2.5 rounded-full bg-white/20" />)}</span>
+      <span className="mx-auto rounded-md bg-white/[0.06] px-3 py-0.5 text-[11px] text-white/45">{url}</span>
       <span className="w-10" aria-hidden />
     </div>
   );
@@ -396,7 +400,7 @@ function BrowserBar({ url }: { url: string }) {
 
 function Shot({ src, url, alt }: { src: string; url: string; alt: string }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-black/[0.08] bg-white shadow-[0_30px_80px_-40px_rgba(0,0,0,.35)]">
+    <div className="lp-zoom overflow-hidden rounded-2xl border border-white/10 bg-[#0b0d0c] shadow-[0_40px_120px_-40px_rgba(167,244,90,.25)]">
       <BrowserBar url={url} />
       {/* Every Shot sits below the hero: lazy keeps ~500KB of screenshots off the
           first load (React would otherwise preload each one in <head>). */}
@@ -405,27 +409,24 @@ function Shot({ src, url, alt }: { src: string; url: string; alt: string }) {
   );
 }
 
-function Feature({ kicker, title, body, cta, points, reverse = false, children }: {
+function Feature({ kicker, title, body, cta, points, children }: {
   kicker: string; title: ReactNode; body: string; cta: { href: string; label: string };
   points: [typeof Filter, string][]; reverse?: boolean; children: ReactNode;
 }) {
+  // Tesla panel: title top-centre, the product filling the screen, actions bottom-centre.
   return (
-    <section className="px-4 py-20 sm:px-6 sm:py-24">
-      <div className={`mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 ${reverse ? 'lg:grid-cols-[1.5fr_0.9fr] lg:[&>*:first-child]:order-2' : 'lg:grid-cols-[0.9fr_1.5fr]'}`}>
-        <div>
-          <Kicker>{kicker}</Kicker>
-          <h2 className="mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-[42px]">{title}</h2>
-          <p className="mt-4 text-[15px] leading-relaxed text-black/60">{body}</p>
-          <ul className="mt-6 space-y-2.5">
-            {points.map(([Icon, text]) => (
-              <li key={text} className="flex items-center gap-2.5 text-sm text-black/75"><Icon className="h-4 w-4 shrink-0 text-[#4d8f1d]" aria-hidden />{text}</li>
-            ))}
-          </ul>
-          <Link href={cta.href} className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl bg-[#0b0f0d] px-5 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5">
-            {cta.label} <ArrowRight className="h-4 w-4" aria-hidden />
-          </Link>
-        </div>
-        <div className="min-w-0">{children}</div>
+    <section className="relative flex min-h-[100svh] flex-col items-center px-4 pb-14 pt-24 text-center sm:px-6" aria-label={kicker}>
+      <div className="lp-reveal max-w-3xl">
+        <h2 className="text-balance text-4xl font-medium leading-[1.05] tracking-[-0.03em] sm:text-6xl">{title}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-pretty text-[15px] text-white/65 sm:text-base">{body}</p>
+      </div>
+      <div className="my-10 w-full max-w-6xl flex-1">{children}</div>
+      <ul className="lp-reveal flex flex-wrap justify-center gap-x-8 gap-y-2 text-[13px] text-white/60">
+        {points.map(([Icon, text]) => <li key={text} className="inline-flex items-center gap-2"><Icon className="h-4 w-4 shrink-0" aria-hidden />{text}</li>)}
+      </ul>
+      <div className="lp-reveal mt-7 flex w-full max-w-xl flex-col justify-center gap-3 sm:flex-row">
+        <Link href={cta.href} className="lp-btn lp-btn-primary">{cta.label}</Link>
+        <Link href="/stores" className="lp-btn lp-btn-glass">Browse shops</Link>
       </div>
     </section>
   );
@@ -433,10 +434,10 @@ function Feature({ kicker, title, body, cta, points, reverse = false, children }
 
 function Card({ title, body, children }: { title: string; body: string; children: ReactNode }) {
   return (
-    <article className="flex min-w-0 flex-col gap-5 rounded-[24px] border border-black/[0.06] bg-white p-5 sm:p-7">
+    <article className="lp-reveal flex min-w-0 flex-col gap-5 rounded-[24px] border border-white/10 bg-white/[0.03] p-5 sm:p-7">
       <div>
         <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-black/60">{body}</p>
+        <p className="mt-1.5 text-sm leading-relaxed text-white/55">{body}</p>
       </div>
       {children}
     </article>

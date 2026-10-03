@@ -23,7 +23,7 @@ const SKIN: Record<EmailSignInVariant, { input: string; button: string; error: s
   },
   hero: {
     input: 'h-12 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 text-base text-white placeholder:text-white/45 focus:border-[#a7f45a] focus:outline-none focus:ring-2 focus:ring-[#a7f45a]/30',
-    button: 'inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#a7f45a] px-6 text-[15px] font-semibold text-[#071004] shadow-[0_0_40px_-8px_rgba(167,244,90,.7)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70',
+    button: 'inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-[4px] bg-[#a7f45a] px-8 text-sm font-medium text-[#071004] transition-colors hover:bg-[#bcfb7c] disabled:cursor-not-allowed disabled:opacity-70',
     error: 'rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-left text-sm text-red-200',
     ok: 'text-left text-sm text-white/80', muted: 'text-white/55', link: 'font-medium text-white underline-offset-2 hover:underline',
     code: 'h-14 w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 text-center font-mono text-2xl tracking-[0.5em] text-white placeholder:text-white/25 focus:border-[#a7f45a] focus:outline-none focus:ring-2 focus:ring-[#a7f45a]/30',

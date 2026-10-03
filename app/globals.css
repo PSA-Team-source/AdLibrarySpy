@@ -1418,3 +1418,49 @@ summary {
   .scroll-thin::-webkit-scrollbar { @apply h-2 w-2; }
   .scroll-thin::-webkit-scrollbar-thumb { @apply rounded-lg bg-foreground/20; }
 }
+
+/* ---------- Homepage motion (app/page.tsx) ----------
+   Pure CSS: load-in rise, scroll-driven reveal/zoom via animation-timeline
+   (Chrome/Edge/Safari 26+). Browsers without it, and reduced-motion visitors,
+   get the final static frame, so nothing is ever hidden. */
+@keyframes lp-rise { from { opacity: 0; transform: translateY(28px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes lp-reveal { from { opacity: 0; transform: translateY(64px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes lp-zoom { from { transform: scale(.86); opacity: .4; } to { transform: none; opacity: 1; } }
+@keyframes lp-drift { 0%,100% { transform: translate3d(-6%, -4%, 0) scale(1); } 50% { transform: translate3d(6%, 4%, 0) scale(1.15); } }
+@keyframes lp-sweep { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes lp-cue { 0%,100% { transform: translateY(0); opacity: .35; } 50% { transform: translateY(8px); opacity: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .lp-rise { animation: lp-rise 1.1s cubic-bezier(.16, 1, .3, 1) both; animation-delay: var(--d, 0ms); }
+  .lp-glow { animation: lp-drift 18s ease-in-out infinite; }
+  .lp-cue { animation: lp-cue 2.4s ease-in-out infinite; }
+  .lp-shine {
+    background: linear-gradient(110deg, #fff 35%, #a7f45a 50%, #fff 65%) 0 0 / 200% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: lp-sweep 7s linear infinite;
+  }
+  @supports (animation-timeline: view()) {
+    .lp-reveal { animation: lp-reveal linear both; animation-timeline: view(); animation-range: entry 0% cover 28%; }
+    .lp-zoom { animation: lp-zoom linear both; animation-timeline: view(); animation-range: entry 0% cover 45%; }
+  }
+}
+.lp-grid {
+  background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 70%);
+}
+html:has(.lp-root) { scroll-behavior: smooth; }
+/* Tesla buttons: 4px radius, wide, filled primary + glass secondary. */
+.lp-btn { display: inline-flex; height: 44px; min-width: 0; flex: 1 1 0; max-width: 264px; align-items: center; justify-content: center; border-radius: 4px; padding: 0 24px; font-size: 14px; font-weight: 500; transition: background-color .33s cubic-bezier(.5,0,0,.75), color .33s; }
+@media (max-width: 639px) { .lp-btn { max-width: none; width: 100%; flex: none; } }
+.lp-btn-primary { background: #a7f45a; color: #071004; }
+.lp-btn-primary:hover { background: #bcfb7c; }
+.lp-btn-glass { background: rgba(244,244,244,.65); color: #171a20; backdrop-filter: blur(8px); }
+.lp-btn-glass:hover { background: rgba(244,244,244,.9); }
+@keyframes lp-kb { from { transform: scale(1.08); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: no-preference) { .lp-kenburns { animation: lp-kb 24s ease-out both; } }
+@keyframes lp-tilt { from { transform: rotateX(18deg) scale(.92); } to { transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .lp-tilt { animation: lp-tilt linear both; animation-timeline: scroll(root); animation-range: 0 60vh; transform-origin: 50% 100%; }
+  @supports not (animation-timeline: scroll()) { .lp-tilt { animation: none; } }
+}

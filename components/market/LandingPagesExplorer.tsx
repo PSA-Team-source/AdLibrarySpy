@@ -24,7 +24,7 @@ const LP_KEY = 'landing-pages';
 
 const TYPE_LABEL: Record<LandingPageType, string> = {
   product: 'Product page', advertorial: 'Advertorial', listicle: 'Listicle', quiz: 'Quiz',
-  collection: 'Collection', homepage: 'Homepage', other: 'Other page', unread: 'Not read yet',
+  collection: 'Collection', homepage: 'Homepage', other: 'Other page', unread: 'Not read yet', low_reach: 'Low reach',
 };
 
 function canonical(params: URLSearchParams): string {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import {
   Activity, CalendarClock, CalendarRange, Eye, Clock, Hash, Film, Image as ImageIcon, Globe, ExternalLink,
   Download, LayoutGrid, Store, Tag, Layers, TrendingUp, Bookmark,
@@ -56,15 +56,32 @@ const ico = 'h-3.5 w-3.5';
  * cached), links stay on the public surface (/ad, /store), and Save / All ads are
  * sign-up CTAs instead of workspace actions.
  */
+async function MoreFromAdvertiser({ ad, adHref, drawer }: { ad: Ad; adHref: (id: string) => string; drawer: boolean }) {
+  const similar = await similarAds(ad, 8).catch(() => []);
+  if (!similar.length) return null;
+  return (
+    <section className="rounded-xl border border-border bg-card p-3">
+      <h3 className="pb-2 text-sm font-semibold text-foreground">More from {ad.advertiser}</h3>
+      <div className="grid grid-cols-4 items-start gap-2">
+        {similar.map(a => (
+          <Link key={a.id} href={adHref(a.id)} replace={drawer} scroll={false} title={a.headline || 'Creative'}
+            className="overflow-hidden rounded-lg border border-border transition-opacity hover:opacity-80">
+            <CreativeMedia image={a.image} videoUrl={a.videoUrl} watchUrl={a.adLibraryVideoUrl} alt={a.headline || 'Creative'} className="w-full" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
   { publicView: true } | { publicView?: false; workspaceId: string; userId: string }
 )) {
   const { ad, drawer } = props;
   const viewer = props.publicView ? null : { workspaceId: props.workspaceId, userId: props.userId };
   const adHref = (id: string) => (viewer ? `/ads/${id}` : adPath(id));
-  const [shop, similar, saves, boards, cats] = await Promise.all([
+  const [shop, saves, boards, cats] = await Promise.all([
     ad.shopId ? getShop(ad.shopId).catch(() => null) : Promise.resolve(null),
-    similarAds(ad, 8).catch(() => []),
     // Saved state and boards are secondary: a slow app DB must not blank the ad.
     viewer ? favoritesIn(viewer.workspaceId, viewer.userId, 'ad', 'all').catch(() => null) : Promise.resolve(null),
     viewer ? listFolders(viewer.workspaceId, viewer.userId, 'ad').catch(() => null) : Promise.resolve(null),
@@ -173,19 +190,8 @@ export async function AdDetail(props: { ad: Ad; drawer: boolean } & (
         </Section>
       )}
 
-      {similar.length > 0 && (
-        <section className="rounded-xl border border-border bg-card p-3">
-          <h3 className="pb-2 text-sm font-semibold text-foreground">More from {ad.advertiser}</h3>
-          <div className="grid grid-cols-4 items-start gap-2">
-            {similar.map(a => (
-              <Link key={a.id} href={adHref(a.id)} replace={drawer} scroll={false} title={a.headline || 'Creative'}
-                className="overflow-hidden rounded-lg border border-border transition-opacity hover:opacity-80">
-                <CreativeMedia image={a.image} videoUrl={a.videoUrl} watchUrl={a.adLibraryVideoUrl} alt={a.headline || 'Creative'} className="w-full" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Streams in after the ad: the similar search held the whole drawer ~0.5s. */}
+      <Suspense fallback={null}><MoreFromAdvertiser ad={ad} adHref={adHref} drawer={drawer} /></Suspense>
     </div>
   );
 

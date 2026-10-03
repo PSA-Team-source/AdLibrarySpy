@@ -99,7 +99,8 @@ export function CreativeCard({ ad, saved }: { ad: Ad; saved: boolean }) {
 
         <ExpandableCopy text={ad.adCopy} className="min-h-[2.5rem]" />
 
-        <Link href={`/ads/${ad.id}`} scroll={false} className="block overflow-hidden rounded-lg" aria-label={`Details of this ad by ${ad.advertiser}`}>
+        {/* Hover upgrades to a full prefetch: the drawer (data + its JS) is ready by the click. */}
+        <Link href={`/ads/${ad.id}`} scroll={false} {...({ unstable_dynamicOnHover: true } as object)} className="block overflow-hidden rounded-lg" aria-label={`Details of this ad by ${ad.advertiser}`}>
           <CreativeMedia image={ad.image} videoUrl={ad.videoUrl} watchUrl={ad.adLibraryVideoUrl}
             alt={ad.headline || `Ad by ${ad.advertiser}`} className="w-full" />
         </Link>

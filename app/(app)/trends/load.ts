@@ -309,7 +309,9 @@ export const loadVideoStyles = unstable_cache(async (today: string): Promise<Vid
     GROUP BY k FORMAT JSONEachRow`, { ...w, minConf: STYLE_MIN_CONF });
   const known = rows.filter(r => STYLE_NAMES[String(r.k)]);
   const cT = known.reduce((a, r) => a + Number(r.cur), 0), pT = known.reduce((a, r) => a + Number(r.prev), 0);
-  if (cT < STYLES_MIN_WEEK) throw new Error(`trends styles: only ${cT} styled video ads this week`);
+  // Too few styled ads is a real answer (the section hides), so it is cached:
+  // throwing re-ran this ~1s query on every visit to the older weeks.
+  if (cT < STYLES_MIN_WEEK) return { from: w.from, to: w.to, styled: cT, styles: [] };
 
   const styles = known.map((r): VideoStyle => {
     const id = String(r.k), cur = Number(r.cur), prev = Number(r.prev);
@@ -323,7 +325,7 @@ export const loadVideoStyles = unstable_cache(async (today: string): Promise<Vid
       .then(r => r.items).catch(() => [] as Ad[]);
   });
   return { from: w.from, to: w.to, styled: cT, styles };
-}, ['trends:video-styles:v1'], { revalidate: HOUR });
+}, ['trends:video-styles:v2'], { revalidate: HOUR });
 
 /** Products the most new Meta ads point at (last 14 days), one per store. */
 export const loadHotProducts = unstable_cache(async (): Promise<WinningProduct[]> => {

@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getAd } from '@/lib/data';
 import { dateShort } from '@/lib/format';
 import { MUTED, OG_HEADERS, OG_SIZE, OgFrame, OgLockup, clipText, imageData, ogFonts } from '@/lib/public/og';
@@ -12,8 +12,10 @@ export const revalidate = 3600;
 /** Share card for /ad/{id}: the creative itself beside the brand and headline. */
 export default async function AdOgImage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const ad = /^[A-Za-z0-9_-]{1,128}$/.test(id) ? await getAd(id).catch(() => null) : null;
-  if (!ad) notFound();
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(id)) notFound();
+  const ad = await getAd(id).catch(() => null);
+  // An ad that left the index still gets a card where the link was shared: the site's own.
+  if (!ad) redirect('/opengraph-image.jpg');
 
   const [creative, logo, fonts] = await Promise.all([
     imageData(ad.image, { timeoutMs: 4000 }),

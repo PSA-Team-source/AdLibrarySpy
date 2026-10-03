@@ -21,8 +21,17 @@ const num = (v: unknown): number | null => {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/**
+ * A running-ads series whose newest day is older than this is not drawn: its
+ * trend is a past trend, and the row would show it as today's. The quoted count
+ * stopped 2026-09-27..10-03 and every sparkline kept showing mid-September as
+ * current. The daily tier is recounted every UTC day, so 3 days covers a late
+ * crawl without passing off a stale series.
+ */
+export const LIVE_ADS_MAX_AGE_DAYS = 3;
+
 /** Parse one store's payload. Exported for the self-check in tests/. */
-export function parseRowSignals(raw: Record<string, unknown>): RowSignals {
+export function parseRowSignals(raw: Record<string, unknown>, now = Date.now()): RowSignals {
   const arr = (v: unknown) => (Array.isArray(v) ? v as Record<string, unknown>[] : []);
 
   const trafficHistory = arr(raw.traffic_history)
@@ -42,6 +51,8 @@ export function parseRowSignals(raw: Record<string, unknown>): RowSignals {
   // dropped when the series has any running ads; an all-zero series stays as
   // measured. Upgrade path: have the crawler record a failed day as absent.
   if (liveAds.some(p => p.v > 0)) liveAds = liveAds.filter(p => p.v > 0);
+  const newest = liveAds.reduce((m, p) => (p.t > m ? p.t : m), '');
+  if (newest && now - Date.parse(`${newest}T00:00:00Z`) > (LIVE_ADS_MAX_AGE_DAYS + 1) * 86_400_000) liveAds = [];
 
   const active = num(raw.active_creatives) ?? 0;
   const targetedCountries = active > 0

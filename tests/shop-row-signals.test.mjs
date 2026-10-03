@@ -12,11 +12,19 @@ test('shares become percentages; bad codes and empty shares are dropped', () => 
   assert.deepEqual(s.targetedCountries, [{ code: 'US', pct: 75 }, { code: 'CA', pct: 25 }]);
 });
 
+const SEP19 = Date.parse('2026-09-19T12:00:00Z');
+
 test('crawl-gap zeros are dropped from a running-ads series; an all-zero series stays', () => {
-  const gap = parseRowSignals({ live_ads_history: [{ date: '2026-09-14', ads: 344 }, { date: '2026-09-16', ads: 0 }, { date: '2026-09-18', ads: 490 }] });
+  const gap = parseRowSignals({ live_ads_history: [{ date: '2026-09-14', ads: 344 }, { date: '2026-09-16', ads: 0 }, { date: '2026-09-18', ads: 490 }] }, SEP19);
   assert.deepEqual(gap.liveAds.map(p => p.v), [344, 490]);
-  const flat = parseRowSignals({ live_ads_history: [{ date: '2026-09-14', ads: 0 }, { date: '2026-09-16', ads: 0 }] });
+  const flat = parseRowSignals({ live_ads_history: [{ date: '2026-09-14', ads: 0 }, { date: '2026-09-18', ads: 0 }] }, SEP19);
   assert.deepEqual(flat.liveAds.map(p => p.v), [0, 0]);
+});
+
+test('a running-ads series that stopped days ago is not drawn as current', () => {
+  const series = { live_ads_history: [{ date: '2026-09-25', ads: 12 }, { date: '2026-09-26', ads: 14 }] };
+  assert.equal(parseRowSignals(series, Date.parse('2026-09-29T23:00:00Z')).liveAds.length, 2);
+  assert.equal(parseRowSignals(series, Date.parse('2026-10-03T12:00:00Z')).liveAds.length, 0);
 });
 
 test('traffic history replaces the series only for a SimilarWeb-measured store', () => {

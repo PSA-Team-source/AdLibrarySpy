@@ -56,6 +56,11 @@ function summary(shop: Shop, categoryPath: string[]): string {
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const m0 = Date.now();
+  try { return await storeMetadata(params); } finally { if (process.env.PAGE_TRACE) console.warn(`[page-trace] metadata ${Date.now() - m0}ms`); }
+}
+
+async function storeMetadata(params: Params): Promise<Metadata> {
   const shop = await load((await params).domain);
   const profile = await storeProfile(shop.domain);
   const categoryPath = profile?.categoryPath.length ? profile.categoryPath : shop.niches;
@@ -94,6 +99,7 @@ async function StorefrontProducts({ factsP, shop }: { factsP: Promise<Storefront
 
 export default async function PublicStorePage({ params }: { params: Params }) {
   const raw = (await params).domain;
+  const t0 = Date.now(); // ops: PAGE_TRACE=1 logs where a cold render spends its time
   // Reads keyed by domain alone start beside the shop lookup, not after it
   // (two sequential round trips put a never-opened page at ~380ms).
   const early = publicDomain(raw);
@@ -101,6 +107,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
   const profileP = early ? storeProfile(early) : null;
   const countP = early ? creativeCountFor(early) : null;
   const shop = await load(raw);
+  const tShop = Date.now() - t0;
   const same = early === shop.domain;
   const factsP: Promise<StorefrontFacts | null> = shop.platform === 'shopify'
     ? storefrontFactsFast(shop.domain, 30) // memo answers in ms; a cold store never makes 150ms anyway
@@ -116,6 +123,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
     same && countP ? countP : creativeCountFor(shop.domain),
   ]);
   const { ads, countries: adCountries } = adBundle;
+  if (process.env.PAGE_TRACE) console.warn(`[page-trace] /store/${shop.domain} shop=${tShop}ms data=${Date.now() - t0}ms`);
 
   // Public surfaces show SimilarWeb's measurement of this exact host or nothing:
   // the index estimate is often the parent domain's traffic, wrong on a shared card.

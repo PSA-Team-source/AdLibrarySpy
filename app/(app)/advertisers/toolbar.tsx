@@ -1,7 +1,7 @@
 'use client';
 import { ArrowDownUp, Globe, Landmark, Megaphone, Rocket, Users, X, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FOCUS, FilterChip, useSetParam } from '@/components/market/MarketToolbar';
+import { FOCUS, FilterChip, PlatformChip, useSetParam } from '@/components/market/MarketToolbar';
 
 // Same recipe as the Shops toolbar (components/market/MarketToolbar.tsx): one
 // row of dropdown chips; search sits on the title row (SearchBox).
@@ -11,13 +11,14 @@ const FILTER_KEYS = ['country', 'live', 'launched', 'followers', 'q'];
 const ICONS: Record<string, LucideIcon> = { country: Globe, live: Megaphone, launched: Rocket, followers: Users };
 
 export function AdvertisersToolbar({ selects, sorts }: { selects: ToolbarSelect[]; sorts: { value: string; label: string }[] }) {
-  const { set, params, pending } = useSetParam();
+  const { set, params, pending, prefetch } = useSetParam();
   const p = (k: string) => params.get(k) ?? '';
   const active = FILTER_KEYS.filter(k => params.get(k)).length;
   const defaultSort = sorts.find(s => !s.value);
 
   return (
     <div className={cn('flex shrink-0 flex-wrap items-center gap-2 transition-opacity', pending && 'opacity-60')}>
+      <PlatformChip params={params} set={set} prefetch={prefetch} />
       <FilterChip icon={Landmark} label="Region" value={p('scope')} anyLabel="All advertisers" showAny={false}
         onChange={v => set({ scope: v })} options={[{ value: 'eu', label: 'EU/UK' }]} />
       {selects.map(s => (

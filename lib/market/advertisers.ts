@@ -42,6 +42,8 @@ export interface AdvertiserQuery {
   minLive?: number;
   minLaunched?: number;
   minFollowers?: number;
+  /** Store platform (shopify… | other); undefined = every platform. */
+  platform?: string;
   page?: number;
   limit?: number;
 }
@@ -90,6 +92,7 @@ export async function queryAdvertisers(qp: AdvertiserQuery) {
   if (qp.minLive) p.set('minLive', String(qp.minLive));
   if (qp.minLaunched) p.set('minLaunched', String(qp.minLaunched));
   if (qp.minFollowers) p.set('minFollowers', String(qp.minFollowers));
+  if (qp.platform) p.set('platform', qp.platform);
   const payload = await marketGet(`/adlibs/findproduct/creatives-es/advertisers?${p}`, { auth: true, revalidate: 300 });
   const d = ((payload as { data?: unknown })?.data ?? {}) as Record<string, unknown>;
   const items = (Array.isArray(d.items) ? d.items as Record<string, unknown>[] : []).map(mapPage).filter(x => x.pageId && x.name);

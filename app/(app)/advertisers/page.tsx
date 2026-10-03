@@ -9,6 +9,7 @@ import { BrandLogo } from '@/components/market/BrandLogo';
 import { MarketPagination, SearchBox } from '@/components/market/MarketToolbar';
 import { ProductImage } from '@/components/ShopMedia';
 import { requireCtx } from '@/lib/auth/guard';
+import { marketPlatformParam } from '@/lib/market-platforms';
 import { PageShell } from '@/components/layouts/page-shell';
 import TrackButton from '@/components/TrackButton';
 import { AdvertisersToolbar, type ToolbarSelect } from './toolbar';
@@ -82,6 +83,7 @@ export default async function AdvertisersPage({ searchParams }: { searchParams: 
   const res = await queryAdvertisers({
     q: sp.q, sort: sp.sort, country: sp.country, euUk: sp.scope === 'eu',
     minLive: num(sp.live), minLaunched: num(sp.launched), minFollowers: num(sp.followers),
+    platform: marketPlatformParam(sp.platform), // none = Shopify, like every list
     page, limit: PAGE_SIZE,
   });
   // "Shop Analytics" and tracking only exist for stores we actually index.

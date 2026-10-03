@@ -10,7 +10,10 @@ import { randomUUID } from 'node:crypto';
 export type FunnelEvent = 'signup' | 'first_save' | 'first_track' | 'invite_sent' | 'invite_accepted'
   // Email engagement: one `email_sent` per delivered digest/report (ref = campaign,
   // e.g. alerts:daily, weekly:2026-w40), one `email_click` per tracked link hop (app/r).
-  | 'email_sent' | 'email_click';
+  | 'email_sent' | 'email_click'
+  // "Pick 3 shops to watch" 50/50 test (lib/pick-three.ts): assigned (props.arm, both arms),
+  // shown / tracked (props.n = shops tracked) / skipped (props.n) / completed — treatment only.
+  | 'pick3_assigned' | 'pick3_shown' | 'pick3_tracked' | 'pick3_skipped' | 'pick3_completed';
 
 const TIMEOUT_MS = 2000;
 

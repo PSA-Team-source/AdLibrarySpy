@@ -76,9 +76,6 @@ function useSetParam() {
 // system grey fill (--a-fill, base.css), the picked one filled with the label
 // colour, and a soft blue focus halo instead of a hard ring.
 export const FOCUS = 'outline-none focus-visible:shadow-[0_0_0_4px_var(--a-focus)]';
-const PILL = `inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${FOCUS}`;
-const PILL_ON = 'bg-foreground text-background';
-const PILL_OFF = 'bg-[var(--a-fill)] text-foreground hover:bg-[var(--a-fill-hover)]';
 
 // Top Brands' platform and category rows: capsules, grey until picked.
 export const TB_PILL = `inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[13px] font-medium tracking-[-0.01em] transition-colors ${FOCUS}`;
@@ -169,7 +166,9 @@ export function FilterChip({ icon: Icon, label, value, options, onChange, badge,
   );
 }
 
-export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
+export function MarketToolbar({ categories, hiddenCount = 0, tech = null, views }: {
+  /** Preset views (Segments), placed on the same row as the dropdowns. */
+  views?: ReactNode;
   categories: CategoryNode[];
   /** Shops this workspace has hidden; > 0 shows the "Hidden" toggle. */
   hiddenCount?: number;
@@ -277,9 +276,10 @@ export function MarketToolbar({ categories, hiddenCount = 0, tech = null }: {
           </button>
         )}
         <ExportCsv kind="shops" className={cn(CHIP, 'h-9 shrink-0 disabled:opacity-60', CHIP_OFF)} />
+        {views && <div className="min-w-0 flex-1 basis-full lg:basis-0">{views}</div>}
       </div>
 
-      {filtersOpen && <div id="shop-filters" className="flex flex-wrap items-center gap-2">
+      {filtersOpen && <div id="shop-filters" className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 [&>*]:shrink-0">
         <ShopFilterChips params={params} set={set} tech={tech} profileOptions={profileOptions}
           techOptions={techOptions} pixelOptions={pixelOptions}
           before={<>
@@ -374,8 +374,8 @@ export function Segments({ items }: { items: { value: string; label: string }[] 
   const cur = params.get('view') ?? '';
   const sorted = !!params.get('sort');
   return (
-    <div className="shrink-0 overflow-x-auto -mx-4 px-4 pb-1 sm:mx-0 sm:px-0">
-      <div className="flex min-w-max gap-2">
+    <div className="shrink-0 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex min-w-max gap-1.5">
       {items.map(it => {
         const active = cur === it.value && !sorted;
         return (
@@ -385,7 +385,7 @@ export function Segments({ items }: { items: { value: string; label: string }[] 
             // whichever the reader touched last is the one that applies.
             onClick={() => set({ view: it.value, sort: '', dir: '' })}
             aria-pressed={active}
-            className={cn(PILL, active ? PILL_ON : PILL_OFF)}
+            className={cn(CHIP, "h-9", active ? CHIP_ON : CHIP_OFF)}
           >
             {it.label}
           </button>

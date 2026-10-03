@@ -115,15 +115,14 @@ export function ShopsExplorer({ categories, tech, initial, initialParams, render
     <ShallowUrlProvider>
       <PageShell
         fullHeight
-        className="apple-ui gap-5 bg-[var(--a-canvas)]"
+        className="apple-ui gap-3 bg-[var(--a-canvas)]"
         title={showHidden ? 'Hidden shops' : 'Shops'}
         actions={showHidden ? <ShopSearch /> : <><ShopSearch />{intro}<SaveSearchButton kind="shops" /></>}
         titleAdornment={(data?.allPlatformsTotal ?? data?.total) != null
           ? <span className="inline-flex items-center rounded-full bg-[var(--a-fill)] px-3 py-1 text-[13px] font-semibold tabular-nums text-foreground" title="Shops across all platforms">{(data!.allPlatformsTotal ?? data!.total)!.toLocaleString()}</span>
           : undefined}
       >
-        {!showHidden && <Segments items={VIEWS} />}
-        <MarketToolbar categories={categories} hiddenCount={data?.hiddenCount ?? 0} tech={tech} />
+        <MarketToolbar views={showHidden ? undefined : <Segments items={VIEWS} />} categories={categories} hiddenCount={data?.hiddenCount ?? 0} tech={tech} />
 
         {q.isError && (
           <div role="alert" className="alert-error flex shrink-0 items-center justify-between gap-3 rounded-2xl text-sm">

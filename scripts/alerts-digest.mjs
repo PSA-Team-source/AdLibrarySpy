@@ -2,9 +2,12 @@
 // Alerts digest: one email per user and period with what moved in the brands
 // their workspaces track, the new results of their saved searches, and "Today
 // in the market" (stores whose running Meta ads jumped day over day, in the
-// user's niche when known). A user with no personal news also gets "Winning
-// products today" (lib/alerts/products.ts: products with the most new Meta ads
-// in 48h); a user who tracks nothing gets a "track a competitor" nudge with up
+// user's niche when known). Tracked shops that changed lead the email ("3 of
+// your shops changed"). Every user with market alerts on gets "Today's 10
+// winners" (lib/alerts/products.ts: products with the most new Meta ads in 48h,
+// ranked; in their favourite niche when it fills 10, else overall), stored once
+// per day in winner_days (lib/alerts/winners.ts) and browsable at /winners; a
+// user who tracks nothing gets a "track a competitor" nudge with up
 // to 3 stores they viewed — the nudge never causes a send on its own.
 // Every app link goes through the /r click hop (lib/email/click.ts) and each
 // send emits `email_sent` (lib/analytics/events.ts) — CTR by campaign in
@@ -62,6 +65,7 @@ const { queryAds, favoriteIds } = await import('../lib/data.ts');
 const { getShops } = await import('../lib/market/shops.ts');
 const { marketMovers } = await import('../lib/alerts/market.ts');
 const { winningProductsToday } = await import('../lib/alerts/products.ts');
+const { keepWinnerDay } = await import('../lib/alerts/winners.ts');
 const { trackLinks, clickUrl } = await import('../lib/email/click.ts');
 const { emit } = await import('../lib/analytics/events.ts');
 const { chQuery } = await import('../lib/clickhouse.ts');
@@ -158,13 +162,23 @@ try {
 }
 let products;
 try {
-  products = await withRetry('winning products', () => winningProductsToday(MARKET_DAY, D.PRODUCTS_POOL));
+  products = await withRetry('winning products', () => winningProductsToday(MARKET_DAY, D.WINNERS_POOL));
 } catch (err) {
   console.error(`[alerts] winning products for ${MARKET_DAY} unavailable: ${err.message} — nothing sent, the next run resumes`);
   await pool().end();
   process.exit(1);
 }
 log(`winning products ${MARKET_DAY}: ${products.length} product(s)${products[0] ? ` (top: ${products[0].domain} "${products[0].title}" +${products[0].newAds} new ads)` : ''}`);
+// Today's list, stored once per (day, niche): the first run's list is the day's
+// list, so retries and the /winners archive agree with every email sent.
+const winnerLists = new Map();
+async function winnerList(niche, items) {
+  const key = niche ?? '';
+  if (!winnerLists.has(key)) winnerLists.set(key, WRITE && items.length >= D.WINNERS_MIN ? await keepWinnerDay(DAY, niche, items) : items);
+  return winnerLists.get(key);
+}
+await winnerList(null, products.slice(0, D.WINNERS));
+log(`today's winners ${DAY}: ${winnerLists.get('').length} in the overall list${WRITE ? ' (stored)' : ''}`);
 log(`market ${MARKET_DAY}: ${movers.length} store(s) added ${D.MARKET_MIN_JUMP}+ live Meta ads${movers[0] ? ` (top: ${movers[0].domain} +${movers[0].jump})` : ''}`);
 
 // Last email click per user, so people who never click get weekly, not daily.
@@ -274,7 +288,7 @@ for (const u of users) {
     }
     const niches = u.market && (movers.length || products.length) ? await nichesOf(u.id) : [];
     if (u.market && movers.length) market = D.marketPicks(movers, niches);
-    if (u.market) picks = D.productPicks(products, niches);
+    if (u.market) { const w = D.winnersFor(products, niches); picks = { niche: w.niche, items: await winnerList(w.niche, w.items) }; }
     nudge = await nudgeFor(u.id);
     marketStreak = 0;
   } catch (err) {
@@ -286,7 +300,7 @@ for (const u of users) {
   }
 
   if (sentToday >= DAILY_CAP) { log(`daily cap ${DAILY_CAP} reached — the rest wait for tomorrow`); break; }
-  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market, products: picks?.items ?? null, productsNiche: picks?.niche ?? null, nudge });
+  const digest = D.buildDigest({ app: APP, frequency: u.frequency, brands, searches, market, winners: picks ? { day: DAY, niche: picks.niche, items: picks.items } : null, nudge });
   if (!digest) { empty++; continue; }
 
   const campaign = `alerts:${u.frequency}`;
@@ -306,7 +320,7 @@ for (const u of users) {
     for (const b of brands) log(`   brand ${b.domain}: ${b.lines.join(' · ')}`);
     for (const s of searches) log(`   search "${s.name}" (${s.kind}): ${s.total} new — ${s.items.slice(0, 3).map(i => i.title).join(', ')}`);
     if (nudge) log(`   nudge: ${nudge.suggestions.length ? nudge.suggestions.map(s => s.name).join(', ') : 'no viewed stores — link to Shops'}`);
-    if (digest.body.includes('Winning products today')) log(`   products${picks.niche ? ` [${picks.niche}]` : ''}: ${picks.items.map(p => `${p.domain} +${p.newAds}`).join(', ')}`);
+    if (picks?.items.length >= D.WINNERS_MIN) log(`   winners${picks.niche ? ` [${picks.niche}]` : ''}: ${picks.items.map((p, i) => `${i + 1}. ${p.domain} +${p.newAds}`).join(', ')}`);
     if (market) log(`   market${market.niche ? ` [${market.niche}]` : ''}: ${market.items.map(m => `${m.domain} +${m.jump}`).join(', ')}`);
     if (RENDER) {
       fs.mkdirSync(RENDER, { recursive: true });
@@ -329,7 +343,7 @@ for (const u of users) {
     if (WRITE) {
       for (const x of seenUpdates) await query('UPDATE saved_searches SET seen_ids=$2, last_run_at=now() WHERE id=$1', [x.id, x.seen]);
       await query('UPDATE alert_sends SET summary=$3 WHERE user_id=$1 AND period=$2', [u.id, period,
-        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, products: digest.body.includes('Winning products today') ? picks.items.length : 0, productsNiche: picks?.niche ?? null, nudge: nudge ? nudge.suggestions.length : null, niche: market?.niche ?? null, envelope })]);
+        JSON.stringify({ brands: brands.length, searches: searches.map(s => ({ id: s.id, new: s.total })), market: market?.items.length ?? 0, winners: picks?.items.length >= D.WINNERS_MIN ? picks.items.length : 0, winnersNiche: picks?.niche ?? null, nudge: nudge ? nudge.suggestions.length : null, niche: market?.niche ?? null, envelope })]);
     }
     log(`sent ${period} to ${message.to} (envelope ${envelope}): "${digest.subject}"`);
   } catch (err) {

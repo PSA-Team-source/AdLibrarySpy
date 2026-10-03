@@ -1,7 +1,8 @@
 // Alerts digest logic (lib/alerts/digest.ts). Run with `npm test`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeQuery, newResultIds, mergeSeen, periodFor, trackerLines, buildDigest, marketPicks, topNiches, productPicks, effectiveFrequency, QUIET_AFTER } from '../lib/alerts/digest.ts';
+import { normalizeQuery, newResultIds, mergeSeen, periodFor, trackerLines, buildDigest, marketPicks, topNiches, winnersFor, WINNERS, effectiveFrequency, QUIET_AFTER } from '../lib/alerts/digest.ts';
+import { windowDelta } from '../lib/tracker-window.ts';
 import { marketingEnvelopes } from '../lib/mail.ts';
 import { unsubscribeToken, verifyUnsubscribe } from '../lib/weekly/unsubscribe.ts';
 
@@ -49,7 +50,7 @@ test('a digest escapes merchant text and links into the app', () => {
     searches: [{ id: '1', name: 'Pets', kind: 'shops', query: 'q=pet', total: 1, items: [{ title: 'Pet Co', subtitle: 'pet.co', href: '/shops/shp_2' }] }],
   });
   assert.ok(d);
-  assert.equal(d.subject, '1 tracked brand moved, 1 new result in your saved searches');
+  assert.equal(d.subject, '1 of your shops changed, 1 new result in your saved searches');
   assert.ok(d.body.includes('&lt;b&gt;Evil&lt;/b&gt;') && !d.body.includes('<b>Evil'));
   assert.ok(d.body.includes('https://x.test/shops/shp_1?ref=alerts:daily'));
   assert.ok(d.body.includes('https://x.test/shops/shp_2?ref=alerts:daily'));
@@ -90,18 +91,41 @@ test('marketing envelope: news subdomain, root alias, then the mailbox; refusals
   assert.equal(marketingEnvelopes('no-reply@adlibraryspy.com', 1_000 + 600_000, refused)[0], 'mkt-bounce.no-reply@news.adlibraryspy.com');
 });
 
-test('products follow the user\'s niche history; quiet default-daily users go weekly', () => {
+test('tracked-shop changes: real moves only, over noise thresholds', () => {
+  const m = (o) => ({ monthlyVisits: 1000, liveAds: 10, productCount: 50, avgPrice: 20, creatives: 100, landingPages: 5, ...o });
+  // trickles under the thresholds are not news
+  assert.deepEqual(trackerLines(windowDelta(m({ creatives: 102, productCount: 51, liveAds: 12 }), m({}))), []);
+  // a launch: new ads, a new landing page, new products
+  assert.deepEqual(trackerLines(windowDelta(m({ creatives: 112, landingPages: 7, productCount: 54 }), m({}))),
+    ['12 new ads launched', '2 new landing pages', '4 new products']);
+  // a figure the index could not give (null) is never read as a change
+  assert.deepEqual(trackerLines(windowDelta(m({ landingPages: null, creatives: null }), m({}))), []);
+  assert.deepEqual(trackerLines(windowDelta(m({ landingPages: 9 }), m({ landingPages: undefined }))), []);
+  assert.deepEqual(trackerLines(windowDelta(m({}), null)), []);
+  // three changed shops lead the subject
+  const b = (id) => ({ shopId: id, name: id, domain: `${id}.com`, lines: ['12 new ads launched'] });
+  const d = buildDigest({ app: 'https://x', frequency: 'daily', brands: [b('a'), b('c'), b('e')], searches: [] });
+  assert.equal(d.subject, '3 of your shops changed');
+  assert.match(d.body, /^<p[^>]*>3 of your shops changed/);   // the user's shops open the email
+});
+
+test("today's winners: a fixed ranked 10 in the user's niche when it fills, else overall; quiet users go weekly", () => {
   const p = (t, niches) => ({ title: t, image: '', shopId: t, storeName: t, domain: `${t}.com`, newAds: 20, from: '2026-10-01', to: '2026-10-02', niches });
-  const pool = [p('a', ['Beauty']), p('b', ['Pets']), p('c', ['Pets']), p('d', ['Pets']), p('e', ['Beauty'])];
-  assert.deepEqual(productPicks(pool, ['Pets']).items.map(x => x.title), ['b', 'c', 'd']);
-  assert.equal(productPicks(pool, ['Pets']).niche, 'Pets');
-  const fallback = productPicks(pool, ['Beauty', 'Toys']);   // 2 Beauty < min rows → overall top
+  const pool = [...Array.from({ length: 12 }, (_, i) => p(`pet${i}`, ['Pets'])), ...Array.from({ length: 4 }, (_, i) => p(`b${i}`, ['Beauty']))];
+  assert.equal(winnersFor(pool, ['Pets']).niche, 'Pets');
+  assert.equal(winnersFor(pool, ['Pets']).items.length, WINNERS);
+  const fallback = winnersFor(pool, ['Beauty']);   // 4 Beauty cannot fill 10 → overall top
   assert.equal(fallback.niche, null);
-  assert.equal(fallback.items[0].title, 'a');
+  assert.deepEqual(fallback.items.map(x => x.title), pool.slice(0, 10).map(x => x.title));
+  assert.equal(winnersFor(pool.slice(0, 4), []).items.length, 4);   // a thin day is never padded
   assert.equal(effectiveFrequency('daily', false, QUIET_AFTER), 'weekly');
   assert.equal(effectiveFrequency('daily', false, QUIET_AFTER - 1), 'daily');
   assert.equal(effectiveFrequency('daily', true, 99), 'daily');   // an explicit choice is kept
-  const d = buildDigest({ app: 'https://x', frequency: 'daily', brands: [], searches: [], products: pool.slice(1, 4), productsNiche: 'Pets' });
-  assert.match(d.subject, /^Pets: b got/);
+  const w = winnersFor(pool, ['Pets']);
+  const d = buildDigest({ app: 'https://x', frequency: 'daily', brands: [], searches: [], winners: { day: '2026-10-03', ...w } });
+  assert.match(d.subject, /^Today's 10 winners in Pets: pet0 leads/);
   assert.match(d.body, /track=1/);
+  assert.ok(d.body.includes('https://x/winners/2026-10-03?niche=Pets&ref=alerts:daily'));
+  assert.ok(!d.body.includes('<img'));   // no image = no image cell
+  assert.equal(buildDigest({ app: 'https://x', frequency: 'daily', brands: [], searches: [], winners: { day: '2026-10-03', niche: null, items: pool.slice(0, 2) } }), null);
 });

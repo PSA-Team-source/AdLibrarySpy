@@ -25,6 +25,12 @@ export interface TrackedMetrics {
    * it was captured, or when the library could not be asked.
    */
   creatives?: number | null;
+  /**
+   * Landing pages our index holds for the store (pages its Meta ads send people
+   * to). Growth over a window = new landing pages. Absent on snapshots recorded
+   * before it was captured, or when the index could not be asked.
+   */
+  landingPages?: number | null;
 }
 
 /** The numeric metrics the change feed diffs. */

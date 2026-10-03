@@ -16,6 +16,8 @@ export interface WindowDelta {
   newAds: number | null;
   /** Change in the storefront's product count; null when the window has no baseline. */
   products: number | null;
+  /** Landing pages newly indexed for the store in the window; null = not measurable. Optional: older callers omit it. */
+  newLandingPages?: number | null;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface WindowDelta {
  * of measurement source are not compared (see changeFeed).
  */
 export function windowDelta(latest: TrackedMetrics | null, baseline: TrackedMetrics | null): WindowDelta {
-  const none: WindowDelta = { visits: null, visitsPct: null, liveAds: null, liveAdsPct: null, newAds: null, products: null };
+  const none: WindowDelta = { visits: null, visitsPct: null, liveAds: null, liveAdsPct: null, newAds: null, products: null, newLandingPages: null };
   if (!latest || !baseline) return none;
   const sameSource = (latest.monthlyVisitsSource ?? null) === (baseline.monthlyVisitsSource ?? null);
   const visits = sameSource && latest.monthlyVisits > 0 && baseline.monthlyVisits > 0
@@ -39,6 +41,8 @@ export function windowDelta(latest: TrackedMetrics | null, baseline: TrackedMetr
     liveAdsPct: baseline.liveAds > 0 ? Math.round(((latest.liveAds - baseline.liveAds) / baseline.liveAds) * 1000) / 10 : null,
     newAds,
     products: (Number(latest.productCount) || 0) - (Number(baseline.productCount) || 0),
+    newLandingPages: typeof latest.landingPages === 'number' && typeof baseline.landingPages === 'number'
+      ? Math.max(0, latest.landingPages - baseline.landingPages) : null,
   };
 }
 

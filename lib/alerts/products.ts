@@ -12,7 +12,7 @@
 // in the Shops index, is dropped — never shown by handle.
 import { listWinningProducts } from '../market/products';
 import { getShops } from '../market/shops';
-import { PRODUCTS_MIN_NEW_ADS, PRODUCTS_ROWS, type WinningToday } from './digest';
+import { PRODUCTS_MIN_NEW_ADS, WINNERS, type WinningToday } from './digest';
 
 const SQL = `
 SELECT host, handle, uniqExact(id) AS n
@@ -44,7 +44,7 @@ export function emailableImage(url: string): string {
  * YYYY-MM-DD; a 48h window), biggest first. Throws when ClickHouse cannot be
  * asked; a product the catalogue cannot resolve is skipped.
  */
-export async function winningProductsToday(day: string, rows = PRODUCTS_ROWS): Promise<WinningToday[]> {
+export async function winningProductsToday(day: string, rows = WINNERS): Promise<WinningToday[]> {
   const base = process.env.CLICKHOUSE_URL;
   if (!base) throw new Error('CLICKHOUSE_URL is not set');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error(`bad day ${day}`);

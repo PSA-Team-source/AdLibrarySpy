@@ -18,6 +18,10 @@ export const isSearchKind = (v: unknown): v is SearchKind => v === 'shops' || v 
 export const VISITS_MATERIAL_PCT = 10;
 /** Live ads must move by at least this much (or start from zero) to be emailed. */
 export const LIVE_ADS_MATERIAL_PCT = 50;
+/** Fewer newly indexed creatives than this in the window is a trickle, not a launch. */
+export const TRACKER_MIN_NEW_ADS = 3;
+/** Product-count moves smaller than this are catalogue jitter (a variant re-listed). */
+export const TRACKER_MIN_PRODUCTS = 2;
 /** Most results listed per saved search in one email; the rest are a link. */
 export const ITEMS_PER_SEARCH = 5;
 /** Remembered result ids per saved search (newest kept). */
@@ -44,9 +48,6 @@ export interface MarketMover {
 // ---------- Winning products today (lib/alerts/products.ts) ----------
 /** A product needs at least this many new ads in the 48h window to be listed. */
 export const PRODUCTS_MIN_NEW_ADS = 10;
-/** Fewer products than this and the section is left out. */
-export const PRODUCTS_MIN_ROWS = 3;
-export const PRODUCTS_ROWS = 5;
 /** Most "track a store you viewed" suggestions in one email. */
 export const SUGGESTIONS = 3;
 
@@ -60,16 +61,32 @@ export interface WinningToday {
   niches?: string[];
 }
 
-/** Candidate products pulled once per run; each user gets PRODUCTS_ROWS of them. */
-export const PRODUCTS_POOL = 40;
+// ---------- Today's 10 winners (persisted per day in winner_days; /winners archive) ----------
+/** The daily list is always this long when the market has that many real winners. */
+export const WINNERS = 10;
+/** Fewer than this and there is no list that day (and no section in the email). */
+export const WINNERS_MIN = 3;
+/** Candidates resolved once per run, so niche lists can still fill 10. */
+export const WINNERS_POOL = 80;
 
-/** The user's products: their first niche with enough winners, else the overall top. */
-export function productPicks(pool: WinningToday[], userNiches: string[]): { niche: string | null; items: WinningToday[] } {
+/**
+ * The day's ranked list for one user: their first niche that can fill all
+ * WINNERS places, else the overall top. Never padded: a thin day lists fewer.
+ */
+export function winnersFor(pool: WinningToday[], userNiches: string[]): { niche: string | null; items: WinningToday[] } {
   for (const niche of userNiches) {
     const inNiche = pool.filter(p => p.niches?.includes(niche));
-    if (inNiche.length >= PRODUCTS_MIN_ROWS) return { niche, items: inNiche.slice(0, PRODUCTS_ROWS) };
+    if (inNiche.length >= WINNERS) return { niche, items: inNiche.slice(0, WINNERS) };
   }
-  return { niche: null, items: pool.slice(0, PRODUCTS_ROWS) };
+  return { niche: null, items: pool.slice(0, WINNERS) };
+}
+
+/** "Today's 10 winners" — the count is the real list length. */
+export const winnersTitle = (n: number) => `Today's ${n === 1 ? 'winner' : `${n} winners`}`;
+
+/** Archive URL of one day's list (niche lists carry ?niche=). */
+export function winnersPath(day: string, niche: string | null): string {
+  return `/winners/${day}${niche ? `?niche=${encodeURIComponent(niche)}` : ''}`;
 }
 
 /** Daily emails in a row with no click before a default-daily user drops to weekly. */
@@ -201,7 +218,7 @@ const signed = (n: number) => `${n > 0 ? '+' : '−'}${fmt(n)}`;
 /** The material moves in one brand's window delta, as short lines. [] = nothing to report. */
 export function trackerLines(d: WindowDelta): string[] {
   const out: string[] = [];
-  if (d.newAds !== null && d.newAds > 0) out.push(`${fmt(d.newAds)} new ad${d.newAds === 1 ? '' : 's'} launched`);
+  if (d.newAds !== null && d.newAds >= TRACKER_MIN_NEW_ADS) out.push(`${fmt(d.newAds)} new ad${d.newAds === 1 ? '' : 's'} launched`);
   // Small day-to-day swings in live ads are noise; a jump (or drop) of 50%+,
   // or going live from zero, is news. liveAdsPct null + liveAds > 0 = from zero.
   if (d.liveAds !== null && d.liveAds !== 0) {
@@ -212,8 +229,9 @@ export function trackerLines(d: WindowDelta): string[] {
   if (d.visits !== null && d.visitsPct !== null && Math.abs(d.visitsPct) >= VISITS_MATERIAL_PCT) {
     out.push(`Monthly visits ${signed(d.visits)} (${d.visitsPct > 0 ? '+' : '−'}${Math.abs(d.visitsPct)}%)`);
   }
-  if (d.products !== null && d.products > 0) out.push(`${fmt(d.products)} new product${d.products === 1 ? '' : 's'}`);
-  else if (d.products !== null && d.products < 0) out.push(`${fmt(d.products)} product${d.products === -1 ? '' : 's'} removed`);
+  if (d.newLandingPages != null && d.newLandingPages > 0) out.push(`${fmt(d.newLandingPages)} new landing page${d.newLandingPages === 1 ? '' : 's'}`);
+  if (d.products !== null && d.products >= TRACKER_MIN_PRODUCTS) out.push(`${fmt(d.products)} new products`);
+  else if (d.products !== null && d.products <= -TRACKER_MIN_PRODUCTS) out.push(`${fmt(d.products)} product${d.products === -1 ? '' : 's'} removed`);
   return out;
 }
 
@@ -223,16 +241,20 @@ export interface DigestSearch { id: string; name: string; kind: SearchKind; quer
 
 export interface Digest { subject: string; heading: string; body: string; cta: { label: string; href: string } }
 
+/** "1 of your shops changed" / "3 of your shops changed". */
+export const shopsChanged = (n: number) => `${fmt(n)} of your shops changed`;
+
 const esc = (s: string) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** The email for one user and period, or null when there is nothing to say. */
 export function buildDigest(o: {
   app: string; frequency: 'daily' | 'weekly'; brands: DigestBrand[]; searches: DigestSearch[];
   market?: { niche: string | null; items: MarketMover[] } | null;
-  /** Shown only when the user has no personal news; under PRODUCTS_MIN_ROWS it is left out. */
-  products?: WinningToday[] | null;
-  /** The niche the products were picked for (names the section); null = overall top. */
-  productsNiche?: string | null;
+  /**
+   * Today's ranked winners (winner_days: the same list /winners/<day> shows).
+   * Under WINNERS_MIN it is left out. niche = the list was picked for it; null = overall.
+   */
+  winners?: { day: string; niche: string | null; items: WinningToday[] } | null;
   /** Set for a user who tracks nothing: the activation nudge. Never a reason to send on its own. */
   nudge?: { suggestions: Suggestion[] } | null;
 }): Digest | null {
@@ -240,8 +262,8 @@ export function buildDigest(o: {
   const searches = o.searches.filter(s => s.total > 0 && s.items.length);
   const market = o.market && o.market.items.length ? o.market : null;
   const personal = brands.length > 0 || searches.length > 0;
-  const products = !personal && o.products && o.products.length >= PRODUCTS_MIN_ROWS ? o.products.slice(0, PRODUCTS_ROWS) : null;
-  if (!personal && !market && !products) return null;
+  const winners = o.winners && o.winners.items.length >= WINNERS_MIN ? { ...o.winners, items: o.winners.items.slice(0, WINNERS) } : null;
+  if (!personal && !market && !winners) return null;
   const app = o.app.replace(/\/$/, '');
   const ref = `ref=alerts:${o.frequency}`;
   const link = 'color:#4338ca;text-decoration:none;font-weight:600';
@@ -250,7 +272,8 @@ export function buildDigest(o: {
   const parts: string[] = [];
 
   if (brands.length) {
-    parts.push(`<p style="margin:0 0 6px;font-weight:600;color:#111827">Brandtracker · ${o.frequency === 'daily' ? 'last 24 hours' : 'last 7 days'}</p>`);
+    // The user's own shops lead the email, always.
+    parts.push(`<p style="margin:0 0 6px;font-weight:600;color:#111827">${shopsChanged(brands.length)} · ${o.frequency === 'daily' ? 'last 24 hours' : 'last 7 days'}</p>`);
     parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0">');
     for (const b of brands) {
       parts.push(`<tr><td style="${row}"><a href="${app}/shops/${encodeURIComponent(b.shopId)}?${ref}" style="${link}">${esc(b.name || b.domain)}</a>`
@@ -268,6 +291,25 @@ export function buildDigest(o: {
     }
     parts.push('</table>');
     if (s.total > ITEMS_PER_SEARCH) parts.push(`<p style="margin:6px 0 0;font-size:13px"><a href="${url}" style="${link}">See all ${fmt(s.total)} in ${s.kind === 'shops' ? 'Shops' : 'Ads'} →</a></p>`);
+  }
+
+  if (winners) {
+    const lead = parts.length ? 'margin:24px 0 6px' : 'margin:0 0 6px';
+    const all = `${app}${winnersPath(winners.day, winners.niche)}${winners.niche ? '&' : '?'}${ref}`;
+    parts.push(`<p style="${lead};font-weight:600;color:#111827">${winnersTitle(winners.items.length)}${winners.niche ? ` · ${esc(winners.niche)}` : ''}</p>`);
+    parts.push(`<p style="margin:0 0 6px;${sub}">Shopify products with the most new Meta ads started ${esc(dayRange(winners.items[0].from, winners.items[0].to))} (UTC), one per store.</p>`);
+    parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0">');
+    winners.items.forEach((p, i) => {
+      // No image = no image cell at all, never a blank box.
+      const img = p.image
+        ? `<td width="52" style="${row};padding-right:10px;vertical-align:top"><img src="${esc(p.image)}" width="44" height="44" alt="" style="display:block;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover"></td>`
+        : '';
+      parts.push(`<tr><td width="24" style="${row};vertical-align:top;color:#6b7280;font-weight:600">${i + 1}</td>${img}<td style="${row}"${p.image ? '' : ' colspan="2"'}><a href="${app}/shops/${encodeURIComponent(p.shopId)}?${ref}" style="${link}">${esc(p.title)}</a>`
+        + `<br><span style="${sub}">${esc(p.storeName)} · ${esc(p.domain)} · </span><a href="${app}/shops/${encodeURIComponent(p.shopId)}?track=1&${ref}" style="${link};font-size:12px">Track store</a></td>`
+        + `<td style="${row};padding-left:12px;text-align:right;white-space:nowrap;vertical-align:top"><span style="font-weight:600;color:#047857">+${fmt(p.newAds)}</span><br><span style="${sub}">new ads</span></td></tr>`);
+    });
+    parts.push('</table>');
+    parts.push(`<p style="margin:6px 0 0;font-size:13px"><a href="${all}" style="${link}">Open today's list and past days →</a></p>`);
   }
 
   if (market) {
@@ -288,23 +330,6 @@ export function buildDigest(o: {
     parts.push('</table>');
   }
 
-  if (products) {
-    const lead = parts.length ? 'margin:24px 0 6px' : 'margin:0 0 6px';
-    parts.push(`<p style="${lead};font-weight:600;color:#111827">Winning products today${o.productsNiche ? ` · ${esc(o.productsNiche)}` : ''}</p>`);
-    parts.push(`<p style="margin:0 0 6px;${sub}">Shopify products with the most new Meta ads started ${esc(dayRange(products[0].from, products[0].to))} (UTC).</p>`);
-    parts.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0">');
-    for (const p of products) {
-      const img = p.image
-        ? `<td width="52" style="${row};padding-right:10px;vertical-align:top"><img src="${esc(p.image)}" width="44" height="44" alt="" style="display:block;border-radius:6px;border:1px solid #e5e7eb;object-fit:cover"></td>`
-        : '';
-      parts.push(`<tr>${img}<td style="${row}"${p.image ? '' : ' colspan="2"'}><a href="${app}/shops/${encodeURIComponent(p.shopId)}?${ref}" style="${link}">${esc(p.title)}</a>`
-        + `<br><span style="${sub}">${esc(p.storeName)} · ${esc(p.domain)} · </span><a href="${app}/shops/${encodeURIComponent(p.shopId)}?track=1&${ref}" style="${link};font-size:12px">Track store</a></td>`
-        + `<td style="${row};padding-left:12px;text-align:right;white-space:nowrap;vertical-align:top"><span style="font-weight:600;color:#047857">+${fmt(p.newAds)}</span><br><span style="${sub}">new ads</span></td></tr>`);
-    }
-    parts.push('</table>');
-    parts.push(`<p style="margin:6px 0 0;font-size:13px"><a href="${app}/products?sort=new_ads&${ref}" style="${link}">See all winning products →</a></p>`);
-  }
-
   if (o.nudge) {
     const box = 'margin:24px 0 0;padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb';
     const sugg = o.nudge.suggestions.slice(0, SUGGESTIONS);
@@ -317,15 +342,15 @@ export function buildDigest(o: {
 
   const newResults = searches.reduce((n, s) => n + s.total, 0);
   const bits = [
-    brands.length ? `${fmt(brands.length)} tracked brand${brands.length === 1 ? '' : 's'} moved` : '',
+    brands.length ? shopsChanged(brands.length) : '',
     newResults ? `${fmt(newResults)} new result${newResults === 1 ? '' : 's'} in your saved searches` : '',
   ].filter(Boolean);
   // Personal news leads the subject; a market-only digest names its biggest mover.
   const subject = bits.length
     ? bits.join(', ')
-    : market
-      ? `${market.items[0].name} added ${fmt(market.items[0].jump)} live Meta ads yesterday`
-      : `${o.productsNiche ? `${o.productsNiche}: ` : ''}${products![0].title.slice(0, 70)} got ${fmt(products![0].newAds)} new Meta ads in 2 days`;
+    : winners
+      ? `${winnersTitle(winners.items.length)}${winners.niche ? ` in ${winners.niche}` : ''}: ${winners.items[0].title.slice(0, 60)} leads with ${fmt(winners.items[0].newAds)} new ads`
+      : `${market!.items[0].name} added ${fmt(market!.items[0].jump)} live Meta ads yesterday`;
   return {
     subject: subject[0].toUpperCase() + subject.slice(1),
     heading: personal
@@ -333,11 +358,11 @@ export function buildDigest(o: {
       : (o.frequency === 'daily' ? 'Your daily market brief' : 'Your weekly market brief'),
     body: parts.join(''),
     cta: brands.length
-      ? { label: 'Open Brandtracker', href: `${app}/brandtracker?window=${o.frequency === 'daily' ? '1d' : '7d'}&${ref}` }
+      ? { label: 'Open your tracked shops', href: `${app}/brandtracker?window=${o.frequency === 'daily' ? '1d' : '7d'}&${ref}` }
       : searches.length
         ? { label: 'Open saved searches', href: `${app}/searches?${ref}` }
-        : market
-          ? { label: 'Explore scaling stores', href: `${app}/shops?${ref}` }
-          : { label: 'See winning products', href: `${app}/products?sort=new_ads&${ref}` },
+        : winners
+          ? { label: `See ${winnersTitle(winners.items.length).replace(/^Today's /, 'all ')}`, href: `${app}${winnersPath(winners.day, winners.niche)}${winners.niche ? '&' : '?'}${ref}` }
+          : { label: 'Explore scaling stores', href: `${app}/shops?${ref}` },
   };
 }

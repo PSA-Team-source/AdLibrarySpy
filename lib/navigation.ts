@@ -1,5 +1,5 @@
 import {
-  Home, ScanEye, Bookmark, Store, Package, PanelsTopLeft, Clapperboard, Radio, TrendingUp, Folder, Users,
+  Home, ScanEye, Bookmark, Store, Package, PanelsTopLeft, Clapperboard, Radio, TrendingUp, Trophy, Folder, Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,6 +30,7 @@ export const APP_NAV: NavSection[] = [
   ]},
   { section: 'Analyse', items: [
     { href: '/shops', label: 'Shops', icon: Store, description: 'Search the store index' },
+    { href: '/winners', label: 'Daily winners', icon: Trophy, description: "Today's 10 winning products, and past days" },
     { href: '/products', label: 'Products', icon: Package, description: 'Winning products: the products ads point at' },
     { href: '/landing-pages', label: 'Landing pages', icon: PanelsTopLeft, description: 'The pages ads send people to' },
     { href: '/ads', label: 'Ads', icon: Clapperboard, description: 'Browse the ad creative library' },

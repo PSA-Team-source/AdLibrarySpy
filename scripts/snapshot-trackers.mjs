@@ -68,6 +68,26 @@ async function fetchCreativeCount(domain) {
   }
 }
 
+// How many landing pages (pages its ads send people to) the index holds for the
+// domain; growth = new landing pages in the tracked-shop alerts. Same request as
+// listLandingPages() in lib/market/landing-pages.ts. null = could not be asked
+// (or the list is still being built, 503) — no figure rather than a fake zero.
+async function fetchLandingPageCount(domain) {
+  const token = serviceToken();
+  if (!token) return null;
+  try {
+    const res = await fetch(`${MARKET_API_BASE}/market/landing-pages?limit=1&store=${encodeURIComponent(domain)}`, {
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return null;
+    const total = (await res.json())?.data?.pagination?.total;
+    return typeof total === 'number' && Number.isFinite(total) ? total : null;
+  } catch {
+    return null;
+  }
+}
+
 const client = new pg.Client({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
 await client.connect();
 
@@ -94,6 +114,7 @@ for (const t of trackers) {
       followers: Number(brand.fan_page_like) || 0,
       avgPrice: (Number(brand.avg_product_price) || 0) / 100,
       creatives: await fetchCreativeCount(clean(brand.store_url) || t.domain),
+      landingPages: await fetchLandingPageCount(clean(brand.store_url) || t.domain),
     };
 
     // Skip a snapshot identical to the previous one — it adds no information

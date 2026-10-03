@@ -93,17 +93,25 @@ async function StorefrontProducts({ factsP, shop }: { factsP: Promise<Storefront
 }
 
 export default async function PublicStorePage({ params }: { params: Params }) {
-  const shop = await load((await params).domain);
+  const raw = (await params).domain;
+  // Reads keyed by domain alone start beside the shop lookup, not after it
+  // (two sequential round trips put a never-opened page at ~380ms).
+  const early = publicDomain(raw);
+  const adBundleP = early ? storeAdBundle(early, 8, 24).catch(() => ({ ads: [], countries: [] })) : null;
+  const profileP = early ? storeProfile(early) : null;
+  const countP = early ? creativeCountFor(early) : null;
+  const shop = await load(raw);
+  const same = early === shop.domain;
   const factsP: Promise<StorefrontFacts | null> = shop.platform === 'shopify'
     ? storefrontFactsFast(shop.domain)
     : Promise.resolve(null);
 
   const [similar, adBundle, adHistory, profile, creativeTotal] = await Promise.all([
     similarShops(shop, 6).catch(() => []),
-    storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
+    same && adBundleP ? adBundleP : storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
     storeAdHistory(shop.storeId),
-    storeProfile(shop.domain),
-    creativeCountFor(shop.domain),
+    same && profileP ? profileP : storeProfile(shop.domain),
+    same && countP ? countP : creativeCountFor(shop.domain),
   ]);
   const { ads, countries: adCountries } = adBundle;
 

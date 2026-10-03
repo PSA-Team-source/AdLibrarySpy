@@ -21,6 +21,9 @@ import type { LandingPagesPayload } from '@/app/(app)/landing-pages/load';
 import { cn } from '@/lib/utils';
 
 const LP_KEY = 'landing-pages';
+// Last filters the viewer used: coming back to /landing-pages from another
+// screen reopens them (rows come from the in-memory query cache, no wait).
+const LAST_QS = 'lp:last-qs';
 
 const TYPE_LABEL: Record<LandingPageType, string> = {
   product: 'Product page', advertorial: 'Advertorial', listicle: 'Listicle', quiz: 'Quiz',
@@ -274,6 +277,17 @@ export function LandingPagesExplorer({ categories, initial, initialParams, rende
 }) {
   const params = useSearchParams();
   const qs = canonical(params);
+  const prevQs = useRef<string | null>(null);
+  useEffect(() => {
+    const first = prevQs.current === null;
+    if (prevQs.current === qs) return;
+    prevQs.current = qs;
+    try {
+      if (qs || !first) { localStorage.setItem(LAST_QS, qs); return; }
+      const last = localStorage.getItem(LAST_QS);
+      if (last) window.history.replaceState(null, '', `${window.location.pathname}?${last}`);
+    } catch { /* storage blocked: start unfiltered */ }
+  }, [qs]);
   const initialQs = useMemo(() => canonical(new URLSearchParams(initialParams)), [initialParams]);
 
   const q = useQuery({

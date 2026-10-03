@@ -26,7 +26,7 @@ export interface StoreAnswerInput {
 }
 
 const nf = new Intl.NumberFormat('en-US');
-const platformName: Record<string, string> = { shopify: 'Shopify', woocommerce: 'WooCommerce', shopline: 'Shopline', shoplazza: 'Shoplazza', wix: 'Wix', square: 'Square' };
+const platformName: Record<string, string> = { shopify: 'Shopify', woocommerce: 'WooCommerce', shopline: 'Shopline', shoplazza: 'Shoplazza', wix: 'Wix', square: 'Square', squarespace: 'Squarespace' };
 const list = (xs: string[]) => xs.length <= 2 ? xs.join(' and ') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
 
 export function storeAnswers(s: StoreAnswerInput): [string, string][] {

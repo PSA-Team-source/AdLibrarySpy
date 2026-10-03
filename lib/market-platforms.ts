@@ -8,6 +8,7 @@ export const STANDARD_MARKET_PLATFORMS = [
   { id: 'shoplazza', name: 'Shoplazza', color: 'bg-teal-500' },
   { id: 'wix', name: 'Wix', color: 'bg-neutral-900' },
   { id: 'square', name: 'Square', color: 'bg-zinc-700' },
+  { id: 'squarespace', name: 'Squarespace', color: 'bg-stone-800' },
 ] as const;
 
 export const MARKET_PLATFORM_FILTERS = [

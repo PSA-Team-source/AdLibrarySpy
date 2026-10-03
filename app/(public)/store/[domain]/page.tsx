@@ -107,7 +107,9 @@ export default async function PublicStorePage({ params }: { params: Params }) {
     : Promise.resolve(null);
 
   const [similar, adBundle, adHistory, profile, creativeTotal] = await Promise.all([
-    similarShops(shop, 6).catch(() => []),
+    // ponytail: 100ms budget; a cold pool (shared, cached 6h) finishes in the
+    // background and the next render of any store in that niche shows it.
+    Promise.race([similarShops(shop, 6).catch(() => []), new Promise<Awaited<ReturnType<typeof similarShops>>>(r => setTimeout(() => r([]), 100))]),
     same && adBundleP ? adBundleP : storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
     storeAdHistory(shop.storeId),
     same && profileP ? profileP : storeProfile(shop.domain),

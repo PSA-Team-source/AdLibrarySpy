@@ -57,7 +57,7 @@ function summary(shop: Shop, categoryPath: string[]): string {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const shop = await load((await params).domain);
-  const profile = await storeProfile(shop.storeId);
+  const profile = await storeProfile(shop.domain);
   const categoryPath = profile?.categoryPath.length ? profile.categoryPath : shop.niches;
   const title = `${shop.name} (${shop.domain}) — traffic, Meta ads & top products`;
   const description = summary(shop, categoryPath);
@@ -102,7 +102,7 @@ export default async function PublicStorePage({ params }: { params: Params }) {
     similarShops(shop, 6).catch(() => []),
     storeAdBundle(shop.domain, 8, 24).catch(() => ({ ads: [], countries: [] })),
     storeAdHistory(shop.storeId),
-    storeProfile(shop.storeId),
+    storeProfile(shop.domain),
     creativeCountFor(shop.domain),
   ]);
   const { ads, countries: adCountries } = adBundle;

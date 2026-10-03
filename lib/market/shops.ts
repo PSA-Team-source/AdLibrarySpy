@@ -734,6 +734,16 @@ export async function shopifyProducts(domain: string, limit = 8): Promise<Produc
  * visitor country, then closest measured traffic. Stores without their own
  * measured visits are left out, so no card prints an estimate.
  */
+/**
+ * One category/country/traffic-decade pool, cached 6h and shared by every store
+ * in it: the filter cost 100-340ms on the loaded search node per store page.
+ * next/cache is imported lazily so node --test can import this module.
+ */
+async function similarPool(f: ShopFilter): Promise<ShopPage> {
+  const { unstable_cache } = await import('next/cache');
+  return unstable_cache(() => listShops(f, { crux: false }), ['similar-pool-v1', JSON.stringify(f)], { revalidate: 6 * 3600 })();
+}
+
 export async function similarShops(shop: Shop, limit = 6): Promise<Shop[]> {
   if (!shop.niches.length) return [];
   // A name maps to several ids ("Health" is both 2 and 4078); the picker's tree
@@ -745,15 +755,15 @@ export async function similarShops(shop: Shop, limit = 6): Promise<Shop[]> {
   // The pool must sit in the shop's own traffic band. It used to be the
   // category's 50 BIGGEST stores, so a 2K-visit shop got the smallest of those
   // (all ~3.7M) as its "closest" neighbours. Band = one decade either side.
-  const band = measured(shop)
-    ? { trafficMin: Math.floor(shop.monthlyVisits / 10), trafficMax: Math.ceil(shop.monthlyVisits * 10) }
-    : {};
+  // Decade-aligned so neighbouring stores share one cached pool (similarPool).
+  const decade = measured(shop) ? 10 ** Math.floor(Math.log10(Math.max(1, shop.monthlyVisits))) : 0;
+  const band = decade ? { trafficMin: Math.floor(decade / 10), trafficMax: decade * 100 } : {};
   // Pool = 3x what is shown (min 30): 100 full rows cost 60-270ms in Go, 30 cost ~20ms.
   const base: ShopFilter = { category: catId, platform: shop.platform || 'shopify', limit: Math.min(100, Math.max(30, limit * 3)), ...band };
   const home = [...new Set([shop.country, shop.visitorCountries?.[0]?.code].filter(Boolean) as string[])];
   const pages = await Promise.all([
-    listShops(base, { crux: false }),
-    ...home.map(country => listShops({ ...base, country }, { crux: false })),
+    similarPool(base),
+    ...home.map(country => similarPool({ ...base, country })),
   ].map(p => p.catch(() => null)));
   return rankSimilar(shop, pages.flatMap(p => p?.items ?? []), limit);
 }

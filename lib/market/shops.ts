@@ -613,6 +613,18 @@ export async function countShops(f: ShopFilter, revalidate = 3600): Promise<numb
   return unwrapTotal(payload);
 }
 
+/**
+ * The store's own products.json, memoised 6h, waited on at most 80ms: a live,
+ * uncached read (6s timeout) held every shop lookup 300-430ms. A miss returns
+ * [] (the panels fall back) and the read finishes in the background, filling
+ * the memo. next/cache is imported lazily so node --test can import this file.
+ */
+async function storeProductsFast(domain: string): Promise<Product[]> {
+  const { unstable_cache } = await import('next/cache');
+  const read = unstable_cache(() => shopifyProducts(domain), ['shopify-products-v1', domain], { revalidate: 6 * 3600 })().catch(() => [] as Product[]);
+  return Promise.race([read, new Promise<Product[]>(r => setTimeout(() => r([]), 80))]);
+}
+
 export async function getShop(id: string): Promise<Shop | null> {
   const cats = await categories();
   // The index keys brands by store_id; our ids are 'shp_<store_id>'.
@@ -656,7 +668,7 @@ export async function getShop(id: string): Promise<Shop | null> {
   }
 
   const [products, traffic, crux] = await Promise.all([
-    shop.bestSellers.length ? Promise.resolve(shop.bestSellers) : shopifyProducts(shop.domain),
+    shop.bestSellers.length ? Promise.resolve(shop.bestSellers) : storeProductsFast(shop.domain),
     monthlyTraffic(shop.domain),
     cruxRank(shop.domain),
   ]);
